@@ -1,0 +1,10 @@
+<div class="list-folder {{folderType}}-folder" data-folder-id="{{folderId}}">
+	<div class="folder-header" data-action="toggleFolder" {{#if folderTooltip}}data-tooltip="{{folderTooltip}}" {{/if}}>
+		<i class="fas fa-chevron-down collapse-indicator" aria-hidden="true"></i>
+		<i class="{{icon}} folder-icon" aria-hidden="true"></i>
+		<span>{{folderHeader}}</span>
+	</div>
+	<ul class="spell-list-items folder-content">
+		{{> @partial-block}}
+	</ul>
+</div>

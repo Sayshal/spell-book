@@ -1,119 +1,98 @@
-/**
- * Macro Management and Compendium Operations
- *
- * Manages versioned compendium macros for the Spell Book module including creation,
- * updates, versioning, and cleanup operations. This class provides a centralized
- * system for maintaining module-specific macros in compendium packs with automatic
- * version management and obsolete macro cleanup.
- *
- * The manager operates on macro configurations defined in the macros module,
- * ensuring all required macros exist in the compendium with current versions
- * and removing any macros that are no longer defined.
- * @module Managers/Macros
- * @author Tyler
- */
-
-import { MODULE } from '../constants/_module.mjs';
-import { log } from '../logger.mjs';
-import * as m from '../macros/_module.mjs';
-
-const MACROS = Object.values(m);
+import { MODULE, PACK } from '../constants.mjs';
+import { log } from '../utils/logger.mjs';
 
 /**
- * Macro Manager - Centralized macro management and versioning system.
+ * @type {Array<{flagKey: string, version: string, name: string, command: string, img: string}>}
+ * Each macro's `command` is a thin wrapper around a public API call on `SPELLBOOK.api`.
+ * Bumping the `version` string forces the manager to overwrite any existing pack entry on next ready.
  */
-export class Macros {
-  /**
-   * Initialize and ensure all module macros exist in compendium.
-   * @returns {Promise<void>} Promise that resolves when all macros are initialized
-   * @static
-   */
-  static async initializeMacros() {
-    log(3, 'Initializing macros.', { macroCount: MACROS.length });
-    const pack = game.packs.get(MODULE.PACK.MACROS);
-    for (const macro of MACROS) await this.ensureCompendiumMacroExists(pack, macro);
-    await this.cleanupObsoleteMacros();
-    log(3, 'Macro initialization complete.');
+const MACROS = [
+  {
+    flagKey: 'spellBookQuickAccess',
+    version: '2.0.0',
+    name: 'Spell Book - Quick Access',
+    img: 'icons/sundries/books/book-purple-gem.webp',
+    command: 'SPELLBOOK.api.spellBookQuickAccess();'
+  },
+  {
+    flagKey: 'spellSlotTracker',
+    version: '2.0.0',
+    name: 'Spell Book - Slot Tracker',
+    img: 'icons/magic/symbols/runes-star-pentagon-magenta.webp',
+    command: 'SPELLBOOK.api.spellSlotTracker();'
+  },
+  {
+    flagKey: 'scrollScanner',
+    version: '2.0.0',
+    name: 'Spell Book - Scroll Scanner',
+    img: 'icons/sundries/scrolls/scroll-bound-red.webp',
+    command: 'SPELLBOOK.api.scrollScanner();'
+  },
+  {
+    flagKey: 'spellsNotInLists',
+    version: '2.0.0',
+    name: 'Spell Book - Spells Not In Lists',
+    img: 'icons/tools/scribal/magnifying-glass.webp',
+    command: 'SPELLBOOK.api.spellsNotInLists();'
+  },
+  {
+    flagKey: 'flagPurge',
+    version: '2.0.0',
+    name: 'Spell Book - Flag Purge',
+    img: 'icons/sundries/flags/banner-standard-tattered-red.webp',
+    command: 'SPELLBOOK.api.flagPurge();'
   }
+];
 
-  /**
-   * Ensure a specific macro exists in the compendium and is current.
-   * @param {object} pack - The macro compendium pack
-   * @param {object} macro - Macro configuration object
-   * @returns {Promise<object | null>} Promise that resolves to the existing or newly created Macro document, or null if not found/creation failed
-   * @static
-   */
-  static async ensureCompendiumMacroExists(pack, macro) {
-    const { flagKey, version, name, command, img = 'icons/svg/dice-target.svg', type = 'script' } = macro;
-    log(3, 'Ensuring compendium macro exists.', { name, version, flagKey });
-    const packDocuments = await pack.getDocuments();
-    const existingMacro = packDocuments.find((macro) => macro.getFlag(MODULE.ID, flagKey) !== undefined);
-    if (existingMacro) {
-      const currentVersion = existingMacro.getFlag(MODULE.ID, `${flagKey}.version`);
-      if (currentVersion === version) return existingMacro;
-      else {
-        log(3, `Updating compendium macro "${name}" from ${currentVersion} --> ${version}`);
-        await existingMacro.update({
-          name: name,
-          command: command,
-          img: img,
-          [`flags.${MODULE.ID}.${flagKey}.version`]: version,
-          [`flags.${MODULE.ID}.${flagKey}.lastUpdated`]: Date.now()
-        });
-        log(3, `Compendium macro "${name}" updated successfully.`);
-        return existingMacro;
-      }
-    } else {
-      log(3, `Creating new compendium macro "${name}" (v${version})`);
-      const newMacro = await Macro.create(
-        {
-          name: name,
-          type: type,
-          command: command,
-          img: img,
-          scope: 'global',
-          flags: { [MODULE.ID]: { [flagKey]: { version: version, created: Date.now(), lastUpdated: Date.now(), managedByModule: true } } }
-        },
-        { pack: pack.collection }
-      );
-      log(3, `Compendium macro "${name}" created successfully.`, { macroId: newMacro?.id });
-      return newMacro;
+const MANAGED_FLAG_KEYS = new Set(MACROS.map((m) => m.flagKey));
+
+/** Reconcile the module's macro compendium with the defined MACROS list. */
+export async function initializeMacros() {
+  const pack = game.packs.get(PACK.MACROS);
+  if (!pack) return;
+  if (pack.locked) await pack.configure({ locked: false });
+  const existing = await pack.getDocuments();
+  for (const def of MACROS) await upsertMacro(pack, existing, def);
+  for (const doc of existing) {
+    const managed = doc.getFlag(MODULE.ID, 'managed');
+    const keyFlag = Object.keys(doc.flags?.[MODULE.ID] ?? {}).find((k) => MANAGED_FLAG_KEYS.has(k) || k === 'managed');
+    if (managed && keyFlag && !MANAGED_FLAG_KEYS.has(managed)) {
+      await doc.delete();
+      log(3, `Removed obsolete macro: ${doc.name}`);
     }
   }
+}
 
-  /**
-   * Get all macros managed by this module from the compendium.
-   * @returns {Promise<Array<object>>} Promise that resolves to an array of module-managed macros
-   * @static
-   */
-  static async getManagedMacros() {
-    log(3, 'Getting managed macros.');
-    const pack = game.packs.get(MODULE.PACK.MACROS);
-    const packDocuments = await pack.getDocuments();
-    const managedMacros = packDocuments.filter((macro) => {
-      const moduleFlags = macro.getFlag(MODULE.ID);
-      return moduleFlags && Object.values(moduleFlags).some((flag) => typeof flag === 'object' && flag.managedByModule === true);
+/**
+ * Create the macro if it's missing, or update its command/name/img/version if the stored version is stale.
+ * @param {object} pack - The macro compendium
+ * @param {object[]} existing - Documents currently in the pack (pre-fetched)
+ * @param {object} def - The macro definition from MACROS
+ */
+async function upsertMacro(pack, existing, def) {
+  const match = existing.find((d) => d.getFlag(MODULE.ID, 'managed') === def.flagKey);
+  if (match) {
+    if (match.getFlag(MODULE.ID, 'version') === def.version) return;
+    await match.update({
+      name: def.name,
+      command: def.command,
+      img: def.img,
+      [`flags.${MODULE.ID}.version`]: def.version,
+      [`flags.${MODULE.ID}.managed`]: def.flagKey
     });
-    log(3, 'Found managed macros.', { count: managedMacros.length });
-    return managedMacros;
+    log(3, `Updated macro "${def.name}" to ${def.version}`);
+    return;
   }
-
-  /**
-   * Clean up obsolete macros that are no longer defined.
-   * @returns {Promise<void>} Promise that resolves when cleanup is complete
-   * @static
-   */
-  static async cleanupObsoleteMacros() {
-    const currentFlagKeys = MACROS.map((def) => def.flagKey);
-    const managedMacros = await this.getManagedMacros();
-    for (const macro of managedMacros) {
-      const moduleFlags = macro.getFlag(MODULE.ID);
-      const macroFlagKeys = Object.keys(moduleFlags || {});
-      const isObsolete = macroFlagKeys.every((flagKey) => !currentFlagKeys.includes(flagKey));
-      if (isObsolete) {
-        log(3, 'Deleting obsolete macro.', { macroId: macro.id, name: macro.name });
-        await macro.delete();
-      }
-    }
-  }
+  await Macro.create(
+    {
+      name: def.name,
+      type: 'script',
+      scope: 'global',
+      command: def.command,
+      img: def.img,
+      flags: { [MODULE.ID]: { managed: def.flagKey, version: def.version } }
+    },
+    { pack: pack.collection }
+  );
+  log(3, `Created macro "${def.name}" (v${def.version})`);
 }

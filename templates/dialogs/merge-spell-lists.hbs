@@ -1,28 +1,53 @@
-<div class='merge-spell-lists-dialog'>
-  <!-- Spell Lists Multi-Select -->
+<div class="merge-spell-lists">
   <div class="form-group">
     <label for="spell-lists-to-merge">{{localize "SPELLMANAGER.MergeLists.SpellListsLabel"}}</label>
-    {{{formElements.spellListsMultiSelectHtml}}}
+    <div class="form-fields">
+      <multi-select id="spell-lists-to-merge" name="spellListsToMerge">
+        {{#if lists.standard.length}}
+          <optgroup label="{{localize 'SPELLMANAGER.Folders.SpellLists'}}">
+            {{#each lists.standard}}
+              <option value="{{this.uuid}}">{{this.name}}</option>
+            {{/each}}
+          </optgroup>
+        {{/if}}
+        {{#if lists.custom.length}}
+          <optgroup label="{{localize 'SPELLMANAGER.Folders.CustomLists'}}">
+            {{#each lists.custom}}
+              <option value="{{this.uuid}}">{{this.name}}</option>
+            {{/each}}
+          </optgroup>
+        {{/if}}
+        {{#if lists.merged.length}}
+          <optgroup label="{{localize 'SPELLMANAGER.Folders.MergedLists'}}">
+            {{#each lists.merged}}
+              <option value="{{this.uuid}}">{{this.name}}</option>
+            {{/each}}
+          </optgroup>
+        {{/if}}
+        {{#if lists.actorOwned.length}}
+          <optgroup label="{{localize 'SPELLMANAGER.Folders.PlayerSpellbooks'}}">
+            {{#each lists.actorOwned}}
+              <option value="{{this.uuid}}">{{this.name}}</option>
+            {{/each}}
+          </optgroup>
+        {{/if}}
+      </multi-select>
+    </div>
     <p class="hint">{{localize "SPELLMANAGER.MergeLists.SpellListsHint"}}</p>
   </div>
-
-  <!-- Merged List Name Configuration (Required) -->
   <div class="form-group">
-    <label for="merged-list-name">{{localize "SPELLMANAGER.MergeLists.MergedListNameLabel"}} <span class="required">*</span></label>
-    {{{formElements.mergedListNameInputHtml}}}
+    <label for="merged-list-name">{{localize "SPELLMANAGER.MergeLists.MergedListNameLabel"}}</label>
+    <div class="form-fields">
+      <input type="text" id="merged-list-name" name="mergedListName"
+        placeholder="{{localize 'SPELLMANAGER.MergeLists.MergedListNameLabel'}}" maxlength="100">
+    </div>
     <p class="hint">{{localize "SPELLMANAGER.MergeLists.MergedListNameRequired"}}</p>
   </div>
-
-  <!-- Source List Visibility Option -->
   <div class="form-group">
-    <label class="checkbox">
-      <span class="label-text">{{localize "SPELLMANAGER.MergeLists.HideSourceListsLabel"}}</span>
-      {{{formElements.hideSourceListsCheckboxHtml}}}
-    </label>
+    <label for="hide-source-lists">{{localize "SPELLMANAGER.MergeLists.HideSourceListsLabel"}}</label>
+    <div class="form-fields">
+      <input type="checkbox" id="hide-source-lists" name="hideSourceLists">
+    </div>
     <p class="hint">{{localize "SPELLMANAGER.MergeLists.HideSourceListsHint"}}</p>
   </div>
-
-  <!-- Validation Error Display -->
-  <p class="validation-error" style="color: red; display: none;">{{localize "SPELLMANAGER.MergeLists.ValidationError"}}
-  </p>
 </div>

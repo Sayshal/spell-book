@@ -1,27 +1,22 @@
 <div class="scroll-scanner">
-  <!-- Scan Results Header with Count -->
-  <p>{{{localize 'SPELLBOOK.ScrollProcessor.ResultsHeader' count=scrolls.length}}}</p>
-
-  <!-- Scroll Results Table -->
-  <div>
-    <table>
-      <thead>
-        <tr>
-          <th>{{localize 'SPELLBOOK.ScrollProcessor.TableHeaderName'}}</th>
-          <th>{{localize 'SPELLBOOK.ScrollProcessor.TableHeaderUUID'}}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{#each scrolls}}
-          <tr>
-            <td>{{this.name}}</td>
-            <td>{{this.uuid}}</td>
-          </tr>
-        {{/each}}
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Results Footer with Usage Information -->
-  <p><em>{{localize 'SPELLBOOK.ScrollProcessor.ResultsFooter'}}</em></p>
+	<p>{{{localize 'SPELLBOOK.ScrollProcessor.ResultsHeader' count=scrolls.length}}}</p>
+	<div>
+		<table>
+			<thead>
+				<tr>
+					<th>{{localize 'SPELLBOOK.ScrollProcessor.TableHeaderName'}}</th>
+					<th>{{localize 'SPELLBOOK.ScrollProcessor.TableHeaderUUID'}}</th>
+				</tr>
+			</thead>
+			<tbody>
+				{{#each scrolls}}
+					<tr>
+						<td>{{this.name}}</td>
+						<td>{{this.uuid}}</td>
+					</tr>
+				{{/each}}
+			</tbody>
+		</table>
+	</div>
+	<p><em>{{localize 'SPELLBOOK.ScrollProcessor.ResultsFooter'}}</em></p>
 </div>

@@ -1,0 +1,188 @@
+<section class="class-rules-wrapper standard-form">
+<div class="class-rules-content standard-form">
+  <fieldset>
+    <legend>{{localize "SPELLBOOK.Settings.GlobalSettings.Legend"}}</legend>
+    <div class="form-group">
+      <label for="rule-set-override">{{localize "SPELLBOOK.Settings.RuleSetOverride.Label"}}</label>
+      <div class="form-fields">
+        <select name="ruleSetOverride" id="rule-set-override">
+          {{#each ruleSetOptions}}
+            <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+          {{/each}}
+        </select>
+      </div>
+      <p class="hint">{{localize "SPELLBOOK.Settings.RuleSetOverride.Hint"}}</p>
+    </div>
+    <div class="form-group">
+      <label for="notify-gm">{{localize "SPELLBOOK.Settings.NotifyGmOnSpellChanges.Label"}}</label>
+      <div class="form-fields">
+        <input type="checkbox" name="notifyGm" id="notify-gm" {{#if notifyGm}}checked{{/if}}>
+      </div>
+      <p class="hint">{{localize "SPELLBOOK.Settings.NotifyGmOnSpellChanges.Hint"}}</p>
+    </div>
+    <div class="form-group">
+      <label>{{localize "SPELLBOOK.Settings.DetailsCustomization.MenuName"}}</label>
+      <div class="form-fields">
+        <button type="button" data-action="openCustomization">
+          <i class="fas fa-palette" aria-hidden="true"></i>
+          {{localize "SPELLBOOK.Settings.DetailsCustomization.MenuLabel"}}
+        </button>
+      </div>
+    </div>
+  </fieldset>
+  {{#each classes as |cls|}}
+    <fieldset class="class-section{{#if cls.noScaleValue}} has-issues{{/if}}" data-class="{{cls.identifier}}">
+      <legend>
+        {{#if cls.img}}<img src="{{cls.img}}" alt="{{cls.name}}" class="class-icon">{{/if}}
+        {{cls.name}}
+      </legend>
+      <div class="form-group{{#if cls.noScaleValue}} disabled{{/if}}">
+        <label for="showCantrips-{{cls.identifier}}">{{localize "SPELLBOOK.Settings.ShowCantrips.Label"}}</label>
+        <div class="form-fields">
+          <input type="checkbox" id="showCantrips-{{cls.identifier}}"
+            name="class.{{cls.identifier}}.showCantrips" value="true"
+            {{#if cls.rules.showCantrips}}checked{{/if}} {{#if cls.noScaleValue}}disabled{{/if}}>
+        </div>
+        {{#if cls.noScaleValue}}
+          <p class="hint warning">{{localize "SPELLBOOK.Settings.DisabledNoScaleValue"}}</p>
+        {{else}}
+          <p class="hint">{{localize "SPELLBOOK.Settings.ShowCantrips.Hint"}}</p>
+        {{/if}}
+      </div>
+      <div class="form-group">
+        <label for="forceWizardMode-{{cls.identifier}}">{{localize "SPELLBOOK.Settings.ForceWizardMode.Label"}}</label>
+        <div class="form-fields">
+          <input type="checkbox" id="forceWizardMode-{{cls.identifier}}"
+            name="class.{{cls.identifier}}.forceWizardMode" value="true"
+            {{#if cls.rules.forceWizardMode}}checked{{/if}}>
+        </div>
+        <p class="hint">{{localize "SPELLBOOK.Settings.ForceWizardMode.Hint"}}</p>
+      </div>
+      <div class="form-group{{#unless cls.rules.showCantrips}} disabled{{/unless}}">
+        <label for="cantripSwapping-{{cls.identifier}}">{{localize "SPELLBOOK.Settings.CantripSwapping.Label"}}</label>
+        <div class="form-fields">
+          <select id="cantripSwapping-{{cls.identifier}}" name="class.{{cls.identifier}}.cantripSwapping">
+            {{#each cls.swapOptions}}
+              <option value="{{value}}" {{#if selected}}selected{{/if}}>{{localize label}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <p class="hint">{{localize "SPELLBOOK.Settings.CantripSwapping.Hint"}}</p>
+      </div>
+      <div class="form-group">
+        <label for="spellSwapping-{{cls.identifier}}">{{localize "SPELLBOOK.Settings.SpellSwapping.Label"}}</label>
+        <div class="form-fields">
+          <select id="spellSwapping-{{cls.identifier}}" name="class.{{cls.identifier}}.spellSwapping">
+            {{#each cls.spellSwapOptions}}
+              <option value="{{value}}" {{#if selected}}selected{{/if}}>{{localize label}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <p class="hint">{{localize "SPELLBOOK.Settings.SpellSwapping.Hint"}}</p>
+      </div>
+      <div class="form-group">
+        <label for="ritualCasting-{{cls.identifier}}">{{localize "SPELLBOOK.Settings.RitualCasting.Label"}}</label>
+        <div class="form-fields">
+          <select id="ritualCasting-{{cls.identifier}}" name="class.{{cls.identifier}}.ritualCasting">
+            {{#each cls.ritualOptions}}
+              <option value="{{value}}" {{#if selected}}selected{{/if}}>{{localize label}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <p class="hint">{{localize "SPELLBOOK.Settings.RitualCasting.Hint"}}</p>
+      </div>
+      <div class="form-group">
+        <label for="customSpellList-{{cls.identifier}}">{{localize "SPELLBOOK.Settings.SpellLists.Label"}}</label>
+        <div class="form-fields">
+          <multi-select id="customSpellList-{{cls.identifier}}"
+            name="class.{{cls.identifier}}.customSpellList">
+            {{#each cls.spellListOptions}}
+              <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+            {{/each}}
+          </multi-select>
+        </div>
+        <p class="hint">{{localize "SPELLBOOK.Settings.CustomSpellLists.Hint"}}</p>
+      </div>
+      <div class="form-group">
+        <label for="customSubclassSpellList-{{cls.identifier}}">{{localize "SPELLBOOK.Settings.SubclassSpellLists.Label"}}</label>
+        <div class="form-fields">
+          <multi-select id="customSubclassSpellList-{{cls.identifier}}"
+            name="class.{{cls.identifier}}.customSubclassSpellList">
+            {{#each cls.subclassSpellListOptions}}
+              <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
+            {{/each}}
+          </multi-select>
+        </div>
+        <p class="hint">{{localize "SPELLBOOK.Settings.SubclassSpellLists.Hint"}}</p>
+      </div>
+      <div class="form-group">
+        <label for="spellPrepBonus-{{cls.identifier}}">{{localize "SPELLBOOK.Settings.SpellPreparationBonus.Label"}}</label>
+        <div class="form-fields">
+          <input type="number" id="spellPrepBonus-{{cls.identifier}}"
+            name="class.{{cls.identifier}}.spellPreparationBonus"
+            value="{{cls.rules.spellPreparationBonus}}" min="-20" max="20">
+        </div>
+        <p class="hint">{{localize "SPELLBOOK.Settings.SpellPreparationBonus.Hint"}}</p>
+      </div>
+      <div class="form-group{{#unless cls.rules.showCantrips}} disabled{{/unless}}">
+        <label for="cantripPrepBonus-{{cls.identifier}}">{{localize
+          "SPELLBOOK.Settings.CantripPreparationBonus.Label"}}</label>
+        <div class="form-fields">
+          <input type="number" id="cantripPrepBonus-{{cls.identifier}}"
+            name="class.{{cls.identifier}}.cantripPreparationBonus"
+            value="{{cls.rules.cantripPreparationBonus}}" min="-20" max="20">
+        </div>
+        <p class="hint">{{localize "SPELLBOOK.Settings.CantripPreparationBonus.Hint"}}</p>
+      </div>
+      {{#if cls.isWizard}}
+        <div class="form-group">
+          <label for="costMultiplier-{{cls.identifier}}">{{localize
+            "SPELLBOOK.Settings.SpellLearningCostMultiplier.Label"}}</label>
+          <div class="form-fields">
+            <input type="number" id="costMultiplier-{{cls.identifier}}"
+              name="class.{{cls.identifier}}.spellLearningCostMultiplier"
+              value="{{cls.rules.spellLearningCostMultiplier}}" min="0">
+          </div>
+          <p class="hint">{{localize "SPELLBOOK.Settings.SpellLearningCostMultiplier.Hint"}}</p>
+        </div>
+        <div class="form-group">
+          <label for="timeMultiplier-{{cls.identifier}}">{{localize
+            "SPELLBOOK.Settings.SpellLearningTimeMultiplier.Label"}}</label>
+          <div class="form-fields">
+            <input type="number" id="timeMultiplier-{{cls.identifier}}"
+              name="class.{{cls.identifier}}.spellLearningTimeMultiplier"
+              value="{{cls.rules.spellLearningTimeMultiplier}}" min="0" step="1">
+          </div>
+          <p class="hint">{{localize "SPELLBOOK.Settings.SpellLearningTimeMultiplier.Hint"}}</p>
+        </div>
+        <div class="form-group">
+          <label for="startingSpells-{{cls.identifier}}">{{localize
+            "SPELLBOOK.Settings.StartingSpells.Label"}}</label>
+          <div class="form-fields">
+            <input type="number" id="startingSpells-{{cls.identifier}}"
+              name="class.{{cls.identifier}}.startingSpells" value="{{cls.rules.startingSpells}}"
+              min="0">
+          </div>
+          <p class="hint">{{localize "SPELLBOOK.Settings.StartingSpells.Hint"}}</p>
+        </div>
+        <div class="form-group">
+          <label for="spellsPerLevel-{{cls.identifier}}">{{localize
+            "SPELLBOOK.Settings.SpellsPerLevel.Label"}}</label>
+          <div class="form-fields">
+            <input type="number" id="spellsPerLevel-{{cls.identifier}}"
+              name="class.{{cls.identifier}}.spellsPerLevel" value="{{cls.rules.spellsPerLevel}}"
+              min="0">
+          </div>
+          <p class="hint">{{localize "SPELLBOOK.Settings.SpellsPerLevel.Hint"}}</p>
+        </div>
+      {{/if}}
+    </fieldset>
+  {{/each}}
+  {{#unless classes.length}}
+    <p class="empty-state">{{localize "SPELLBOOK.Settings.NoSpellcastingClasses"}}</p>
+  {{/unless}}
+</div>
+<footer class="form-footer flexrow">
+  <button type="submit" class="btn"><i class="fas fa-save"></i> {{localize "Save"}}</button>
+</footer>
+</section>

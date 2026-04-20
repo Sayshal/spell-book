@@ -1,23 +1,17 @@
 /**
  * Rule Set Management and Class-Specific Configuration
- *
- * Manages spellcasting rule set application and class-specific rule configuration
- * for actors in the Spell Book module. This class provides a centralized system for
- * applying legacy or modern spellcasting rules, managing per-class configurations,
- * and handling spell list changes with proper validation and cleanup.
  * @module Managers/RuleSet
  * @author Tyler
  */
 
-import { FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants/_module.mjs';
-import * as DataUtils from '../data/_module.mjs';
-import { log } from '../logger.mjs';
+import { CLASS_IDENTIFIERS, FLAGS, MODULE, RITUAL_CASTING_MODES, RULE_SETS, SETTINGS, SPELL_MODE, SWAP_MODES, TEMPLATES, WIZARD_DEFAULTS } from '../constants.mjs';
+import { getClassSpellList } from '../data/spell-list-resolver.mjs';
+import { log } from '../utils/logger.mjs';
+import { ClassManager } from './class-manager.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
 
-/**
- * Rule Set Manager - Centralized spellcasting rule configuration and management.
- */
+/** Rule Set Manager - Centralized spellcasting rule configuration and management. */
 export class RuleSet {
   /**
    * Cache for class rules by actor. Uses WeakMap for automatic cleanup when actors are deleted.
@@ -60,7 +54,7 @@ export class RuleSet {
     log(3, `Getting effective rule set for actor.`, { actorName: actor.name, actorId: actor.id });
     const override = actor.getFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE);
     if (override) return override;
-    const effectiveRuleSet = game.settings.get(MODULE.ID, SETTINGS.SPELLCASTING_RULE_SET) || MODULE.RULE_SETS.LEGACY;
+    const effectiveRuleSet = game.settings.get(MODULE.ID, SETTINGS.SPELLCASTING_RULE_SET) || RULE_SETS.LEGACY;
     log(3, `Effective rule set determined.`, { actorName: actor.name, effectiveRuleSet });
     return effectiveRuleSet;
   }
@@ -103,7 +97,7 @@ export class RuleSet {
       const ruleSet = RuleSet.getEffectiveRuleSet(actor);
       rules = RuleSet._getClassDefaults(classIdentifier, ruleSet);
     }
-    log(3, `Class rules retrieved.`, { actorName: actor.name, classIdentifier, hasExistingRules: !!existingRules });
+    log(3, 'Class rules retrieved.', { actorName: actor.name, classIdentifier, hasExistingRules: !!existingRules });
     actorCache.set(classIdentifier, rules);
     return rules;
   }
@@ -139,7 +133,7 @@ export class RuleSet {
       }
     }
     classRules[classIdentifier] = { ...classRules[classIdentifier], ...newRules };
-    actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, classRules);
+    await actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, classRules);
     if (this._classRules.has(actor)) this._classRules.delete(actor);
     log(3, `Class rules updated successfully.`, { actorName: actor.name, classIdentifier });
     return true;
@@ -151,7 +145,7 @@ export class RuleSet {
    * @returns {void}
    * @static
    */
-  static initializeNewClasses(actor) {
+  static async initializeNewClasses(actor) {
     log(3, `Initializing new classes for actor.`, { actorName: actor.name, actorId: actor.id });
     const spellcastingClasses = RuleSet._detectSpellcastingClasses(actor);
     const existingRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
@@ -164,7 +158,7 @@ export class RuleSet {
       }
     }
     if (hasNewClasses) {
-      actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, existingRules);
+      await actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, existingRules);
       if (this._classRules.has(actor)) this._classRules.delete(actor);
       log(3, `New classes initialized.`, { actorName: actor.name, classCount: Object.keys(spellcastingClasses).length });
     } else log(3, `No new classes to initialize.`, { actorName: actor.name });
@@ -206,19 +200,20 @@ export class RuleSet {
   static _getClassDefaults(classIdentifier, ruleSet) {
     log(3, `Getting class defaults.`, { classIdentifier, ruleSet });
     const defaults = {
-      cantripSwapping: MODULE.SWAP_MODES.NONE,
-      spellSwapping: MODULE.SWAP_MODES.NONE,
-      ritualCasting: MODULE.RITUAL_CASTING_MODES.NONE,
+      cantripSwapping: SWAP_MODES.NONE,
+      spellSwapping: SWAP_MODES.NONE,
+      ritualCasting: RITUAL_CASTING_MODES.NONE,
       showCantrips: true,
       customSpellList: [],
+      customSubclassSpellList: [],
       spellPreparationBonus: 0,
       cantripPreparationBonus: 0,
       forceWizardMode: false,
-      spellLearningCostMultiplier: 50,
-      spellLearningTimeMultiplier: 2
+      spellLearningCostMultiplier: WIZARD_DEFAULTS.SPELL_LEARNING_COST_MULTIPLIER,
+      spellLearningTimeMultiplier: WIZARD_DEFAULTS.SPELL_LEARNING_TIME_MULTIPLIER
     };
-    if (ruleSet === MODULE.RULE_SETS.LEGACY) RuleSet._applyLegacyDefaults(classIdentifier, defaults);
-    else if (ruleSet === MODULE.RULE_SETS.MODERN) RuleSet._applyModernDefaults(classIdentifier, defaults);
+    if (ruleSet === RULE_SETS.LEGACY) RuleSet._applyLegacyDefaults(classIdentifier, defaults);
+    else if (ruleSet === RULE_SETS.MODERN) RuleSet._applyModernDefaults(classIdentifier, defaults);
     log(3, `Class defaults determined.`, { classIdentifier, ruleSet });
     return defaults;
   }
@@ -233,41 +228,41 @@ export class RuleSet {
    */
   static _applyLegacyDefaults(classIdentifier, defaults) {
     log(3, `Applying legacy defaults for class.`, { classIdentifier });
-    defaults.cantripSwapping = MODULE.SWAP_MODES.NONE;
-    defaults.ritualCasting = MODULE.RITUAL_CASTING_MODES.NONE;
+    defaults.cantripSwapping = SWAP_MODES.NONE;
+    defaults.ritualCasting = RITUAL_CASTING_MODES.NONE;
     switch (classIdentifier) {
-      case MODULE.CLASS_IDENTIFIERS.WIZARD:
-        defaults.spellSwapping = MODULE.SWAP_MODES.LONG_REST;
-        defaults.ritualCasting = MODULE.RITUAL_CASTING_MODES.ALWAYS;
+      case CLASS_IDENTIFIERS.WIZARD:
+        defaults.spellSwapping = SWAP_MODES.LONG_REST;
+        defaults.ritualCasting = RITUAL_CASTING_MODES.ALWAYS;
         defaults.showCantrips = true;
         break;
-      case MODULE.CLASS_IDENTIFIERS.CLERIC:
-      case MODULE.CLASS_IDENTIFIERS.DRUID:
-        defaults.spellSwapping = MODULE.SWAP_MODES.LONG_REST;
-        defaults.ritualCasting = MODULE.RITUAL_CASTING_MODES.PREPARED;
+      case CLASS_IDENTIFIERS.CLERIC:
+      case CLASS_IDENTIFIERS.DRUID:
+        defaults.spellSwapping = SWAP_MODES.LONG_REST;
+        defaults.ritualCasting = RITUAL_CASTING_MODES.PREPARED;
         defaults.showCantrips = true;
         break;
-      case MODULE.CLASS_IDENTIFIERS.PALADIN:
-        defaults.spellSwapping = MODULE.SWAP_MODES.LONG_REST;
+      case CLASS_IDENTIFIERS.PALADIN:
+        defaults.spellSwapping = SWAP_MODES.LONG_REST;
         defaults.showCantrips = false;
         break;
-      case MODULE.CLASS_IDENTIFIERS.RANGER:
-        defaults.spellSwapping = MODULE.SWAP_MODES.LEVEL_UP;
+      case CLASS_IDENTIFIERS.RANGER:
+        defaults.spellSwapping = SWAP_MODES.LEVEL_UP;
         defaults.showCantrips = false;
         break;
-      case MODULE.CLASS_IDENTIFIERS.BARD:
-      case MODULE.CLASS_IDENTIFIERS.SORCERER:
-      case MODULE.CLASS_IDENTIFIERS.WARLOCK:
-        defaults.spellSwapping = MODULE.SWAP_MODES.LEVEL_UP;
+      case CLASS_IDENTIFIERS.BARD:
+      case CLASS_IDENTIFIERS.SORCERER:
+      case CLASS_IDENTIFIERS.WARLOCK:
+        defaults.spellSwapping = SWAP_MODES.LEVEL_UP;
         defaults.showCantrips = true;
-        if (classIdentifier === MODULE.CLASS_IDENTIFIERS.BARD) defaults.ritualCasting = MODULE.RITUAL_CASTING_MODES.PREPARED;
+        if (classIdentifier === CLASS_IDENTIFIERS.BARD) defaults.ritualCasting = RITUAL_CASTING_MODES.PREPARED;
         break;
-      case MODULE.CLASS_IDENTIFIERS.ARTIFICER:
-        defaults.spellSwapping = MODULE.SWAP_MODES.LONG_REST;
+      case CLASS_IDENTIFIERS.ARTIFICER:
+        defaults.spellSwapping = SWAP_MODES.LONG_REST;
         defaults.showCantrips = true;
         break;
       default:
-        defaults.spellSwapping = MODULE.SWAP_MODES.LEVEL_UP;
+        defaults.spellSwapping = SWAP_MODES.LEVEL_UP;
         defaults.showCantrips = true;
         break;
     }
@@ -284,42 +279,42 @@ export class RuleSet {
    */
   static _applyModernDefaults(classIdentifier, defaults) {
     log(3, `Applying modern defaults for class.`, { classIdentifier });
-    defaults.cantripSwapping = MODULE.SWAP_MODES.LEVEL_UP;
-    defaults.ritualCasting = MODULE.RITUAL_CASTING_MODES.NONE;
+    defaults.cantripSwapping = SWAP_MODES.LEVEL_UP;
+    defaults.ritualCasting = RITUAL_CASTING_MODES.NONE;
     switch (classIdentifier) {
-      case MODULE.CLASS_IDENTIFIERS.WIZARD:
-        defaults.cantripSwapping = MODULE.SWAP_MODES.LONG_REST;
-        defaults.spellSwapping = MODULE.SWAP_MODES.LONG_REST;
-        defaults.ritualCasting = MODULE.RITUAL_CASTING_MODES.ALWAYS;
+      case CLASS_IDENTIFIERS.WIZARD:
+        defaults.cantripSwapping = SWAP_MODES.LONG_REST;
+        defaults.spellSwapping = SWAP_MODES.LONG_REST;
+        defaults.ritualCasting = RITUAL_CASTING_MODES.ALWAYS;
         defaults.showCantrips = true;
         break;
-      case MODULE.CLASS_IDENTIFIERS.CLERIC:
-      case MODULE.CLASS_IDENTIFIERS.DRUID:
-        defaults.spellSwapping = MODULE.SWAP_MODES.LONG_REST;
+      case CLASS_IDENTIFIERS.CLERIC:
+      case CLASS_IDENTIFIERS.DRUID:
+        defaults.spellSwapping = SWAP_MODES.LONG_REST;
         defaults.showCantrips = true;
         break;
-      case MODULE.CLASS_IDENTIFIERS.PALADIN:
-        defaults.cantripSwapping = MODULE.SWAP_MODES.NONE;
-        defaults.spellSwapping = MODULE.SWAP_MODES.LONG_REST;
+      case CLASS_IDENTIFIERS.PALADIN:
+        defaults.cantripSwapping = SWAP_MODES.NONE;
+        defaults.spellSwapping = SWAP_MODES.LONG_REST;
         defaults.showCantrips = false;
         break;
-      case MODULE.CLASS_IDENTIFIERS.RANGER:
-        defaults.cantripSwapping = MODULE.SWAP_MODES.NONE;
-        defaults.spellSwapping = MODULE.SWAP_MODES.LONG_REST;
+      case CLASS_IDENTIFIERS.RANGER:
+        defaults.cantripSwapping = SWAP_MODES.NONE;
+        defaults.spellSwapping = SWAP_MODES.LONG_REST;
         defaults.showCantrips = false;
         break;
-      case MODULE.CLASS_IDENTIFIERS.BARD:
-      case MODULE.CLASS_IDENTIFIERS.SORCERER:
-      case MODULE.CLASS_IDENTIFIERS.WARLOCK:
-        defaults.spellSwapping = MODULE.SWAP_MODES.LEVEL_UP;
+      case CLASS_IDENTIFIERS.BARD:
+      case CLASS_IDENTIFIERS.SORCERER:
+      case CLASS_IDENTIFIERS.WARLOCK:
+        defaults.spellSwapping = SWAP_MODES.LEVEL_UP;
         defaults.showCantrips = true;
         break;
-      case MODULE.CLASS_IDENTIFIERS.ARTIFICER:
-        defaults.spellSwapping = MODULE.SWAP_MODES.LONG_REST;
+      case CLASS_IDENTIFIERS.ARTIFICER:
+        defaults.spellSwapping = SWAP_MODES.LONG_REST;
         defaults.showCantrips = true;
         break;
       default:
-        defaults.spellSwapping = MODULE.SWAP_MODES.LEVEL_UP;
+        defaults.spellSwapping = SWAP_MODES.LEVEL_UP;
         defaults.showCantrips = true;
         break;
     }
@@ -360,8 +355,7 @@ export class RuleSet {
         if (spellSets.length > 0) for (const spellSet of spellSets) for (const spell of spellSet) newSpellList.add(spell);
       }
     } else {
-      const classItem = actor.spellcastingClasses?.[classIdentifier];
-      if (classItem) newSpellList = await DataUtils.getClassSpellList(classItem.name.toLowerCase(), classItem.uuid, actor);
+      newSpellList = await getClassSpellList(classIdentifier, actor);
     }
     const affectedSpells = [];
     for (const classSpellKey of classPreparedSpells) {
@@ -394,11 +388,11 @@ export class RuleSet {
     const context = { className, totalAffected: affectedSpells.length, cantripCount, spellCount, affectedSpells };
     const content = await renderTemplate(TEMPLATES.DIALOGS.SPELL_LIST_CHANGE_CONFIRMATION, context);
     const result = await foundry.applications.api.DialogV2.wait({
-      title: game.i18n.localize('SPELLBOOK.SpellListChange.Title'),
+      title: _loc('SPELLBOOK.SpellListChange.Title'),
       content: content,
       buttons: [
         { icon: 'fas fa-check', label: 'SPELLBOOK.SpellListChange.Proceed', action: 'confirm', className: 'dialog-button' },
-        { icon: 'fas fa-times', label: 'SPELLBOOK.UI.Cancel', action: 'cancel', className: 'dialog-button' }
+        { icon: 'fas fa-times', label: 'COMMON.Cancel', action: 'cancel', className: 'dialog-button' }
       ],
       default: 'cancel',
       rejectClose: false
@@ -435,10 +429,10 @@ export class RuleSet {
         if (item.type !== 'spell') return false;
         const sourceId = item._stats?.compendiumSource || item.uuid;
         if (!affectedUuids.has(sourceId)) return false;
-        if (DataUtils.getSpellClassIdentifier(item) !== classIdentifier) return false;
+        if (ClassManager.getSpellClassIdentifier(item) !== classIdentifier) return false;
         const isGranted = !!item.flags?.dnd5e?.cachedFor;
         const isAlwaysPrepared = item.system?.prepared === 2;
-        const isSpecialMode = [MODULE.SPELL_MODE.INNATE, MODULE.SPELL_MODE.AT_WILL].includes(item.system?.method);
+        const isSpecialMode = [SPELL_MODE.INNATE, SPELL_MODE.AT_WILL].includes(item.system?.method);
         return !isGranted && !isAlwaysPrepared && !isSpecialMode;
       })
       .map((item) => item.id);

@@ -1,0 +1,47 @@
+## New Features
+
+- Added a per-class customSubclassSpellList picker in Class Rules so GMs can assign subclass spells explicitly; the dnd5e subclass registry fallback has been removed.
+- Added full light theme support across all Spell Book dialogs and panels.
+- Added the Class Rules dialog for configuring per-class preparation, cantrip, ritual, and spell list behavior.
+- Added filters for Target, Requires Save, Costly Material Components, Prepared Only, and Favorites Only; Level and Range now use min/max range inputs.
+- Rebuilt the Player Spell Book and Spell List Manager on top of the dnd5e CompendiumBrowser, retiring the custom search engine, filter service, query parser/executor, and form-elements modules.
+- Spell Book now fires spellBookOpened and spellBookClosed hooks for macros and modules.
+
+## Bug Fixes
+
+- Fixed a bug that broke handling of empty custom spell lists when resolving spells for preparation.
+- Fixed a recursion bug that could corrupt injected spell descriptions.
+- Fixed errors that prevented the spell book window from opening.
+- Fixed invalid spell filter operator that could break spell fetching.
+- Fixed module initialization errors that prevented Spell Book from loading at world startup.
+- Long-rest spell swap state is now handled automatically when the spell book opens, and scroll scanner, flag purge, and spells-not-in-lists error paths no longer throw.
+- Sheet buttons now render at the correct size before stylesheets finish loading.
+- Spell images with cross-origin restrictions no longer throw errors when extracting dominant colors for UI theming.
+- Wizard spellbook creation no longer blocked by stale creation locks.
+
+## Changes
+
+- Advanced search syntax and the Advanced Search Prefix setting have been removed; use the filters instead, as the search bar now matches spell names only.
+- All pre-2.0 migrations and the migration manager have been dropped; upgrade through a 1.x release before installing 2.0.
+- Available spells panel now offers search plus filters for level, school, casting time, damage type, condition, material components, compendium source, and spell source with range inputs for fine-tuning.
+- Class identifier picker now surfaces registry-only classes that lack items, so GMs can map spell lists to every class the system knows about.
+- Classes without an explicit spell list assignment now show a notice linking to Class Rules instead of auto-merging from the dnd5e registry.
+- Exposed flag purge, spell book quick access, spell slot tracker, scroll scanner, and spells-not-in-lists directly on SPELLBOOK.api (previously only available as compendium macros).
+- GMs can now jump straight to the active tab's class or subclass spell list from a new header button in the Player Spell Book, with a picker when multiple lists apply.
+- Opening the Spell Book is significantly faster (roughly 2.5s to 700ms) thanks to deferred spell enrichment and class-scoped folder caching.
+- Party Coordinator now includes a dedicated synergy analysis view with two-column spell distribution breakdown.
+- Player Spell Book sidebar Reset button clears all filters on click and also unchecks every preparation checkbox across loaded tabs on shift-click.
+- Property filters (Vocal, Somatic, Material, Concentration, Ritual) are now tri-state toggles cycling ignore/include/exclude, with right-click to cycle backwards.
+- Reorganized the Player Spell Book sidebar with class tabs, settings, and loadouts buttons; footer shows live preparation counts.
+- Right-click the Loadouts sidebar button for a quick-select context menu to swap prepared sets without opening the dialog.
+- Setup Mode, Suppress Preload Notification, and Filter Configuration settings have been removed.
+- Sidebar organizes spell lists into folders for actor-owned, custom, merged, standard, and hidden lists so GMs can find the right list quickly.
+- Spell Book layouts now adapt to narrower windows with responsive breakpoints for smaller screens.
+- Spell List Manager now auto-duplicates a stock list on first save, hides the original, and shows your edits under a new Modified Spell Lists sidebar folder.
+- The three-state cantrip/spell enforcement setting (Unenforced/Notify GM/Enforced) is replaced by a single "Notify GM on spell changes" toggle.
+- Toggling favorites now batches actor updates into a single write.
+
+## Documentation
+
+- Full docs site rewrite across all pages for 2.0, new API Reference / Class Rules / Details Customization / Spell Loadouts / Spell Notes pages, README rewritten, ~23 screenshots embedded.
+- In-app documentation dialog gains Discord, GitHub, Wiki, Patreon, and Ko-fi footer links.

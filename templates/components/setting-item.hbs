@@ -1,0 +1,10 @@
+<div class="form-group">
+  <label for="{{id}}">{{localize label}}</label>
+  <div class="form-fields">
+    <input type="checkbox" id="{{id}}" name="{{name}}" {{#if checked}}checked{{/if}}
+      aria-label="{{localize label}}">
+  </div>
+  {{#if description}}
+    <p class="hint">{{localize description}}</p>
+  {{/if}}
+</div>

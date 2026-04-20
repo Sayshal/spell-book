@@ -1,0 +1,26 @@
+<div class="search-section-header">{{localize "SPELLBOOK.Search.Advanced"}}</div>
+{{#if statusText}}
+	<div class="search-status info">{{localize statusText}}</div>
+{{/if}}
+{{#if isRangeField}}
+	<div class="search-note">
+		<i class="fas fa-info-circle"></i>
+		<span class="suggestion-text">{{localize "SPELLBOOK.Search.TypeRange"}}</span>
+	</div>
+{{/if}}
+{{#if sectionHeader}}
+	<div class="search-section-header">{{localize sectionHeader}}</div>
+{{/if}}
+{{#each suggestions as |suggestion|}}
+	<div class="search-suggestion" data-query="{{suggestion.query}}" role="option" tabindex="-1" aria-selected="false">
+		<span class="suggestion-text" {{#if suggestion.tooltip}}data-tooltip="{{suggestion.tooltip}}"
+			{{/if}}>{{suggestion.text}}</span>
+	</div>
+{{/each}}
+{{#if showSubmit}}
+	<div class="search-suggestion submit-query" data-query="{{submitQuery}}" role="option" tabindex="-1"
+		aria-selected="false">
+		<span class="suggestion-text">{{localize "SPELLBOOK.Search.ExecuteQuery"}}</span>
+		<span class="suggestion-execute">⏎</span>
+	</div>
+{{/if}}

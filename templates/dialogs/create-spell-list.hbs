@@ -1,37 +1,36 @@
-<div class='create-list-dialog'>
-	<!-- List Name Input Group -->
-	<div class="form-group">
-		<label for="list-name">{{localize "SPELLMANAGER.CreateList.ListNameLabel"}}</label>
-		{{{formElements.nameInputHtml}}}
-	</div>
-
-	<!-- Class Association Input Group -->
-	<div class="form-group">
-		<label for="class-identifier">{{localize "SPELLMANAGER.CreateList.ClassLabel"}}</label>
-		{{{formElements.classSelectHtml}}}
-	</div>
-
-	<!-- Custom Identifier Input Group - Hidden by default -->
-	<div class="form-group custom-id-group" style="display:none;">
-		<label for="custom-identifier">{{localize "SPELLMANAGER.CreateList.CustomIdentifierLabel"}}</label>
-		{{{formElements.customInputHtml}}}
-
-		<!-- Custom Identifier Guidance -->
-		<p class="hint">{{localize "SPELLMANAGER.CreateList.IdentifierNotes"}}</p>
-
-	</div>
-
-	<!-- Subclass Checkbox -->
-	<div class="form-group subclass-checkbox">
-		<label class="checkbox">
-			<span class="label-text">{{localize "SPELLMANAGER.CreateList.SubclassLabel"}}</span>
-			{{{formElements.subclassCheckboxHtml}}}
-		</label>
-		<p class="hint">{{localize "SPELLMANAGER.CreateList.SubclassHint"}}</p>
-	</div>
-
-	<!-- Validation Error Display -->
-	<p class="validation-error" style="color: red; display: none;">
-		{{localize "SPELLMANAGER.CreateList.ValidationError"}}
-	</p>
+<div class="create-spell-list">
+  <div class="form-group">
+    <label for="list-name">{{localize "SPELLMANAGER.CreateList.ListNameLabel"}}</label>
+    <div class="form-fields">
+      <input type="text" id="list-name" name="name"
+        placeholder="{{localize 'SPELLMANAGER.CreateList.ListNameLabel'}}" maxlength="100">
+    </div>
+  </div>
+  <div class="form-group">
+    <label for="class-identifier">{{localize "SPELLMANAGER.CreateList.ClassLabel"}}</label>
+    <div class="form-fields">
+      <select id="class-identifier" name="identifier">
+        {{#each identifierOptions}}
+          <option value="{{this.id}}">{{this.name}}</option>
+        {{/each}}
+        <option value="custom">{{localize "SPELLMANAGER.CreateList.CustomIdentifier"}}</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-group">
+    <label for="custom-identifier">{{localize "SPELLMANAGER.CreateList.CustomIdentifierLabel"}}</label>
+    <div class="form-fields">
+      <input type="text" id="custom-identifier" name="customIdentifier"
+        placeholder="{{localize 'SPELLMANAGER.CreateList.CustomIdentifierLabel'}}"
+        pattern="[\d_a-z-]+" disabled>
+    </div>
+    <p class="hint">{{localize "SPELLMANAGER.CreateList.IdentifierNotes"}}</p>
+  </div>
+  <div class="form-group">
+    <label for="is-subclass">{{localize "SPELLMANAGER.CreateList.SubclassLabel"}}</label>
+    <div class="form-fields">
+      <input type="checkbox" id="is-subclass" name="is-subclass">
+    </div>
+    <p class="hint">{{localize "SPELLMANAGER.CreateList.SubclassHint"}}</p>
+  </div>
 </div>

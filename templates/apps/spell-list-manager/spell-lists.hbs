@@ -1,235 +1,199 @@
-<div class="spell-lists-sidebar card" role="complementary"
-	aria-label="{{localize 'SPELLMANAGER.Columns.AvailableLists'}}">
-
-	<!-- Sidebar Collapse Control -->
-	<button type="button" class="sidebar-collapser collapser vertical" data-action="toggleSidebar"
-		aria-label="{{localize 'SPELLMANAGER.Buttons.HideLists'}}" aria-expanded="true">
-		<i class="fas fa-caret-left collapse-indicator" aria-hidden="true"></i>
-	</button>
-
-	<!-- Lists Header - Title and primary actions -->
-	<div class="lists-header">
-		<!-- Merge Lists Action Button -->
-		<button type="button" class="merge-lists-button" data-action="mergeLists"
-			aria-label="{{localize 'SPELLMANAGER.Buttons.MergeLists'}}"
-			data-tooltip="{{localize 'SPELLMANAGER.Tooltips.MergeLists'}}">
-			<i class="fas fa-code-merge" aria-hidden="true"></i>
-		</button>
-
-		<!-- Section Header -->
-		<h2 id="available-lists-heading">{{localize "SPELLMANAGER.Columns.AvailableLists"}}</h2>
-
-		<!-- Create New List Action Button -->
-		<button type="button" class="create-new-button" data-action="createList"
-			aria-label="{{localize 'SPELLMANAGER.Buttons.CreateNew'}}"
-			data-tooltip="{{localize 'SPELLMANAGER.Tooltips.CreateNew'}}">
-			<i class="fas fa-plus" aria-hidden="true"></i>
-		</button>
-	</div>
-
-	<!-- Lists Container - Organized spell list navigation -->
-	<div class="lists-container" role="list" aria-labelledby="available-lists-heading">
-
-		<!-- Player Spellbooks Section - Actor-owned spell lists -->
-		{{#if hasActorOwnedLists}}
-			<div class="list-folder actor-lists-folder" data-folder-id="actor-lists">
-				<div class="folder-header" data-action="toggleFolder"
-					data-tooltip="{{localize 'SPELLMANAGER.Tooltips.PlayerSpellbooksFolder'}}">
-					<i class="fas fa-chevron-down collapse-indicator" aria-hidden="true"></i>
-					<i class="fas fa-user folder-icon" aria-hidden="true"></i>
-					<span>{{localize "SPELLMANAGER.Folders.PlayerSpellbooks"}}</span>
-				</div>
-				<ul class="spell-list-items folder-content">
-					{{#each actorOwnedLists as |list|}}
-						<li class="spell-list-item actor-owned-list {{#if list.isCustom}}custom-list{{/if}}"
-							data-uuid="{{list.uuid}}" role="listitem"
-							data-tooltip="{{localize 'SPELLMANAGER.Tooltips.ActorSpellbook' actorName=list.actorName}}"
-							aria-label="{{list.name}} - {{localize 'SPELLMANAGER.Status.SpellCount' count=list.spellCount}} - {{list.pack}}">
-							<div class="list-item-header">
-								<div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
-									<div class="list-name">
-										<i class="{{list.icon}} {{#if list.isCustom}}is-custom-list{{else if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
-											aria-hidden="true"></i>
-										<span>{{list.name}}</span>
-									</div>
-									<div class="list-meta">
-										<span class="spell-count">{{localize "SPELLMANAGER.Status.SpellCount" count=list.spellCount}}</span>
-										<span class="meta-separator" aria-hidden="true">•</span>
-										<span
-											class="source">{{#if list.actorName}}{{list.actorName}}{{else}}{{localize "SPELLMANAGER.ListSource.Character"}}{{/if}}</span>
-									</div>
-								</div>
-								<!-- Actor spellbooks cannot be hidden, so no visibility toggle -->
-							</div>
-						</li>
-					{{/each}}
-				</ul>
-			</div>
-		{{/if}}
-
-		<!-- Custom Spell Lists Section - User-created lists -->
-		{{#if hasCustomLists}}
-			<div class="list-folder custom-lists-folder" data-folder-id="custom-lists">
-				<div class="folder-header" data-action="toggleFolder"
-					data-tooltip="{{localize 'SPELLMANAGER.Tooltips.CustomListsFolder'}}">
-					<i class="fas fa-chevron-down collapse-indicator" aria-hidden="true"></i>
-					<i class="fas fa-magic folder-icon" aria-hidden="true"></i>
-					<span>{{localize "SPELLMANAGER.Folders.CustomLists"}}</span>
-				</div>
-				<ul class="spell-list-items folder-content">
-					{{#each customLists as |list|}}
-						<li class="spell-list-item custom-list" data-uuid="{{list.uuid}}" role="listitem"
-							{{#if (eq list.system.type 'subclass')}}
-							data-tooltip="{{localize 'SPELLMANAGER.Tooltips.CustomList' identifier=list.identifier type=(localize 'TYPES.Item.subclass')}}"
-							{{else}}
-							data-tooltip="{{localize 'SPELLMANAGER.Tooltips.CustomList' identifier=list.identifier type=(localize 'TYPES.Item.class')}}"
-							{{/if}}
-							aria-label="{{list.name}} - {{localize 'SPELLMANAGER.Status.SpellCount' count=list.spellCount}} - {{localize 'SPELLMANAGER.ListSource.Custom'}}">
-							<div class="list-item-header">
-								<div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
-									<div class="list-name">
-										<i class="{{list.icon}} is-custom-list" aria-hidden="true"></i>
-										<span>{{list.name}}</span>
-									</div>
-									<div class="list-meta">
-										<span class="spell-count">{{localize "SPELLMANAGER.Status.SpellCount" count=list.spellCount}}</span>
-										<span class="meta-separator" aria-hidden="true">•</span>
-										<span class="source">{{localize "SPELLMANAGER.ListSource.Custom"}}</span>
-									</div>
-								</div>
-								<button type="button" class="visibility-toggle" data-action="hideList"
-									data-uuid="{{list.uuid}}" aria-label="{{localize 'SPELLMANAGER.HideList.Hide' name=list.name}}"
-									data-tooltip="{{localize 'SPELLMANAGER.HideList.HideTooltip'}}">
-									<i class="fas fa-eye" aria-hidden="true"></i>
-								</button>
-							</div>
-						</li>
-					{{/each}}
-				</ul>
-			</div>
-		{{/if}}
-
-		<!-- Merged Spell Lists Section - Combined lists from multiple sources -->
-		{{#if hasMergedLists}}
-			<div class="list-folder merged-lists-folder" data-folder-id="merged-lists">
-				<div class="folder-header" data-action="toggleFolder"
-					data-tooltip="{{localize 'SPELLMANAGER.Tooltips.MergedListsFolder'}}">
-					<i class="fas fa-chevron-down collapse-indicator" aria-hidden="true"></i>
-					<i class="fas fa-code-merge folder-icon" aria-hidden="true"></i>
-					<span>{{localize "SPELLMANAGER.Folders.MergedLists"}}</span>
-				</div>
-				<ul class="spell-list-items folder-content">
-					{{#each mergedLists as |list|}}
-						<li class="spell-list-item merged-list" data-uuid="{{list.uuid}}" role="listitem"
-							data-tooltip="{{localize 'SPELLMANAGER.Tooltips.MergedList'}}"
-							aria-label="{{list.name}} - {{localize 'SPELLMANAGER.Status.SpellCount' count=list.spellCount}} - {{localize 'SPELLMANAGER.ListSource.Merged'}}">
-							<div class="list-item-header">
-								<div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
-									<div class="list-name">
-										<i class="{{list.icon}} is-merged-list" aria-hidden="true"></i>
-										<span>{{list.name}}</span>
-									</div>
-									<div class="list-meta">
-										<span class="spell-count">{{localize "SPELLMANAGER.Status.SpellCount" count=list.spellCount}}</span>
-										<span class="meta-separator" aria-hidden="true">•</span>
-										<span class="source">{{localize "SPELLMANAGER.ListSource.Merged"}}</span>
-									</div>
-								</div>
-								<button type="button" class="visibility-toggle" data-action="hideList"
-									data-uuid="{{list.uuid}}" aria-label="{{localize 'SPELLMANAGER.HideList.Hide' name=list.name}}"
-									data-tooltip="{{localize 'SPELLMANAGER.HideList.HideTooltip'}}">
-									<i class="fas fa-eye" aria-hidden="true"></i>
-								</button>
-							</div>
-						</li>
-					{{/each}}
-				</ul>
-			</div>
-		{{/if}}
-
-		<!-- Standard Spell Lists Section - System-provided class lists -->
-		{{#if hasStandardLists}}
-			<div class="list-folder standard-lists-folder" data-folder-id="standard-lists">
-				<div class="folder-header" data-action="toggleFolder"
-					data-tooltip="{{localize 'SPELLMANAGER.Tooltips.StandardListsFolder'}}">
-					<i class="fas fa-chevron-down collapse-indicator" aria-hidden="true"></i>
-					<i class="fas fa-scroll folder-icon" aria-hidden="true"></i>
-					<span>{{localize "SPELLMANAGER.Folders.SpellLists"}}</span>
-				</div>
-				<ul class="spell-list-items folder-content">
-					{{#each standardLists as |list|}}
-						<li class="spell-list-item" data-uuid="{{list.uuid}}" role="listitem"
-							data-tooltip="{{#if (lookup ../customListMap list.uuid)}}{{localize 'SPELLMANAGER.Tooltips.ModifiedList' class=list.name source=list.pack}}{{else}}{{localize 'SPELLMANAGER.Tooltips.StandardList' class=list.name source=list.pack}}{{/if}}"
-							aria-label="{{list.name}} - {{localize 'SPELLMANAGER.Status.SpellCount' count=list.spellCount}} - {{list.pack}}">
-							<div class="list-item-header">
-								<div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
-									<div class="list-name">
-										<i class="{{list.icon}} {{#if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
-											aria-hidden="true"></i>
-										<span>{{list.name}}</span>
-									</div>
-									<div class="list-meta">
-										<span class="spell-count">{{localize "SPELLMANAGER.Status.SpellCount" count=list.spellCount}}</span>
-										<span class="meta-separator" aria-hidden="true">•</span>
-										<span class="source">{{list.pack}}</span>
-									</div>
-								</div>
-								<button type="button" class="visibility-toggle" data-action="hideList"
-									data-uuid="{{list.uuid}}" aria-label="{{localize 'SPELLMANAGER.HideList.Hide' name=list.name}}"
-									data-tooltip="{{localize 'SPELLMANAGER.HideList.HideTooltip'}}">
-									<i class="fas fa-eye" aria-hidden="true"></i>
-								</button>
-							</div>
-						</li>
-					{{/each}}
-				</ul>
-			</div>
-		{{/if}}
-
-		<!-- Hidden Spell Lists Section - Lists hidden from main view -->
-		{{#if hasHiddenLists}}
-			<div class="list-folder hidden-lists-folder" data-folder-id="hidden-lists">
-				<div class="folder-header" data-action="toggleFolder"
-					data-tooltip="{{localize 'SPELLMANAGER.Tooltips.HiddenListsFolder'}}">
-					<i class="fas fa-chevron-down collapse-indicator" aria-hidden="true"></i>
-					<i class="fas fa-eye-slash folder-icon" aria-hidden="true"></i>
-					<span>{{localize "SPELLMANAGER.Folders.HiddenLists"}}</span>
-				</div>
-				<ul class="spell-list-items folder-content">
-					{{#each hiddenSpellLists as |list|}}
-						<li
-							class="spell-list-item hidden-list {{#if list.isCustom}}custom-list{{/if}} {{#if list.isMerged}}merged-list{{/if}}"
-							data-uuid="{{list.uuid}}" role="listitem" data-tooltip="{{localize 'SPELLMANAGER.Tooltips.HiddenList'}}"
-							aria-label="{{list.name}} - {{localize 'SPELLMANAGER.Status.SpellCount' count=list.spellCount}} - {{localize 'SPELLMANAGER.HideList.Hidden'}}">
-							<div class="list-item-header">
-								<div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
-									<div class="list-name">
-										<i class="{{list.icon}} {{#if list.isCustom}}is-custom-list{{else if list.isMerged}}is-merged-list{{else if (lookup ../customListMap list.uuid)}}has-custom-version{{/if}}"
-											aria-hidden="true"></i>
-										<span>{{list.name}}</span>
-									</div>
-									<div class="list-meta">
-										<span class="spell-count">{{localize "SPELLMANAGER.Status.SpellCount" count=list.spellCount}}</span>
-										<span class="meta-separator" aria-hidden="true">•</span>
-										<span
-											class="source">{{#if list.isMerged}}{{localize "SPELLMANAGER.ListSource.Merged"}}{{else if list.isCustom}}{{localize "SPELLMANAGER.ListSource.Custom"}}{{else}}{{list.pack}}{{/if}}</span>
-									</div>
-								</div>
-								<button type="button" class="visibility-toggle" data-action="hideList"
-									data-uuid="{{list.uuid}}" aria-label="{{localize 'SPELLMANAGER.HideList.Unhide' name=list.name}}"
-									data-tooltip="{{localize 'SPELLMANAGER.HideList.UnhideTooltip'}}">
-									<i class="fas fa-eye-slash" aria-hidden="true"></i>
-								</button>
-							</div>
-						</li>
-					{{/each}}
-				</ul>
-			</div>
-		{{/if}}
-
-		<!-- Empty State - Shown when no lists are available -->
-		{{#unless availableSpellLists.length}}
-			{{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize "SPELLMANAGER.Columns.NoLists")}}
-		{{/unless}}
-	</div>
+<div class="spell-lists-sidebar" role="complementary">
+  {{#if (eq sidebarMode "filters")}}
+    <div class="sidebar-filter-header">
+      <h2>{{localize "SPELLMANAGER.Sidebar.AvailableSpells"}}</h2>
+      <button type="button" class="header-action-btn" data-action="switchSidebarMode" data-mode="lists">
+        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+        {{localize "SPELLMANAGER.Sidebar.BackToLists"}}
+      </button>
+    </div>
+    <div class="sidebar-filter-section">
+      {{#if filterFormElements}}
+        <div class="filter-search">
+          {{> "modules/spell-book/templates/components/filter-item.hbs" filterFormElements.search}}
+        </div>
+        <div class="filter-list">
+          {{> "modules/spell-book/templates/components/filter-item.hbs" filterFormElements.level}}
+          {{> "modules/spell-book/templates/components/filter-item.hbs" filterFormElements.school}}
+          {{> "modules/spell-book/templates/components/filter-item.hbs" filterFormElements.castingTime}}
+          {{> "modules/spell-book/templates/components/filter-item.hbs" filterFormElements.damageType}}
+          {{> "modules/spell-book/templates/components/filter-item.hbs" filterFormElements.condition}}
+          {{> "modules/spell-book/templates/components/filter-item.hbs" filterFormElements.requiresSave}}
+          {{> "modules/spell-book/templates/components/filter-item.hbs" filterFormElements.concentration}}
+          {{> "modules/spell-book/templates/components/filter-item.hbs" filterFormElements.materialComponents}}
+        </div>
+        <div class="filter-range">
+          <label>{{localize 'DND5E.Range'}}
+            ({{#if settings.useMetricUnits}}{{localize 'DND5E.DistM'}}{{else}}{{localize 'DND5E.DistFt'}}{{/if}})</label>
+          <div class="range-inputs">
+            {{> "modules/spell-book/templates/components/filter-item.hbs" filterFormElements.minRange}}
+            {{> "modules/spell-book/templates/components/filter-item.hbs" filterFormElements.maxRange}}
+          </div>
+        </div>
+        <div class="filter-source">
+          {{> "modules/spell-book/templates/components/filter-item.hbs" filterFormElements.compendiumSource}}
+          {{> "modules/spell-book/templates/components/filter-item.hbs" filterFormElements.spellSource}}
+        </div>
+        <div class="filter-checkbox">
+          {{> "modules/spell-book/templates/components/filter-item.hbs" filterFormElements.ritual}}
+        </div>
+        <button type="button" class="reset-filters" data-tooltip="{{localize 'SPELLMANAGER.Filters.Reset'}}">
+          <i class="fas fa-rotate-left" aria-hidden="true"></i> {{localize "SPELLMANAGER.Filters.Reset"}}
+        </button>
+      {{/if}}
+    </div>
+  {{else}}
+    <div class="lists-header">
+      <h2>{{localize 'SPELLMANAGER.Columns.SpellLists'}}</h2>
+      <div class="lists-header-actions">
+        <button type="button" class="header-action-btn" data-action="createList"
+          data-tooltip="{{localize 'SPELLMANAGER.Tooltips.CreateNew'}}">
+          <i class="fas fa-plus" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.CreateNew"}}
+        </button>
+        <button type="button" class="header-action-btn" data-action="mergeLists"
+          data-tooltip="{{localize 'SPELLMANAGER.Tooltips.MergeLists'}}">
+          <i class="fas fa-code-merge" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.MergeLists"}}
+        </button>
+      </div>
+    </div>
+    <div class="lists-container" role="list">
+      {{#if hasActorOwnedLists}}
+        {{#> "modules/spell-book/templates/components/folder-section.hbs"
+          folderType="actor-lists" folderId="actor-lists" icon="fas fa-user"
+          folderHeader=(localize "SPELLMANAGER.Folders.PlayerSpellbooks")
+          folderTooltip=(localize "SPELLMANAGER.Tooltips.PlayerSpellbooksFolder")}}
+          {{#each actorOwnedLists as |list|}}
+            <li class="spell-list-item actor-owned-list" data-uuid="{{list.uuid}}" role="listitem" data-tooltip-direction="RIGHT" data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
+              <div class="list-item-header">
+                <div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
+                  <div class="list-name">
+                    <i class="{{list.icon}}" aria-hidden="true"></i>
+                    <span>{{list.name}}</span>
+                  </div>
+                </div>
+              </div>
+            </li>
+          {{/each}}
+        {{/"modules/spell-book/templates/components/folder-section.hbs"}}
+      {{/if}}
+      {{#if hasCustomLists}}
+        {{#> "modules/spell-book/templates/components/folder-section.hbs"
+          folderType="custom-lists" folderId="custom-lists" icon="fas fa-magic"
+          folderHeader=(localize "SPELLMANAGER.Folders.CustomLists")
+          folderTooltip=(localize "SPELLMANAGER.Tooltips.CustomListsFolder")}}
+          {{#each customLists as |list|}}
+            <li class="spell-list-item custom-list" data-uuid="{{list.uuid}}" role="listitem" data-tooltip-direction="RIGHT" data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
+              <div class="list-item-header">
+                <div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
+                  <div class="list-name">
+                    <i class="{{list.icon}} is-custom-list" aria-hidden="true"></i>
+                    <span>{{list.name}}</span>
+                  </div>
+                </div>
+                <button type="button" class="visibility-toggle" data-action="hideList" data-uuid="{{list.uuid}}"
+                  data-tooltip="{{localize 'SPELLMANAGER.HideList.HideTooltip'}}">
+                  <i class="fas fa-eye" aria-hidden="true"></i>
+                </button>
+              </div>
+            </li>
+          {{/each}}
+        {{/"modules/spell-book/templates/components/folder-section.hbs"}}
+      {{/if}}
+      {{#if hasMergedLists}}
+        {{#> "modules/spell-book/templates/components/folder-section.hbs"
+          folderType="merged-lists" folderId="merged-lists" icon="fas fa-code-merge"
+          folderHeader=(localize "SPELLMANAGER.Folders.MergedLists")
+          folderTooltip=(localize "SPELLMANAGER.Tooltips.MergedListsFolder")}}
+          {{#each mergedLists as |list|}}
+            <li class="spell-list-item merged-list" data-uuid="{{list.uuid}}" role="listitem" data-tooltip-direction="RIGHT" data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
+              <div class="list-item-header">
+                <div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
+                  <div class="list-name">
+                    <i class="{{list.icon}} is-merged-list" aria-hidden="true"></i>
+                    <span>{{list.name}}</span>
+                  </div>
+                </div>
+                <button type="button" class="visibility-toggle" data-action="hideList" data-uuid="{{list.uuid}}"
+                  data-tooltip="{{localize 'SPELLMANAGER.HideList.HideTooltip'}}">
+                  <i class="fas fa-eye" aria-hidden="true"></i>
+                </button>
+              </div>
+            </li>
+          {{/each}}
+        {{/"modules/spell-book/templates/components/folder-section.hbs"}}
+      {{/if}}
+      {{#if hasModifiedLists}}
+        {{#> "modules/spell-book/templates/components/folder-section.hbs"
+          folderType="modified-lists" folderId="modified-lists" icon="fas fa-pen"
+          folderHeader=(localize "SPELLMANAGER.Folders.ModifiedLists")
+          folderTooltip=(localize "SPELLMANAGER.Tooltips.ModifiedListsFolder")}}
+          {{#each modifiedLists as |list|}}
+            <li class="spell-list-item modified-list" data-uuid="{{list.uuid}}" role="listitem" data-tooltip-direction="RIGHT" data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
+              <div class="list-item-header">
+                <div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
+                  <div class="list-name">
+                    <i class="{{list.icon}} is-modified-list" aria-hidden="true"></i>
+                    <span>{{list.name}}</span>
+                  </div>
+                </div>
+                <button type="button" class="visibility-toggle" data-action="hideList" data-uuid="{{list.uuid}}"
+                  data-tooltip="{{localize 'SPELLMANAGER.HideList.HideTooltip'}}">
+                  <i class="fas fa-eye" aria-hidden="true"></i>
+                </button>
+              </div>
+            </li>
+          {{/each}}
+        {{/"modules/spell-book/templates/components/folder-section.hbs"}}
+      {{/if}}
+      {{#if hasStandardLists}}
+        {{#> "modules/spell-book/templates/components/folder-section.hbs"
+          folderType="standard-lists" folderId="standard-lists" icon="fas fa-scroll"
+          folderHeader=(localize "SPELLMANAGER.Folders.SpellLists")
+          folderTooltip=(localize "SPELLMANAGER.Tooltips.StandardListsFolder")}}
+          {{#each standardLists as |list|}}
+            <li class="spell-list-item" data-uuid="{{list.uuid}}" role="listitem" data-tooltip-direction="RIGHT" data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
+              <div class="list-item-header">
+                <div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
+                  <div class="list-name">
+                    <i class="{{list.icon}}" aria-hidden="true"></i>
+                    <span>{{list.name}}</span>
+                  </div>
+                </div>
+                <button type="button" class="visibility-toggle" data-action="hideList" data-uuid="{{list.uuid}}"
+                  data-tooltip="{{localize 'SPELLMANAGER.HideList.HideTooltip'}}">
+                  <i class="fas fa-eye" aria-hidden="true"></i>
+                </button>
+              </div>
+            </li>
+          {{/each}}
+        {{/"modules/spell-book/templates/components/folder-section.hbs"}}
+      {{/if}}
+      {{#if hasHiddenLists}}
+        {{#> "modules/spell-book/templates/components/folder-section.hbs"
+          folderType="hidden-lists" folderId="hidden-lists" icon="fas fa-eye-slash"
+          folderHeader=(localize "SPELLMANAGER.Folders.HiddenLists")
+          folderTooltip=(localize "SPELLMANAGER.Tooltips.HiddenListsFolder")}}
+          {{#each hiddenSpellLists as |list|}}
+            <li class="spell-list-item hidden-list" data-uuid="{{list.uuid}}" role="listitem" data-tooltip-direction="RIGHT" data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
+              <div class="list-item-header">
+                <div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
+                  <div class="list-name">
+                    <i class="{{list.icon}}" aria-hidden="true"></i>
+                    <span>{{list.name}}</span>
+                  </div>
+                </div>
+                <button type="button" class="visibility-toggle" data-action="hideList" data-uuid="{{list.uuid}}"
+                  data-tooltip="{{localize 'SPELLMANAGER.HideList.UnhideTooltip'}}">
+                  <i class="fas fa-eye-slash" aria-hidden="true"></i>
+                </button>
+              </div>
+            </li>
+          {{/each}}
+        {{/"modules/spell-book/templates/components/folder-section.hbs"}}
+      {{/if}}
+      {{#unless availableSpellLists.length}}
+        {{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize "SPELLMANAGER.Columns.NoLists")}}
+      {{/unless}}
+    </div>
+  {{/if}}
 </div>

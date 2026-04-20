@@ -1,73 +1,95 @@
 # DM Quick Start
 
----
+Get from install to "spells appear in a player's Spell Book" in five steps.
 
-## Spell List Manager
-
-Access the **Spell List Manager** via the button at the bottom of the **Compendium** tab. This is where you create, modify, and delete spell lists.
-
-- Full reference: [Spell List Manager Interface Overview](SpellListManager-Interface-Overview)
+**Requirements:** Foundry VTT 13.351+, dnd5e 5.3.0+.
 
 ---
 
-## Module Settings
+## 1. Install
 
-In **Game Settings**, Spell Book adds several GM-facing settings. You do not need to configure everything immediately.
+Install the module through the Foundry setup screen or via manifest URL. See [Installation and Settings](Installation-and-Settings) for details.
 
-### Core Settings
+Once enabled in your world, Spell Book adds:
 
-- **Spellcasting Rule Set** — Legacy (2014) or Modern (2024). Default: Legacy
-- **Enforcement Behavior** — Unenforced, Notify GM, or Enforced. Default: Notify GM
-- **Setup Mode** — Preloads all spells and compendiums to reduce loading time during configuration. Disable during sessions.
+- A **Spell Book** button on each actor sheet.
+- A **Spell List Manager** button in the footer of the Compendium sidebar tab (GM only).
+
+---
+
+## 2. Open the Spell List Manager
+
+![Spell List Manager in dark theme](https://raw.githubusercontent.com/Sayshal/spell-book/main/docs/images/slm-hero.png)
+
+Open the **Compendium** sidebar tab and click **Spell List Manager** in the footer.
+
+The manager is a draggable window with a detach button in its header (pops the manager out into a standalone OS window; dialogs opened from the manager follow along).
+
+On first open the module indexes every compendium spell. A progress toast ticks as the fetch completes — this is a one-time cost per session.
+
+Full walkthrough: [Spell List Manager Interface Overview](SpellListManager-Interface-Overview).
+
+---
+
+## 3. Make Lists Available to Players
 
 > [!IMPORTANT]
-> GM Setup Mode significantly impacts memory usage. Always disable it once setup is complete.
+> Spells do **not** auto-populate on character sheets. You must make a list available to each spellcasting class using one of the two options below, or player spell books will appear empty.
 
-### Spell Management
+### Option A: Add to Spell Registry (recommended for stock lists)
 
-- **Consume Scrolls When Learning** — Default: Enabled
-- **Deduct Spell Learning Costs** — Default: Disabled
+In the Spell List Manager header, tick **Add to Spell Registry** on each list you want to act as the global default for its class or subclass. This:
 
-### Interface Options
+- Adds the list's UUID to the `REGISTRY_ENABLED_LISTS` world setting.
+- Calls `dnd5e.registry.spellLists.register(uuid)` immediately, so newly added spells show their class label on item sheets right away — no reload needed.
 
-- **Spell Comparison Maximum** — Default: 3
-- **Cantrip Scale Values** — Default: `cantrips-known, cantrips`
-- **Advanced Search Prefix** — Character that triggers advanced search mode. Default: `^`
-- **Party Mode Token Limit** — Maximum tokens displayed in party spell view (2-8). Default: 4
+Disabling the toggle removes the UUID from the setting but cannot undo contributions already pushed to the registry; a world reload is required to clear those. A notification explains this when you disable a list.
 
-### Advanced Settings
+Use this path when you want one list per class or subclass applied globally.
 
-- **Suppress Migration Warnings** — Default: Disabled
-- **Cauldron of Plentiful Resources Compatibility** — Default: Disabled (only enable if using CPR)
-- **Auto-Delete Unprepared Spells** — Default: Disabled
-- **Spell Notes Length** — Maximum character limit for player spell notes (10-1000). Default: 240
+### Option B: Assign Per Class via Spell Book Settings
 
-Full settings reference: [Installation and Settings](Installation-and-Settings)
+For campaign-specific or per-character lists, have each player open **Spell Book Settings** (the cog icon in their Spell Book header) and select the list for each class:
 
----
+- `Class Spell List` — the class's primary list.
+- `Subclass Spell List` — the subclass list. This is now explicit; the module no longer tries to infer a subclass list from the registry.
 
-## Common GM Workflow
+Per-actor Spell Book Settings overrides the registry, so you can combine both: the registry provides the default, Spell Book Settings overrides per actor.
 
-1. Enable **GM Setup Mode** in settings
-2. Create or modify spell lists for your campaign classes/subclasses in the **Spell List Manager**
-3. Open each player's character sheet and configure their spell lists via the **Wand** icon in Spell Book
-4. Disable **GM Setup Mode** when finished
+- Create lists: [Creating New Spell Lists](Creating-New-Spell-Lists)
+- Modify existing lists: [Modifying Existing Spell Lists](Modifying-Existing-Spell-Lists)
+- Assign lists to classes: [Class Rules](Class-Rules)
+
+![Merge Lists dialog](https://raw.githubusercontent.com/Sayshal/spell-book/main/docs/images/slm-merge-dialog.png)
 
 ---
 
-## Recommended Initial Configuration
+## 4. Review Global Settings (Optional)
 
-- **Configure Compendiums** — Select only the compendiums you use to reduce loading time
-- **Auto-Delete Unprepared Spells** — Off
-- **Consume Scrolls When Learning** — On
-- **Deduct Spell Learning Costs** — Off
-- **Disable Long Rest Swap Prompt** — Off
-- **Suppress Migration Warnings** — Off
+Open **Game Settings > Configure Settings > Spell Book**. You do not need to change anything to get started. A few worth knowing:
+
+- **Notify GM on Spell Changes** (`NOTIFY_GM_ON_SPELL_CHANGES`, default **on**) — whispers the GM when a player prepares more cantrips or spells than their class allows. This does **not** block preparation; it is a soft notification only. Exposed as a boolean checkbox in per-actor Spell Book Settings as well.
+- **Spellcasting Rule Set** — Legacy (2014) or Modern (2024).
+- **Consume Scrolls When Learning** — default on.
+- **Deduct Spell Learning Costs** — default off.
+
+Full reference: [Installation and Settings](Installation-and-Settings).
 
 ---
 
-## See Also
+## 5. Players Open Their Spell Book
 
-- [SpellBook Troubleshooter](SpellBook-Troubleshooter) — Generate diagnostic reports for support
-- [Spell Details Customization](Installation-and-Settings#ui-customization) — Configure which spell details display for players and GMs
-- [Hidden Spell Lists](SpellListManager-Interface-Overview) — Manage hidden lists in the Spell List Manager
+Players click the **Spell Book** button on their character sheet. Their spells come from:
+
+1. The class / subclass list registered in step 3A, or
+2. The list they assigned in **Spell Book Settings** (step 3B), which takes precedence.
+
+If a player's book is empty, confirm one of the two options above is set for their class, and that the class has a `customSpellList` assigned (the subclass list is optional).
+
+---
+
+## Troubleshooting
+
+If something looks wrong, use the [SpellBook Troubleshooter](SpellBook-Troubleshooter) to generate a diagnostic report.
+
+Programmatic access to spell data, list registration, and actor Spell Book state is documented in the [API Reference](API-Reference).

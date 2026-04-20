@@ -1,0 +1,128 @@
+<div class="party-spell-analysis">
+	<div class="analysis-content">
+		{{#if recommendations.length}}
+			<div class="recommendations">
+				<h4>{{localize "SPELLBOOK.Party.Analysis.Recommendations"}}</h4>
+				<ul class="recommendation-list">
+					{{#each recommendations as |recommendation|}}
+						<li class="recommendation-item">{{localize recommendation}}</li>
+					{{/each}}
+				</ul>
+			</div>
+		{{/if}}
+		<div class="analysis-columns">
+			<div class="left-column">
+				{{#if spellSchoolDistribution.length}}
+					<div class="school-analysis">
+						<h4>{{localize "DND5E.School"}} {{localize "SPELLBOOK.Party.Analysis.Distribution"}}</h4>
+						<div class="school-types">
+							{{#each spellSchoolDistribution as |school|}}
+								<div class="school-type-item"
+									data-tooltip-html="{{{school.tooltipHtml}}}">
+									<span class="school-type">{{school.localizedSchool}}</span>
+									<span class="school-count">{{school.count}} ({{school.percentage}}%)</span>
+								</div>
+							{{/each}}
+						</div>
+					</div>
+				{{/if}}
+				{{#if spellLevelDistribution.length}}
+					<div class="level-analysis">
+						<h4>{{localize "DND5E.SpellLevels"}} {{localize "SPELLBOOK.Party.Analysis.Distribution"}}</h4>
+						<div class="level-types">
+							{{#each spellLevelDistribution as |level|}}
+								<div class="level-type-item"
+									data-tooltip="{{level.localizedLevel}}: {{level.count}} prepared ({{level.percentage}}%)">
+									<span class="level-type">{{level.localizedLevel}}</span>
+									<span class="level-count">{{level.count}} ({{level.percentage}}%)</span>
+								</div>
+							{{/each}}
+						</div>
+					</div>
+				{{/if}}
+			</div>
+			<div class="right-column">
+				<div class="analysis-overview">
+					<h4>{{localize "SPELLBOOK.Party.Analysis.Overview"}}</h4>
+					<div class="stats-grid">
+						<div class="stat-item"
+							data-tooltip="{{localize 'SPELLBOOK.Party.Analysis.TotalSpellsTooltip'}}">
+							<span class="stat-label">{{localize "SPELLBOOK.Party.Analysis.TotalSpells"}}</span>
+							<span class="stat-value">{{totalSpells}}</span>
+						</div>
+						<div class="stat-item"
+							data-tooltip="{{localize 'SPELLBOOK.Party.Analysis.TotalPreparedTooltip'}}">
+							<span class="stat-label">{{localize "SPELLBOOK.Party.Analysis.TotalPrepared"}}</span>
+							<span class="stat-value">{{totalPreparedSpells}}</span>
+						</div>
+						<div class="stat-item"
+							data-tooltip-html="<strong>{{localize 'DND5E.Concentration'}}</strong><hr>{{#each concentrationMembers}}<div>{{name}} ({{count}})</div>{{/each}}">
+							<span class="stat-label">{{localize "DND5E.Concentration"}}</span>
+							<span class="stat-value">{{concentrationSpells}} ({{concentrationPercentage}}%)</span>
+						</div>
+						<div class="stat-item"
+							data-tooltip-html="<strong>{{localize 'DND5E.Ritual'}}</strong><hr>{{#each ritualMembers}}<div>{{name}} ({{count}})</div>{{/each}}">
+							<span class="stat-label">{{localize "DND5E.Ritual"}}</span>
+							<span class="stat-value">{{ritualSpells}}</span>
+						</div>
+					</div>
+				</div>
+				{{#if damageDistribution.length}}
+					<div class="damage-analysis">
+						<h4>{{localize "DND5E.DamageTypes"}}</h4>
+						<div class="damage-types">
+							{{#each damageDistribution as |damageData|}}
+								<div class="damage-type-item"
+									data-tooltip-html="{{{damageData.tooltipHtml}}}">
+									<span class="damage-type">{{damageData.localizedType}}</span>
+									<span class="damage-count">{{damageData.count}}</span>
+								</div>
+							{{/each}}
+						</div>
+					</div>
+				{{/if}}
+				<div class="component-analysis">
+					<h4>{{localize "DND5E.Components"}}</h4>
+					<div class="component-grid">
+						<div class="component-item"
+							data-tooltip-html="<strong>Verbal</strong><hr>{{{componentTooltips.verbal}}}">
+							<span class="component-type">{{localize "DND5E.ComponentVerbalAbbr"}}</span>
+							<span class="component-count">{{componentAnalysis.verbal}}</span>
+						</div>
+						<div class="component-item"
+							data-tooltip-html="<strong>Somatic</strong><hr>{{{componentTooltips.somatic}}}">
+							<span class="component-type">{{localize "DND5E.ComponentSomaticAbbr"}}</span>
+							<span class="component-count">{{componentAnalysis.somatic}}</span>
+						</div>
+						<div class="component-item"
+							data-tooltip-html="<strong>Material</strong><hr>{{{componentTooltips.material}}}">
+							<span class="component-type">{{localize "DND5E.ComponentMaterialAbbr"}}</span>
+							<span class="component-count">{{componentAnalysis.material}}</span>
+						</div>
+						<div class="component-item"
+							data-tooltip-html="<strong>Material (costly)</strong><hr>{{{componentTooltips.materialCost}}}">
+							<span class="component-type">{{localize "DND5E.ComponentMaterialAbbr"}}*</span>
+							<span class="component-count">{{componentAnalysis.materialCost}}</span>
+						</div>
+					</div>
+				</div>
+				{{#if duplicateSpells.length}}
+					<div class="duplicate-analysis">
+						<h4>{{localize "SPELLBOOK.Party.Analysis.DuplicateSpells"}}</h4>
+						<div class="duplicate-list">
+							{{#each duplicateSpells as |duplicate|}}
+								<div class="duplicate-item"
+									data-tooltip-html="{{{duplicate.tooltipHtml}}}">
+									<div class="duplicate-spell-info">
+										<span class="spell-name">{{duplicate.name}}</span>
+									</div>
+									<span class="duplicate-count">&times;{{duplicate.actors.length}}</span>
+								</div>
+							{{/each}}
+						</div>
+					</div>
+				{{/if}}
+			</div>
+		</div>
+	</div>
+</div>

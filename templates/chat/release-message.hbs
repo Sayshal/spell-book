@@ -1,0 +1,45 @@
+<div class="spell-book chat-release">
+	<div class="release-header">
+		<i class="fa-solid fa-book-sparkles"></i>
+		<strong>{{localize "SPELLBOOK.Release.Title" version=version}}</strong>
+	</div>
+
+	<div class="release-body">
+		<p class="release-patreon">
+			<strong><a href="https://www.patreon.com/3deathsaves" target="_blank" rel="noopener"><i
+						class="fa-brands fa-patreon"></i> Now on Patreon!</a></strong>
+		</p>
+
+		<h4>{{localize "SPELLBOOK.Release.NewFeatures"}}</h4>
+		<ul>
+			<li>Rebuilt the Player Spell Book and Spell List Manager on the dnd5e CompendiumBrowser, replacing the custom search engine, filter service, and query parser.</li>
+			<li>Added filters for Target, Requires Save, Costly Material Components, Prepared Only, and Favorites Only, plus min/max range inputs for Level and Range.</li>
+			<li>Added the Class Rules dialog plus a per-class customSubclassSpellList picker for explicit subclass spell assignment.</li>
+			<li>Added full light theme support across all Spell Book dialogs and panels.</li>
+			<li>Spell Book now fires spellBookOpened and spellBookClosed hooks for macros and modules.</li>
+		</ul>
+
+		<h4>{{localize "SPELLBOOK.Release.Changes"}}</h4>
+		<ul>
+			<li>Advanced search syntax has been removed; the search bar now matches spell names only, use the filters for everything else.</li>
+			<li>Opening the Spell Book is significantly faster (roughly 2.5s to 700ms) thanks to deferred enrichment and folder caching.</li>
+			<li>Property filters are now tri-state toggles; Loadouts sidebar button supports right-click quick-select.</li>
+			<li>Spell List Manager auto-duplicates stock lists on first save under a new Modified Spell Lists folder.</li>
+			<li>Classes without an explicit spell list now show a notice linking to Class Rules; subclass registry fallback removed.</li>
+			<li>Pre-2.0 migrations have been dropped; upgrade through a 1.x release before installing 2.0.</li>
+			<li>Layouts now adapt to narrower windows with responsive breakpoints.</li>
+		</ul>
+
+		<h4>{{localize "SPELLBOOK.Release.BugFixes"}}</h4>
+		<ul>
+			<li>Fixed module initialization errors that prevented Spell Book from loading at world startup.</li>
+			<li>Fixed errors that prevented the spell book window from opening and corrected sheet button sizing before stylesheets load.</li>
+			<li>Fixed recursion in injected spell descriptions, invalid spell filter operators, and empty custom spell list handling.</li>
+			<li>Long-rest spell swap state is now handled automatically; scroll scanner, flag purge, and spells-not-in-lists paths no longer throw.</li>
+		</ul>
+	</div>
+
+	<a class="open-note" href="{{repoUrl}}" target="_blank" rel="noopener">
+		<i class="fa-solid fa-arrow-up-right-from-square"></i> {{localize "SPELLBOOK.Release.ReleaseNotes"}}
+	</a>
+</div>

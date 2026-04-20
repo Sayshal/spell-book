@@ -1,11 +1,5 @@
-<div class="spell-list-manager-container {{#if isLoading}}loading-state{{else if hasError}}error-state{{/if}}"
-	role="application">
-
+<div class="spell-list-manager-container {{#if isLoading}}loading-state{{else}}idle{{/if}}" role="application">
 	{{#if isLoading}}
-		<!-- Application Loading State -->
 		{{> "modules/spell-book/templates/components/loading-spinner.hbs" size=3 message=(localize "SPELLMANAGER.Application.Loading")}}
-	{{else if hasError}}
-		<!-- Application Error State -->
-		{{> "modules/spell-book/templates/components/error-message.hbs" message=errorMessage}}
 	{{/if}}
 </div>

@@ -1,0 +1,20 @@
+<div class="filter-item" data-filter="{{name}}">
+	{{#if label}}<label for="{{id}}">{{localize label}}</label>{{/if}}
+	{{#if (eq type "select")}}
+		<select name="{{name}}" id="{{id}}" {{#if disabled}}disabled{{/if}} aria-label="{{localize ariaLabel}}">
+			{{#each options as |opt|}}
+				<option value="{{opt.value}}" {{#if opt.selected}}selected{{/if}}>{{opt.label}}</option>
+			{{/each}}
+		</select>
+	{{else if (eq type "checkbox")}}
+		<dnd5e-checkbox name="{{name}}" id="{{id}}" {{#if checked}}checked{{/if}} {{#if disabled}}disabled{{/if}}
+			aria-label="{{localize ariaLabel}}">
+		</dnd5e-checkbox>
+	{{else if (eq type "number")}}
+		<input type="number" name="{{name}}" id="{{id}}" value="{{value}}" placeholder="{{localize placeholder}}"
+			{{#if disabled}}disabled{{/if}} aria-label="{{localize ariaLabel}}">
+	{{else}}
+		<input type="text" name="{{name}}" id="{{id}}" value="{{value}}" placeholder="{{localize placeholder}}"
+			{{#if disabled}}disabled{{/if}} aria-label="{{localize ariaLabel}}">
+	{{/if}}
+</div>

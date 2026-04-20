@@ -1,255 +1,167 @@
 # Installation and Settings
 
-This guide covers installing the Spell Book module and configuring its settings for optimal use with your game.
+This guide covers installing the Spell Book module and configuring its world and client settings.
 
-## Installation Methods
+## Requirements
 
-### Via Foundry VTT Module Browser (Recommended)
+- **Foundry VTT**: 13.351 or newer
+- **D&D 5e System**: 5.3.0 or newer
+- **Optional**: `tidy5e-sheet`, `chris-premades` (extra compatibility settings appear when active)
 
-1. Open Foundry VTT and navigate to the **Setup** screen
-2. Click **Add-on Modules** in the sidebar
-3. Click **Install Module** at the bottom of the module list
-4. In the **Package Browser**, search for **"Spell Book"** by **Tyler**
-5. Click **Install** next to the Spell Book module
-6. Return to your world and enable the module in **Manage Modules**
+## Installation
 
-### Via Module JSON URL
+### Foundry Module Browser
 
-1. Open Foundry VTT and navigate to the **Setup** screen
-2. Click **Add-on Modules** in the sidebar
-3. Click **Install Module** at the bottom
-4. Paste this Manifest URL: `https://github.com/Sayshal/spell-book/releases/latest/download/module.json`
-5. Click **Install** and wait for download to complete
-6. Enable the module in your world's **Manage Modules** menu
+1. Launch Foundry VTT and open the **Setup** screen.
+2. Open **Add-on Modules** and click **Install Module**.
+3. Search for **Spell Book** by **Tyler**.
+4. Click **Install**.
+5. Enable the module in your world's **Manage Modules** menu.
 
-## Initial Setup
+### Manifest URL
 
-### First Time Configuration
+1. Open **Add-on Modules** and click **Install Module**.
+2. Paste the following Manifest URL:
 
-After enabling the module, GMs should complete these essential setup steps:
+   ```
+   https://github.com/Sayshal/spell-book/releases/latest/download/module.json
+   ```
 
-1. **Configure Compendium Indexing** (Required)
-   - Navigate to **Game Settings** → **Configure Settings** → **Spell Book**
-   - Click **"Configure Compendium Indexing"**
-   - Select which compendiums contain spells and spell lists
-   - Module-specific compendiums are automatically selected
-   - Click **Save Selection** (world will reload to index compendiums)
+3. Click **Install** and wait for the download to finish.
+4. Enable the module in your world's **Manage Modules** menu.
 
-[https://raw.githubusercontent.com/Sayshal/spell-book/main/github_media/CompendiumSelectionDialog.png]
+## First-Time Setup
 
-2. **Review Module Settings**
-   - Choose your **Spellcasting Rule Set** (Legacy 2014 or Modern 2024)
-   - Set **Default Enforcement Behavior** for spell preparation limits
-   - Configure other world-level preferences
+After enabling the module:
 
-3. **Configure Individual Spellcasters**
-   - Open each player character sheet
-   - Click the **Spell Book** button
-   - Access the **Settings** (wand icon) for character-specific configuration
+1. Open **Game Settings** -> **Configure Settings** -> **Spell Book**.
+2. Choose your **Default Spellcasting Rules** (Legacy 2014 or Modern 2024).
+3. Decide whether the GM should be notified when players overprepare via **Notify GM on Spell Changes**.
+4. Open **Spell Details Customization** to choose which UI elements and metadata appear in spell rows.
+5. Each player can open their Spell Book and use the **Spell Book Settings** dialog (gear icon in the sidebar) to override world defaults where allowed. See [Class Rules](Class-Rules).
 
-## World Settings (GM Only)
+## Settings Reference
 
-These settings affect all players in your world and can only be modified by GMs.
+All settings live under **Game Settings** -> **Configure Settings** -> **Spell Book**. Scope: **World** = GM-only, shared by everyone; **Client** = per user, stored locally; **User** = per user, synced with the server.
 
-### Core Settings
+### Core Rule Settings
 
-**Spellcasting Rule Set**
+| Setting | Key | Scope | Default | Description |
+|---|---|---|---|---|
+| Default Spellcasting Rules | `spellcastingRuleSet` | World | `legacy` | Default rule set for spellcasting behavior. Choose **Legacy Rules** (2014) or **Modern Rules** (2024). Per-actor override available in [Class Rules](Class-Rules). |
+| Notify GM on Spell Changes | `notifyGmOnSpellChanges` | World | `true` | When a player prepares more cantrips or spells than their class allows, the GM receives a whispered report. Does **not** block preparation. Per-actor override available in [Class Rules](Class-Rules). |
 
-- **Legacy (2014)**: Traditional D&D 5e rules with no cantrip swapping
-- **Modern (2024)**: Updated rules allowing cantrip swapping on level-up
-- Default: Legacy
+### Spell Preparation and Learning
 
-**Default Enforcement Behavior**
+| Setting | Key | Scope | Default | Description |
+|---|---|---|---|---|
+| Consume Scrolls When Learning | `consumeScrollsWhenLearning` | World | `true` | Whether spell scrolls are consumed when a wizard learns a spell from them. |
+| Deduct Spell Learning Costs | `deductSpellLearningCost` | World | `false` | Automatically deduct gold from the character when learning spells. Cost per spell level is configurable per class. |
+| Cantrip Scale Value Keys | `cantripScaleValues` | World | `cantrips-known, cantrips` | Comma-separated scale value keys the module checks to find a class's cantrip limit. First resolving key wins; add keys here for homebrew classes. |
+| Auto-Delete Unprepared Spells | `autoDeleteUnpreparedSpells` | User | `false` | Automatically removes unprepared prepared-casting spells from the character sheet after saving. Cleans up spells unprepared through the system UI. |
+| Disable Long Rest Swap Prompt | `disableLongRestSwapPrompt` | Client | `false` | Disables the dialog that appears after a long rest for swapping spells or cantrips. The Spell Book remains available for swaps. |
 
-- **Unenforced**: Players can prepare unlimited spells
-- **Notify GM**: No limits enforced, but GM receives whispered notifications
-- **Enforced**: Strict preparation limits with locked checkboxes
-- Default: Notify GM
+### UI and Display
 
-**Setup Mode**
+| Setting | Key | Scope | Default | Description |
+|---|---|---|---|---|
+| Maximum Note Length | `spellNotesMaxLength` | World | `240` | Maximum characters allowed in a personal spell note (range 10-1000, step 10). |
+| Inject Notes into Spell Descriptions | `injectNotesIntoDescriptions` | Client | `off` | Inserts your personal spell notes into the spell description on the character sheet. Options: **Off**, **Before description**, **After description**. |
+| Party Mode Token Limit | `partyModeTokenLimit` | Client | `4` | Maximum number of party member tokens displayed per spell in Party Mode (range 2-8). |
 
-- Enables preloading of all spell data for GM configuration
-- Turn on when creating/modifying spell lists
-- Turn off during regular play for better performance
-- Requires world reload when changed
+### Logging
 
-### Spell Management
+| Setting | Key | Scope | Default | Description |
+|---|---|---|---|---|
+| Logging Level | `loggingLevel` | Client | `2` (Warnings) | Console verbosity: **0 Off**, **1 Errors**, **2 Warnings**, **3 Verbose**. The Troubleshooter captures all events regardless of this setting. |
 
-**Consume Scrolls When Learning**
+### Compatibility (Conditional)
 
-- Whether spell scrolls are consumed when wizards learn from them
-- Default: Enabled
+| Setting | Key | Scope | Default | Description |
+|---|---|---|---|---|
+| Cauldron of Plentiful Resources Compatibility | `cprCompatibility` | World | `false` | Only appears when the **chris-premades** module is active. When enabled, automatically runs CPR automation setup after spells are added to character sheets. |
 
-**Deduct Spell Learning Costs**
+### Display Toggles (via Details Customization)
 
-- Automatically deduct gold when wizards copy spells
-- Cost per level configurable per class
-- Default: Disabled
+The per-element UI toggles do not have individual entries in the main settings panel. They are configured through the **Spell Details Customization** menu and stored as **client-scope** booleans, one per toggle. The full list:
 
-### Interface Options
+- Player Spell Book UI: Favorites, Compare, Notes, Position Controls at Bottom (`sidebarControlsBottom`)
+- Player metadata: Spell Level, Components, School, Casting Time, Range, Damage Types, Conditions, Save, Concentration, Material Components
+- Spell List Manager UI (GM): Compare
+- Spell List Manager metadata (GM): same list as player metadata, stored under `gmUI*` keys
 
-**Enable Journal Button**
+The **Wizard Book Icon Color** (`wizardBookIconColor`, client scope, `ColorField`, default `null`) is also configured here.
 
-- Adds Spell List Manager button to journal directory
-- Default: Enabled
+Full reference: [Details Customization](Details-Customization).
 
-**Spell Comparison Maximum**
+### Hidden Internal Settings
 
-- Maximum spells allowed in side-by-side comparison (2-7)
-- Default: 3
+These are registered with `config: false` and are not visible in the settings panel. They persist module state or internal bookkeeping:
 
-**Cantrip Scale Values**
+| Key | Scope | Purpose |
+|---|---|---|
+| `customSpellListMappings` | World | Compendium-to-custom-list mappings maintained by the SLM. |
+| `registryEnabledLists` | World | IDs of dnd5e registry lists enabled for display. |
+| `hiddenSpellLists` | World | UUIDs excluded from the Class Rules spell-list pickers and other consumers. |
+| `spellBookPositionn` | Client | Last window position of the Player Spell Book. |
+| `sidebarControlsBottom` | Client | Layout flag (exposed through Details Customization). |
+| `troubleshooterIncludeActors` | Client | Remembered Troubleshooter checkbox. |
 
-- Which attributes determine cantrip damage scaling
-- Default: "cantrips-known, cantrips"
+## Setting Menus
 
-### Advanced Settings
+The settings panel exposes two dialog menus alongside the standard settings.
 
-**Suppress Migration Warnings**
+### Spell Details Customization
 
-- Hide warnings about data migrations
-- Default: Disabled
+Opens a dialog where each user toggles UI elements and metadata fields on spell rows in the Player Spell Book and Spell List Manager, sets the wizard book icon color, and positions sidebar controls.
 
-**Suppress Preload Notification**
+- **Menu label**: *Configure Display*
+- **Icon**: paint palette
+- **Restricted**: No (players and GMs)
 
-- Hide the preload notification displayed on game ready
-- Default: Disabled
+Full reference: [Details Customization](Details-Customization).
 
-**Registry Enabled Lists** (Hidden)
+### Troubleshooter
 
-- Managed automatically by the module
-- Controls D&D 5e SpellListRegistry integration
+- **Menu label**: *Open Troubleshooter*
+- **Icon**: bug
+- **Restricted**: World / GM only
+- **Purpose**: Generates a diagnostic report of environment, settings, and (optionally) actor data for bug reports. Supports copying to clipboard, exporting to file, import/export of Spell Book settings, and quick links to the issue tracker and Discord.
 
-**Cauldron of Plentiful Resources Compatibility** (Conditional)
+## Per-Actor Overrides
 
-- Only appears when the Cauldron of Plentiful Resources module is active
-- Enables compatibility features for CPR item handling
-- Default: Disabled
+The **Spell Book Settings** dialog (gear icon in the Player Spell Book sidebar, or right-click the Spell Book button on the sheet) provides per-actor and per-class overrides:
 
-## Client Settings (Per User)
+![Spell Book button injected into the D&D 5e character sheet](https://raw.githubusercontent.com/Sayshal/spell-book/main/docs/images/sheet-button-dnd5e.png)
 
-These settings are personal preferences that each user can configure individually.
+- **Rule Set Override** — Use Global / Legacy / Modern (per actor)
+- **Notify on Spell Changes** — boolean (per actor)
+- **Cantrip / Spell Swapping** — none / level-up / long-rest (per class)
+- **Ritual Casting** — none / prepared / always (per class)
+- **Class Spell List** / **Subclass Spell List** — multi-select (per class, required for spells to show)
+- **Show Cantrips**, **Force Wizard Mode**, preparation bonuses, wizard learning cost/time, starting spells, spells per level
 
-### User Interface
-
-**Logging Level**
-
-- Controls debug output verbosity
-- Options: Off, Errors, Warnings, Verbose
-- Default: Warnings
-
-**Disable Long Rest Swap Prompt**
-
-- Skip spell preparation dialog during long rests
-- Default: Disabled
-
-**Auto-Delete Unprepared Spells**
-
-- Automatically remove unprepared spells from character sheets
-- Useful for VTTs with limited item storage
-- Default: Disabled
-
-**Spell Notes Injection**
-
-- Where to display personal spell notes:
-    - **Off**: Notes only visible in Spell Book
-    - **Before**: Insert notes before spell description
-    - **After**: Insert notes after spell description
-- Default: Off
-
-**Spell Notes Maximum Length**
-
-- Maximum character length for personal spell notes (10-1000)
-- Default: 240
-
-**Advanced Search Prefix**
-
-- Character that triggers advanced search mode
-- Default: ^ (caret)
-- Cannot be a letter or number
-
-**Party Mode Token Limit**
-
-- Maximum tokens to display in party spell view (2-8)
-- Default: 4
-
-### UI Customization
-
-Access detailed display settings via **Game Settings** → **Spell Details Customization**
-
-[https://raw.githubusercontent.com/Sayshal/spell-book/main/github_media/UICustomization.png]
-
-These settings are **per-client** (each user configures their own display preferences).
-
-This dialog allows you to control which spell information appears in:
-
-- Player Spell Book interface
-- GM Spell List Manager
-- Spell comparison dialogs
-
-Customizable elements include:
-
-- **UI Elements**: Favorites, Compare button, Notes, Sidebar position
-- **Metadata**: Spell level, Components, School, Casting time, Range, Damage types, Conditions, Save requirements, Concentration, Material components
-
-## Long Rest Integration
-
-When enabled, the module integrates with D&D 5e's long rest system:
-
-1. **During Long Rest**: Players receive a prompt to swap prepared spells
-2. **Rule-Based Swapping**:
-   - Legacy rules: Change any prepared spells
-   - Modern rules: Swap one spell per long rest
-3. **Class-Specific**: Each class follows its own swapping rules
-4. **Optional**: Can be disabled in client settings
-
-The prompt only appears for characters with:
-
-- Spell preparation capability
-- Available spells to swap
-- Permission to modify their character
-
-## Performance Considerations
-
-### Compendium Indexing
-
-- Only select compendiums you actively use
-- Large compendium collections increase initial load time
-- Module compendiums are always indexed
-
-### Setup Mode
-
-- Enable only when configuring spell lists
-- Disable during regular gameplay
-- Significantly impacts memory usage when active
+These overrides take precedence over the world-level defaults. See [Class Rules](Class-Rules).
 
 ## Troubleshooting
 
 ### Module Not Working
 
-1. Verify at least one spell compendium is selected
-2. Check that the module is enabled in Manage Modules
-3. Ensure you're using compatible D&D 5e system version (3.0.0+)
+1. Confirm the module is enabled in **Manage Modules**.
+2. Confirm Foundry is on **13.351** or newer and dnd5e is on **5.3.0** or newer.
+3. Open the **Troubleshooter** menu, generate a report, and share it on Discord or the issue tracker.
 
-### Missing Spells
+### Performance
 
-1. Open **Configure Compendium Indexing**
-2. Verify the compendium containing your spells is selected
-3. Save and reload the world
+- Lower **Logging Level** to **Warnings** or **Errors**.
+- Disable optional integrations you do not use.
 
-### Performance Issues
+### Diagnostic Report
 
-1. Reduce number of indexed compendiums
-2. Disable Setup Mode if not actively configuring
-3. Check logging level (set to Warnings or Off)
-
-### Generate Diagnostic Report
-
-- Navigate to **Game Settings** → **Spell Book** → **Generate Troubleshooter Report**
-- Creates detailed system analysis for support
+Navigate to **Game Settings** -> **Configure Settings** -> **Spell Book** -> **Open Troubleshooter** to generate a system report for support.
 
 ## Next Steps
 
-- **Players**: See [Player Quick Start](Player-Quick-Start) for using the Spell Book
-- **GMs**: Review [DM Quick Start](DM-Quick-Start) for spell list management
-- **Configuration**: Learn about [Creating New Spell Lists](Creating-New-Spell-Lists) and [Modifying Existing Spell Lists](Modifying-Existing-Spell-Lists)
+- **Players**: see [Player Quick Start](Player-Quick-Start)
+- **GMs**: see [DM Quick Start](DM-Quick-Start)
+- **Customizing spell lists**: see [Creating New Spell Lists](Creating-New-Spell-Lists) and [Modifying Existing Spell Lists](Modifying-Existing-Spell-Lists)

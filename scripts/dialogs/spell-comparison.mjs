@@ -1,273 +1,240 @@
-/**
- * Spell Comparison Dialog
- *
- * Side-by-side spell analysis and comparison interface for detailed spell
- * evaluation. Provides spell data comparison including statistics,
- * effects, and tactical analysis for informed spellcasting decisions.
- * @module Dialogs/SpellComparison
- * @author Tyler
- */
-
-import { TEMPLATES } from '../constants/_module.mjs';
-import * as UIUtils from '../ui/_module.mjs';
-import { log } from '../logger.mjs';
+import { TEMPLATES } from '../constants.mjs';
+import { createSpellIconLink, formatSpellActivation, formatSpellComponents, formatSpellSchool } from '../ui/formatting.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-/**
- * Dialog application for comparing multiple spells side-by-side.
- */
+const MIN_COL_WIDTH = 150;
+const PROPERTY_COL_WIDTH = 120;
+const DIALOG_PADDING = 40;
+const MIN_WIDTH = 400;
+
+/** Side-by-side spell comparison dialog. Spells are passed in via constructor options. */
 export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
-  /** @inheritdoc */
+  /** @override */
   static DEFAULT_OPTIONS = {
-    id: 'spell-comparison-dialog',
+    id: 'spellbook-spell-comparison',
     tag: 'div',
-    window: { icon: 'fas fa-clipboard-question', resizable: false, minimizable: true, positioned: true },
+    classes: ['spell-book', 'spell-comparison-dialog'],
     position: { width: 600, height: 'auto' },
-    classes: ['spell-book', 'spell-comparison-dialog']
+    window: { icon: 'fas fa-scale-balanced', resizable: false, frame: false, positioned: true },
+    actions: { close: SpellComparison.#onClose, toggleDetach: SpellComparison.#onToggleDetach }
   };
 
-  /** @inheritdoc */
+  /**
+   * Close the frameless dialog from the template close button.
+   * @this SpellComparison
+   */
+  static async #onClose() {
+    this.element?.classList.add('closing');
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    await this.close({ animate: false });
+  }
+
+  /**
+   * Toggle detached-window mode.
+   * @this SpellComparison
+   */
+  static #onToggleDetach() {
+    if (this.window.windowId) this.attachWindow();
+    else this.detachWindow();
+  }
+
+  /** @override */
   static PARTS = { comparison: { template: TEMPLATES.DIALOGS.SPELL_COMPARISON } };
 
   /**
-   * Create a new spell comparison dialog instance.
-   * @param {object} parentApp - Parent Spell Book application instance
-   * @param {object} [options] - Additional application options
+   * @param {object} options - Options including spellUuids and optional callbacks
+   * @param {string[]} options.spellUuids - UUIDs of spells to compare
+   * @param {Function} [options.onClose] - Callback fired when the dialog closes
+   * @param {HTMLElement} [options.anchor] - Optional element to position the dialog near
    */
-  constructor(parentApp, options = {}) {
+  constructor(options = {}) {
     super(options);
-    this.parentApp = parentApp;
-    log(3, 'SpellComparison constructed.', { parentApp, options });
+    this.spellUuids = Array.from(options.spellUuids || []);
+    this._onCloseCallback = options.onClose || null;
+    this._anchor = options.anchor || null;
   }
 
-  /** @inheritdoc */
+  /** @override */
   get title() {
-    return game.i18n.localize('SPELLBOOK.Comparison.DialogTitle');
+    return _loc('SPELLBOOK.Comparison.DialogTitle');
   }
 
-  /** @inheritdoc */
+  /** @override */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    const spellUuids = Array.from(this.parentApp.comparisonSpells);
     const spells = [];
-    for (const uuid of spellUuids) {
+    for (const uuid of this.spellUuids) {
       const spell = await fromUuid(uuid);
-      if (spell) spells.push(this._processSpellForComparison(spell));
+      if (spell) spells.push(this.#processSpell(spell));
     }
     context.spells = spells;
-    context.comparisonData = this._buildComparisonTable(spells);
-    log(3, 'Spell Comparison Context.', { options, context });
+    context.comparisonData = this.#buildComparisonTable(spells);
+    context.detached = options.window?.attach ? false : options.window?.detach ? true : !!this.window.windowId;
     return context;
   }
 
-  /** @inheritdoc */
-  _onFirstRender(context, options) {
-    log(3, 'First render.', { context, options });
-    super._onFirstRender(context, options);
-    this._calculateOptimalSize();
-    this._positionRelativeToParent();
+  /** @override */
+  _onRender(context, options) {
+    super._onRender(context, options);
+    this.#sizeForSpellCount();
+    this.#enableDragging();
+    if (options.isFirstRender) {
+      requestAnimationFrame(() => {
+        if (this._anchor) this.#positionRelativeToAnchor();
+        else this.#centerOnScreen();
+      });
+      this.bringToFront();
+    }
   }
 
-  /**
-   * Calculate and set optimal dialog size based on content and spell count.
-   * @private
-   */
-  _calculateOptimalSize() {
-    if (!this.parentApp?.comparisonSpells) return;
-    const spellCount = this.parentApp.comparisonSpells.size;
-    const minSpellColumnWidth = 150;
-    const propertyColumnWidth = 120;
-    const dialogPadding = 40;
-    const calculatedWidth = propertyColumnWidth + spellCount * minSpellColumnWidth + dialogPadding;
-    const minWidth = 400;
+  /** Enable drag-to-move via the header strip. Re-wires on every render since PART DOM is replaced. */
+  #enableDragging() {
+    const handle = this.element?.querySelector('.comparison-drag-handle');
+    if (!handle || handle.dataset.dragWired === '1') return;
+    handle.dataset.dragWired = '1';
+    const drag = new foundry.applications.ux.Draggable.implementation(this, this.element, handle, false);
+    const originalMouseDown = drag._onDragMouseDown.bind(drag);
+    drag._onDragMouseDown = (event) => {
+      if (event.target.closest('button, a, input, select, [data-action]')) return;
+      originalMouseDown(event);
+    };
+  }
+
+  /** Center the frameless dialog on screen. */
+  #centerOnScreen() {
+    const width = this.position.width || this.options.position.width || MIN_WIDTH;
+    const height = this.element?.offsetHeight || this.position.height || 400;
+    const left = Math.max(20, Math.round((window.innerWidth - width) / 2));
+    const top = Math.max(40, Math.round((window.innerHeight - height) / 2));
+    this.setPosition({ left, top });
+  }
+
+  /** @override */
+  _onClose(options) {
+    super._onClose(options);
+    if (this._onCloseCallback) this._onCloseCallback();
+  }
+
+  /** @override */
+  bringToFront() {
+    if (!this.element) return;
+    this.position.zIndex = ++ApplicationV2._maxZ;
+    this.element.style.zIndex = String(this.position.zIndex);
+    ui.activeWindow = this;
+  }
+
+  /** Resize the dialog horizontally based on the number of compared spells. */
+  #sizeForSpellCount() {
+    const count = this.spellUuids.length;
+    if (!count) return;
+    const calculated = PROPERTY_COL_WIDTH + count * MIN_COL_WIDTH + DIALOG_PADDING;
     const maxWidth = Math.min(window.innerWidth * 0.9, 1200);
-    const optimalWidth = Math.max(minWidth, Math.min(maxWidth, calculatedWidth));
-    this.options.position.width = optimalWidth;
-    if (this.element) this.element.style.width = `${optimalWidth}px`;
-    log(3, 'Calculated optimal size.', { spellCount, optimalWidth });
+    const width = Math.max(MIN_WIDTH, Math.min(maxWidth, calculated));
+    this.setPosition({ width });
+  }
+
+  /** Position the dialog beside the anchor element if one was supplied. */
+  #positionRelativeToAnchor() {
+    if (!this._anchor) return;
+    const triggerRect = this._anchor.getBoundingClientRect();
+    const dialogWidth = this.options.position.width || MIN_WIDTH;
+    const dialogHeight = 400;
+    const margin = 20;
+    const offset = 10;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const rightSpace = vw - triggerRect.right;
+    const leftSpace = triggerRect.left;
+    let left;
+    if (rightSpace >= dialogWidth + margin) left = triggerRect.right + offset;
+    else if (leftSpace >= dialogWidth + margin) left = leftSpace - dialogWidth - offset;
+    else left = (vw - dialogWidth) / 2;
+    let top = Math.max(50, triggerRect.top + (triggerRect.height - dialogHeight) / 2);
+    left = Math.max(margin, Math.min(left, vw - dialogWidth - margin));
+    top = Math.max(50, Math.min(top, vh - 100));
+    this.setPosition({ left, top });
   }
 
   /**
-   * Position the dialog intelligently relative to the parent SpellBook application.
-   * @private
+   * Build a display row from a spell document.
+   * @param {object} spell - The spell document
+   * @returns {object} Processed spell row
    */
-  _positionRelativeToParent() {
-    if (!this.parentApp?.element) return;
-    const position = UIUtils.calculateOptimalPosition({
-      triggerElement: this.parentApp.element,
-      dialogWidth: this.options.position.width,
-      dialogHeight: 400,
-      minMargin: 20,
-      minTop: 50,
-      maxBottomOffset: 100,
-      offset: 10,
-      preferredSide: 'right'
-    });
-    this.setPosition(position);
-    log(3, 'Positioned relative to parent.', { position });
-  }
-
-  /**
-   * Process a spell document into standardized format for comparison display.
-   * @param {object} spell - The spell document to process
-   * @returns {object} Processed spell data for comparison display
-   * @private
-   */
-  _processSpellForComparison(spell) {
-    const processed = {
+  #processSpell(spell) {
+    return {
       uuid: spell.uuid,
       name: spell.name,
       img: spell.img,
-      enrichedIcon: UIUtils.createSpellIconLink(spell),
+      enrichedIcon: createSpellIconLink(spell),
       level: spell.system.level,
-      school: UIUtils.formatSpellSchool(spell),
-      castingTime: spell.labels?.activation || UIUtils.formatSpellActivation(spell),
-      range: spell.labels?.range || `${spell.system.range?.value} ${spell.system.range?.units}`,
-      duration: spell.labels?.duration || spell.system.duration?.value,
-      components: UIUtils.formatSpellComponents(spell),
-      damage: this._extractDamageInfo(spell),
-      description: spell.system.description?.value || ''
+      school: formatSpellSchool(spell),
+      castingTime: spell.labels?.activation || formatSpellActivation(spell),
+      range: spell.labels?.range || `${spell.system.range?.value ?? ''} ${spell.system.range?.units ?? ''}`.trim(),
+      duration: spell.labels?.duration || spell.system.duration?.value || '',
+      components: formatSpellComponents(spell),
+      damage: this.#extractDamageInfo(spell)
     };
-    log(3, 'Processed spell for comparison.', { spell: spell.name, processed });
-    return processed;
   }
 
   /**
-   * Extract damage information from a spell for comparison purposes.
-   * @param {object} spell - The spell document to analyze
-   * @returns {object} Damage information object
-   * @private
+   * Extract damage formula and max-dice for highlight comparison.
+   * @param {object} spell - The spell document
+   * @returns {object} Damage info { formula, types, maxDice }
    */
-  _extractDamageInfo(spell) {
-    const damageInfo = { formula: '', types: [], maxDice: 0 };
+  #extractDamageInfo(spell) {
+    const info = { formula: '', types: [], maxDice: 0 };
     if (spell.labels?.damages?.length) {
-      const damages = spell.labels.damages;
-      damageInfo.formula = damages
+      info.formula = spell.labels.damages
         .map((d) => d.formula || '')
         .filter(Boolean)
         .join(' + ');
-      damageInfo.types = damages.map((d) => d.damageType).filter(Boolean);
+      info.types = spell.labels.damages.map((d) => d.damageType).filter(Boolean);
     }
-    if (!damageInfo.formula && spell.system?.activities) {
+    if (!info.formula && spell.system?.activities) {
       for (const activity of Object.values(spell.system.activities)) {
         if (activity.damage?.parts?.length) {
-          const formulas = activity.damage.parts.map((part) => part[0]).filter(Boolean);
-          damageInfo.formula = formulas.join(' + ');
-          damageInfo.types = activity.damage.parts.map((part) => part[1]).filter(Boolean);
+          info.formula = activity.damage.parts
+            .map((p) => p[0])
+            .filter(Boolean)
+            .join(' + ');
+          info.types = activity.damage.parts.map((p) => p[1]).filter(Boolean);
           break;
         }
       }
     }
-    if (damageInfo.formula) {
-      const diceMatches = damageInfo.formula.match(/(\d+)d(\d+)/g);
-      if (diceMatches) {
-        for (const match of diceMatches) {
-          const [, count, size] = match.match(/(\d+)d(\d+)/);
-          const maxPossible = parseInt(count) * parseInt(size);
-          damageInfo.maxDice = Math.max(damageInfo.maxDice, maxPossible);
-        }
+    if (info.formula) {
+      const dice = info.formula.match(/(\d+)d(\d+)/g) || [];
+      for (const m of dice) {
+        const [, count, size] = m.match(/(\d+)d(\d+)/);
+        info.maxDice = Math.max(info.maxDice, parseInt(count, 10) * parseInt(size, 10));
       }
     }
-    log(3, 'Extracted damage info.', { spell: spell.name, damageInfo });
-    return damageInfo;
+    return info;
   }
 
   /**
-   * Build comparison table data structure from processed spells.
-   * @param {Array<{
-   *   level: number,
-   *   school: string,
-   *   castingTime: string,
-   *   range: string,
-   *   duration: string,
-   *   components: string,
-   *   damage: { formula: string, maxDice: number }
-   * }>} spells - Array of processed spell objects
-   * @returns {{
-   *   properties: Array<{
-   *     name: string,
-   *     key: string,
-   *     values: Array<{ value: string | number, highlight: boolean }>
-   *   }>,
-   *   maxDamage: number
-   * }} Complete comparison table data structure
-   * @private
+   * Build the comparison table data structure from processed spells.
+   * @param {object[]} spells - Processed spell rows
+   * @returns {object} { properties, maxDamage }
    */
-  _buildComparisonTable(spells) {
-    log(3, 'Building comparison table.', { spellCount: spells.length });
+  #buildComparisonTable(spells) {
     if (!spells.length) return { properties: [] };
-    const maxDamage = Math.max(...spells.map((s) => s.damage.maxDice).filter((d) => d > 0));
+    const maxDamage = Math.max(0, ...spells.map((s) => s.damage.maxDice));
+    const map = (format) => spells.map((s) => ({ value: format(s), highlight: false }));
     const properties = [
+      { name: _loc('DND5E.SpellLevel'), key: 'level', values: map((s) => CONFIG.DND5E.spellLevels[s.level] || s.level) },
+      { name: _loc('DND5E.School'), key: 'school', values: map((s) => s.school) },
+      { name: _loc('DND5E.SpellCastTime'), key: 'castingTime', values: map((s) => s.castingTime) },
+      { name: _loc('DND5E.Range'), key: 'range', values: map((s) => s.range) },
+      { name: _loc('DND5E.Duration'), key: 'duration', values: map((s) => s.duration) },
+      { name: _loc('DND5E.Components'), key: 'components', values: map((s) => s.components) },
       {
-        name: game.i18n.localize('SPELLBOOK.Comparison.Level'),
-        key: 'level',
-        values: spells.map((spell) => ({
-          value: CONFIG.DND5E.spellLevels[spell.level] || spell.level,
-          highlight: false
-        }))
-      },
-      {
-        name: game.i18n.localize('SPELLBOOK.Comparison.School'),
-        key: 'school',
-        values: spells.map((spell) => ({
-          value: spell.school,
-          highlight: false
-        }))
-      },
-      {
-        name: game.i18n.localize('SPELLBOOK.Comparison.CastingTime'),
-        key: 'castingTime',
-        values: spells.map((spell) => ({
-          value: spell.castingTime,
-          highlight: false
-        }))
-      },
-      {
-        name: game.i18n.localize('SPELLBOOK.Comparison.Range'),
-        key: 'range',
-        values: spells.map((spell) => ({
-          value: spell.range,
-          highlight: false
-        }))
-      },
-      {
-        name: game.i18n.localize('SPELLBOOK.Comparison.Duration'),
-        key: 'duration',
-        values: spells.map((spell) => ({
-          value: spell.duration,
-          highlight: false
-        }))
-      },
-      {
-        name: game.i18n.localize('SPELLBOOK.Comparison.Components'),
-        key: 'components',
-        values: spells.map((spell) => ({
-          value: spell.components,
-          highlight: false
-        }))
-      },
-      {
-        name: game.i18n.localize('SPELLBOOK.Comparison.Damage'),
+        name: _loc('DND5E.Damage'),
         key: 'damage',
-        values: spells.map((spell) => ({
-          value: spell.damage.formula || '—',
-          highlight: spell.damage.maxDice > 0 && spell.damage.maxDice === maxDamage
-        }))
+        values: spells.map((s) => ({ value: s.damage.formula || '—', highlight: s.damage.maxDice > 0 && s.damage.maxDice === maxDamage }))
       }
     ];
-    log(3, 'Built comparison table.', { propertyCount: properties.length, maxDamage });
     return { properties, maxDamage };
-  }
-
-  /** @override */
-  _onClose(options = {}) {
-    super._onClose(options);
-    if (this.parentApp) {
-      this.parentApp.comparisonSpells.clear();
-      this.parentApp.comparisonDialog = null;
-      this.parentApp.render(false);
-    }
-    log(3, 'Spell comparison closed.');
   }
 }

@@ -1,0 +1,43 @@
+<section class="custom-spell-list-content">
+  {{#if hasMappings}}
+    <table class="custom-spell-list-table">
+      <thead>
+        <tr>
+          <th>{{localize "SPELLBOOK.CustomSpellList.OriginalList"}}</th>
+          <th>{{localize "SPELLBOOK.CustomSpellList.CustomList"}}</th>
+          <th>{{localize "SPELLBOOK.CustomSpellList.Spells"}}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each mappings}}
+          <tr class="mapping-row{{#if hasOriginalChanged}} drift-warning{{/if}}">
+            <td>
+              <a data-action="open" data-uuid="{{originalUuid}}">{{originalName}}</a>
+            </td>
+            <td>
+              <a data-action="open" data-uuid="{{customUuid}}">{{customName}}</a>
+            </td>
+            <td class="spell-counts">
+              {{customSpellCount}}
+              {{#if added}}<span class="drift-added">+{{added}}</span>{{/if}}
+              {{#if removed}}<span class="drift-removed">-{{removed}}</span>{{/if}}
+            </td>
+            <td class="actions">
+              <button type="button" data-action="remove" data-uuid="{{customUuid}}"
+                data-tooltip="{{localize 'SPELLBOOK.CustomSpellList.Remove'}}">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  {{else}}
+    <p class="empty-state">{{localize "SPELLBOOK.CustomSpellList.NoMappings"}}</p>
+  {{/if}}
+  <footer class="sheet-footer flexrow">
+    <button type="button" data-action="create"><i class="fas fa-plus"></i>
+      {{localize "SPELLBOOK.CustomSpellList.Create"}}</button>
+  </footer>
+</section>

@@ -1,31 +1,23 @@
 <form class="wizard-copy-form">
-  <!-- Spell Learning Confirmation Prompt -->
-  <p>{{localize 'SPELLBOOK.Wizard.LearnSpellPromptPrefix'}} <strong>{{spell.name}}</strong>
-    {{localize 'SPELLBOOK.Wizard.LearnSpellPromptSuffix'}}
+  <p>
+    {{localize "SPELLBOOK.Wizard.LearnSpellPromptPrefix"}}
+    <strong>{{spell.name}}</strong>
+    {{localize "SPELLBOOK.Wizard.LearnSpellPromptSuffix"}}
   </p>
-
-  <!-- Already Known Warning -->
   {{#if isAlreadyInSpellbook}}
-    <p class="notification warning">{{localize 'SPELLBOOK.Wizard.SpellAlreadyKnown'}}</p>
+    <p class="notification warning">{{localize "SPELLBOOK.Wizard.SpellAlreadyKnown"}}</p>
   {{/if}}
-
-  <!-- Spell Copying Cost and Time Details -->
   <div class="copy-details">
-    <!-- Copying Cost Information -->
     <div class="form-group">
-      <label>{{localize 'SPELLBOOK.Wizard.CostLabel'}}:</label>
+      <label>{{localize "SPELLBOOK.Wizard.CostLabel"}}:</label>
       <span>{{costText}}</span>
     </div>
-
-    <!-- Copying Time Information -->
     <div class="form-group">
-      <label>{{localize 'SPELLBOOK.Wizard.TimeLabel'}}:</label>
+      <label>{{localize "SPELLBOOK.Wizard.TimeLabel"}}:</label>
       <span>{{time}}</span>
     </div>
   </div>
-
-  <!-- Scroll Consumption Warning -->
   {{#if shouldConsume}}
-    <p class="notification info">{{localize 'SPELLBOOK.Scrolls.ScrollWillBeConsumed'}}</p>
+    <p class="notification info">{{localize "SPELLBOOK.Scrolls.ScrollWillBeConsumed"}}</p>
   {{/if}}
 </form>
