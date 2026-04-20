@@ -1,55 +1,32 @@
-# Welcome to the Spell Book Wiki
+# Spell Book
 
-Documentation for **Spell Book**, a D&D 5e spell management module for FoundryVTT. Spell Book provides automated rule enforcement, intelligent spell coordination, and party-wide spell visibility.
+Welcome to the **Spell Book** wiki. Spell Book is a FoundryVTT module for the dnd5e system that adds a dedicated player-facing spell book opened from a button on the dnd5e character sheet, and provides GMs with a full Spell List Manager for editing, creating, and merging class spell lists.
 
----
+![Player Spell Book hero view](https://raw.githubusercontent.com/Sayshal/spell-book/main/docs/images/psb-hero.png)
 
-## Getting Started
+![Spell List Manager hero view](https://raw.githubusercontent.com/Sayshal/spell-book/main/docs/images/slm-hero.png)
 
-### Installation and Setup
+## Features
 
-- **[Installation and Settings](Installation-and-Settings)** — Module installation and complete settings reference
+- **Unified Player Spell Book** with per-class tabs, preparation management, wizard spellbook, spell loadouts, side-by-side comparisons, personal spell notes, and party-mode indicators
+- **GM Spell List Manager** for creating custom lists, merging multiple lists, modifying stock lists (auto-duplicates and hides originals), bulk-edit mode, and drag-and-drop spell management
+- **Per-Actor Per-Class Configuration** (Spell Book Settings): rule-set override, class and subclass spell list selection, ritual casting modes, swap timing, wizard learning rates, and preparation bonuses
+- **Party Spell Coordination** with Synergy Analysis for groups of spellcasters
+- **Light and Dark Themes**
+- **Troubleshooter + Module API** for diagnostics and third-party integration
 
-### Quick Start Guides
+## Quick Links
 
-- **[Player Quick Start](Player-Quick-Start)** — Spell preparation basics, multiclass tabs, wizard learning, and filters
-- **[DM Quick Start](DM-Quick-Start)** — Spell List Manager overview and module configuration
+- [Player Quick Start](Player-Quick-Start)
+- [DM Quick Start](DM-Quick-Start)
+- [Spell Book Interface Overview](SpellBook-Interface-Overview)
+- [Spell List Manager Interface Overview](SpellListManager-Interface-Overview)
+- [Class Rules (Spell Book Settings)](Class-Rules)
+- [FAQ](FAQ)
 
-## Applications
+## Support
 
-### Spell Book Interface
-
-- **[Spell Book Interface Overview](SpellBook-Interface-Overview)** — Main player interface: multiclass tabs, filtering, scroll scanner, spell comparison, loadouts, notes, and settings
-
-### GM Tools
-
-- **[Spell List Manager Interface Overview](SpellListManager-Interface-Overview)** — Spell list navigation, management panels, and dialog integration
-- **[Macros](Macros)** — Compendium macro reference: quick access, slot tracker, scroll scanner, flag purge, and more
-
-### Party Coordination
-
-- **[Party Spells Interface Overview](PartySpells-Interface-Overview)** — Multi-player spell coordination with Group Actor integration and party synergy analysis
-
-### Diagnostics
-
-- **[SpellBook Troubleshooter](SpellBook-Troubleshooter)** — GM diagnostic tool for generating and sharing support reports
-
-## Core Spell Management
-
-- **[Spell Preparation System](Spell-Preparation-System)** — Preparation mechanics, rules, and enforcement
-- **[Multiclass Spellcasting](Multiclass-Spellcasting)** — Multiple spellcasting classes, dynamic tabs, and spell slot calculations
-- **[Wizard Spellbook Management](Wizard-Spellbook-Management)** — Spell learning, spellbook management, and scroll integration
-
-## Guides and References
-
-### Configuration Guides
-
-- **[Modifying Existing Spell Lists](Modifying-Existing-Spell-Lists)** — Step-by-step spell list editing and modification
-- **[Creating New Spell Lists](Creating-New-Spell-Lists)** — Custom spell list creation with class identifier reference
-- **[Ruleset Types and What They Mean](Ruleset-Types-and-Meanings)** — Rule enforcement modes and implementation guidelines
-
-## Community and Support
-
-- **[FAQ](FAQ)** — Frequently asked questions and answers
-- **[Community Discord](https://discord.gg/PzzUwU9gdz)** — Join for support and updates
-- **[Bug Reports](https://github.com/Sayshal/spell-book/issues)** — Report issues and request features
+- [Discord Community](https://discord.gg/PzzUwU9gdz)
+- [GitHub Issues](https://github.com/Sayshal/spell-book/issues)
+- [Ko-fi](https://ko-fi.com/sayshal)
+- [Patreon](https://www.patreon.com/3deathsaves)

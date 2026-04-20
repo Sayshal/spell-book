@@ -9,15 +9,29 @@
   "bugs": "https://github.com/Sayshal/spell-book/issues",
   "changelog": "https://github.com/Sayshal/spell-book/releases",
   "compatibility": {
-    "minimum": "13.351",
-    "verified": "13.351"
+    "minimum": "14.361",
+    "verified": "14.361"
   },
   "description": "Enhanced spell management for DnD5e. Easily view, prepare, and customize spell lists.",
   "download": "",
   "esmodules": [
-    "scripts/spell-book.mjs"
+    "spell-book.mjs"
   ],
-  "flags": {},
+  "flags": {
+    "hotReload": {
+      "extensions": [
+        "css",
+        "html",
+        "hbs",
+        "json"
+      ],
+      "paths": [
+        "styles",
+        "lang",
+        "templates"
+      ]
+    }
+  },
   "id": "spell-book",
   "languages": [
     {
@@ -108,7 +122,7 @@
       {
         "compatibility": {
           "minimum": "5.3.0",
-          "verified": "5.3.0"
+          "verified": "5.3.1"
         },
         "id": "dnd5e",
         "type": "system"

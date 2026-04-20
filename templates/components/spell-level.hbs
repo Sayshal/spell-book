@@ -3,19 +3,15 @@
 		aria-expanded="{{#unless isCollapsed}}true{{else}}false{{/unless}}" aria-controls="spell-list-{{level}}">
 		<i class="fas fa-caret-{{#if isCollapsed}}right{{else}}down{{/if}} collapse-indicator" aria-hidden="true"></i>
 		{{levelName}}
-		<span class="spell-count" aria-label="Spell Count">({{preparedCount}}/{{spells.length}})</span>
 		{{#if cantripCounter.enabled}}
 			<span class="cantrip-counter"
-				title="Current/Maximum Cantrips">[{{cantripCounter.current}}/{{cantripCounter.maximum}}]</span>
+				data-tooltip="{{localize 'SPELLBOOK.Cantrips.CounterTooltip'}}">[{{cantripCounter.current}}/{{cantripCounter.maximum}}]</span>
 		{{/if}}
 	</h3>
 	<ul class="spell-list" id="spell-list-{{level}}" {{#if isCollapsed}}style="display: none;" {{/if}} role="list">
 		{{#each spells as |spell|}}
-			{{#if ../isWizardContext}}
-				{{> "modules/spell-book/templates/components/spell-item-wizard.hbs" spell=spell}}
-			{{else}}
-				{{> "modules/spell-book/templates/components/spell-item.hbs" spell=spell}}
-			{{/if}}
+			{{> modules/spell-book/templates/components/spell-item.hbs spell=spell isWizardContext=../isWizardContext}}
 		{{/each}}
 	</ul>
 </div>
+{{!-- @todo multiple hardcoded strings here --}}

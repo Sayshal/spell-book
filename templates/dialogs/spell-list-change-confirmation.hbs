@@ -1,37 +1,26 @@
 <div class="spell-list-change-warning">
-  <!-- Warning Header -->
-  <p><strong>{{localize 'SPELLBOOK.SpellListChange.Warning'}}</strong></p>
-
-  <!-- Explanation -->
-  <p>{{localize 'SPELLBOOK.SpellListChange.Explanation' className=className total=totalAffected}}</p>
-
-  <!-- Cantrip Count -->
-  {{#if cantripCount}}
-    <p><strong>{{localize 'SPELLBOOK.SpellListChange.CantripsAffected'}}:</strong> {{cantripCount}}</p>
-  {{/if}}
-
-  <!-- Spell Count -->
-  {{#if spellCount}}
-    <p><strong>{{localize 'SPELLBOOK.SpellListChange.SpellsAffected'}}:</strong> {{spellCount}}</p>
-  {{/if}}
-
-  <!-- Affected Spells Details -->
-  <details>
-    <summary>{{localize 'SPELLBOOK.SpellListChange.ShowAffectedSpells'}}</summary>
-    <ul class="affected-spells-list">
-      {{#each affectedSpells}}
-        <li>
-          {{this.name}}
-          ({{#if (eq this.level 0)}}
-            {{localize 'SPELLBOOK.SpellLevel.Cantrip'}}
-          {{else}}
-            {{localize 'SPELLBOOK.SpellLevel.Numbered' level=this.level}}
-          {{/if}})
-        </li>
-      {{/each}}
-    </ul>
-  </details>
-
-  <!-- Confirmation Prompt -->
-  <p><strong>{{localize 'SPELLBOOK.SpellListChange.Confirmation'}}</strong></p>
+	<p><strong>{{localize 'SPELLBOOK.SpellListChange.Warning'}}</strong></p>
+	<p>{{localize 'SPELLBOOK.SpellListChange.Explanation' className=className total=totalAffected}}</p>
+	{{#if cantripCount}}
+		<p><strong>{{localize 'SPELLBOOK.SpellListChange.CantripsAffected'}}:</strong> {{cantripCount}}</p>
+	{{/if}}
+	{{#if spellCount}}
+		<p><strong>{{localize 'SPELLBOOK.SpellListChange.SpellsAffected'}}:</strong> {{spellCount}}</p>
+	{{/if}}
+	<details>
+		<summary>{{localize 'SPELLBOOK.SpellListChange.ShowAffectedSpells'}}</summary>
+		<ul class="affected-spells-list">
+			{{#each affectedSpells}}
+				<li>
+					{{this.name}}
+					({{#if (eq this.level 0)}}
+						{{localize 'DND5E.SpellLevel0'}}
+					{{else}}
+						{{localize 'SPELLBOOK.SpellLevel.Numbered' level=this.level}}
+					{{/if}})
+				</li>
+			{{/each}}
+		</ul>
+	</details>
+	<p><strong>{{localize 'SPELLBOOK.SpellListChange.Confirmation'}}</strong></p>
 </div>

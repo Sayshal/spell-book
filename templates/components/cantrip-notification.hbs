@@ -1,22 +1,16 @@
 <div class="spell-book-chat-message spell-book-update-report">
-  <!-- Notification Header - Actor name and overall context -->
   <h2>{{localize 'SPELLBOOK.Chat.UpdateReport.Title' name=actorName}}</h2>
-  <!-- Class-Specific Changes - Iterate through each spellcasting class -->
   {{#each classChanges}}
     {{#if this.hasChanges}}
-      <!-- Class Name Header -->
       <h3>{{this.className}}</h3>
-      <!-- Cantrip Changes Section - Additions and removals -->
       {{#if this.cantripChanges.hasChanges}}
         <h4>{{localize 'SPELLBOOK.Notifications.CantripChanges'}}</h4>
         <ul>
-          <!-- Removed Cantrips -->
           {{#if this.cantripChanges.removedNames}}
             <li><strong class="removed">{{localize 'SPELLBOOK.Notifications.Removed'}}:</strong>
               {{this.cantripChanges.removedNames}}
             </li>
           {{/if}}
-          <!-- Added Cantrips -->
           {{#if this.cantripChanges.addedNames}}
             <li><strong class="added">{{localize 'SPELLBOOK.Notifications.Added'}}:</strong>
               {{this.cantripChanges.addedNames}}
@@ -24,18 +18,14 @@
           {{/if}}
         </ul>
       {{/if}}
-      <!-- Spell Changes Section - Additions and removals -->
       {{#if this.spellChanges.hasChanges}}
         <h4>{{localize 'SPELLBOOK.Notifications.SpellChanges'}}</h4>
         <ul>
-          <!-- Removed Spells -->
           {{#if this.spellChanges.removedNames}}
             <li><strong class="removed">{{localize 'SPELLBOOK.Notifications.Removed'}}:</strong>
               {{this.spellChanges.removedNames}}
             </li>
           {{/if}}
-
-          <!-- Added Spells -->
           {{#if this.spellChanges.addedNames}}
             <li><strong class="added">{{localize 'SPELLBOOK.Notifications.Added'}}:</strong>
               {{this.spellChanges.addedNames}}
@@ -43,21 +33,18 @@
           {{/if}}
         </ul>
       {{/if}}
-      <!-- Cantrip Limit Violations -->
       {{#if this.overLimits.cantrips.isOver}}
         <p><strong class="warning">{{localize 'SPELLBOOK.Notifications.CantripOverLimit'}}:</strong>
           {{this.overLimits.cantrips.current}}/{{this.overLimits.cantrips.max}}
           ({{this.overLimits.cantrips.overCount}} over)
         </p>
       {{/if}}
-      <!-- Spell Limit Violations -->
       {{#if this.overLimits.spells.isOver}}
         <p><strong class="warning">{{localize 'SPELLBOOK.Notifications.SpellOverLimit'}}:</strong>
           {{this.overLimits.spells.current}}/{{this.overLimits.spells.max}}
           ({{this.overLimits.spells.overCount}} over)
         </p>
       {{/if}}
-      <!-- Class Section Separator - Only show if multiple classes -->
       {{#if ../classChanges.length}}
         {{#if (gt ../classChanges.length 1)}}
           <hr>

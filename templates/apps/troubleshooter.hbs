@@ -1,61 +1,15 @@
-<div class="spell-book-troubleshooter-container">
-  <!-- Troubleshooter Instructions and Notes -->
-  <p class="notes">{{localize "SPELLBOOK.Settings.Troubleshooter.Notes"}}</p>
-
-  <!-- Actor Data Export Option - GM Only Feature -->
+<section>
+  <p class="hint">{{localize "SPELLBOOK.Settings.Troubleshooter.Notes"}}</p>
   {{#if ownedActorCount}}
-    <div class="actor-export-option">
-      <!-- Actor Data Inclusion Checkbox -->
-      <label>
-        <input type="checkbox" data-action="includeActors" {{#if includeActors}}checked{{/if}}>
-        <span>{{localize "SPELLBOOK.Settings.Troubleshooter.IncludeActorData"}}</span>
-      </label>
-
-      <!-- Actor Data Context Information -->
+    <div class="form-group">
+      <label for="troubleshooter-include-actors">{{localize "SPELLBOOK.Settings.Troubleshooter.IncludeActorData"}}</label>
+      <input type="checkbox" id="troubleshooter-include-actors" data-action="includeActors"
+        {{#if includeActors}}checked{{/if}}>
       <p class="hint">
         {{localize "SPELLBOOK.Settings.Troubleshooter.ActorDataHint" count=ownedActorCount names=ownedActorNames}}
       </p>
     </div>
   {{/if}}
-
-  <!-- Diagnostic Output Display Area -->
-  <textarea id="troubleshooter-output" rows="25" cols="80" readonly
-    aria-label="{{localize 'SPELLBOOK.Settings.Troubleshooter.OutputLabel'}}">{{output}}</textarea>
-
-  <!-- Troubleshooter Action Buttons - Primary operations and support access -->
-  <div class="troubleshooter-buttons">
-    <!-- Settings Import Operation -->
-    <button type="button" data-action="importSettings"
-      aria-label="{{localize "SPELLBOOK.Settings.Troubleshooter.ImportSettings"}}">
-      <i class="fa-solid fa-upload" aria-hidden="true"></i>
-      <span>{{localize "SPELLBOOK.Settings.Troubleshooter.ImportSettings"}}</span>
-    </button>
-
-    <!-- Diagnostic Report Export Operation -->
-    <button type="button" data-action="export"
-      aria-label="{{localize "SPELLBOOK.Settings.Troubleshooter.SaveToFile"}}">
-      <i class="fa-solid fa-download" aria-hidden="true"></i>
-      <span>{{localize "SPELLBOOK.Settings.Troubleshooter.SaveToFile"}}</span>
-    </button>
-
-    <!-- Clipboard Copy Operation -->
-    <button type="button" data-action="copy"
-      aria-label="{{localize "SPELLBOOK.Settings.Troubleshooter.CopyToClipboard"}}">
-      <i class="fa-solid fa-copy" aria-hidden="true"></i>
-      <span>{{localize "SPELLBOOK.Settings.Troubleshooter.CopyToClipboard"}}</span>
-    </button>
-
-    <!-- Discord Community Support Access -->
-    <button type="button" data-action="openDiscord"
-      aria-label="{{localize "SPELLBOOK.Settings.Troubleshooter.Discord"}}">
-      <i class="fa-brands fa-discord" aria-hidden="true"></i>
-      <span>{{localize "SPELLBOOK.Settings.Troubleshooter.Discord"}}</span>
-    </button>
-
-    <!-- GitHub Issues and Documentation Access -->
-    <button type="button" data-action="openGithub" aria-label="{{localize "SPELLBOOK.Settings.Troubleshooter.Github"}}">
-      <i class="fa-brands fa-github-alt" aria-hidden="true"></i>
-      <span>{{localize "SPELLBOOK.Settings.Troubleshooter.Github"}}</span>
-    </button>
-  </div>
-</div>
+  <label for="troubleshooter-output" class="output-label">{{localize "SPELLBOOK.Settings.Troubleshooter.OutputLabel"}}</label>
+  <textarea id="troubleshooter-output" name="output" readonly>{{output}}</textarea>
+</section>

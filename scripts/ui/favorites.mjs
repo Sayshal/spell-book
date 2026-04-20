@@ -1,21 +1,13 @@
-/**
- * Spell Favorites Management System
- *
- * This module provides management of spell favorites within the Spell Book
- * module, handling synchronization between the journal-based user data system and
- * Foundry VTT's native actor favorites system.
- * @module UIUtils/SpellFavorites
- * @author Tyler
- */
-
-import * as DataUtils from '../data/_module.mjs';
-import { log } from '../logger.mjs';
+import { getTargetUserId } from '../data/helpers.mjs';
+import { loadUserSpellData } from '../data/user-data.mjs';
+import { log } from '../utils/logger.mjs';
+import { getCanonicalSpellUuid } from '../managers/spell-manager.mjs';
 
 /**
- * Add spell to actor.system.favorites.
- * @param {string} spellUuid - The spell UUID (compendium or actor)
+ * Add a spell to actor.system.favorites.
+ * @param {string} spellUuid - The spell UUID
  * @param {object} actor - The actor to update
- * @returns {Promise<boolean>} Success status of the operation
+ * @returns {Promise<boolean>} Whether the add succeeded
  */
 export async function addSpellToActorFavorites(spellUuid, actor) {
   const actorSpell = findActorSpellByUuid(spellUuid, actor);
@@ -23,18 +15,16 @@ export async function addSpellToActorFavorites(spellUuid, actor) {
   const currentFavorites = actor.system.favorites || [];
   const favoriteId = `.Item.${actorSpell.id}`;
   if (currentFavorites.some((fav) => fav.id === favoriteId)) return true;
-  const newFavorite = { type: 'item', id: favoriteId, sort: 100000 + currentFavorites.length };
-  const updatedFavorites = [...currentFavorites, newFavorite];
-  await actor.update({ 'system.favorites': updatedFavorites });
+  await actor.update({ 'system.favorites': [...currentFavorites, { type: 'item', id: favoriteId, sort: 100000 + currentFavorites.length }] });
   log(3, 'Added spell to actor favorites.', { spell: actorSpell.name, actor: actor.name });
   return true;
 }
 
 /**
- * Remove spell from actor.system.favorites.
- * @param {string} spellUuid - The spell UUID to remove from favorites
+ * Remove a spell from actor.system.favorites.
+ * @param {string} spellUuid - The spell UUID
  * @param {object} actor - The actor to update
- * @returns {Promise<boolean>} Success status of the operation
+ * @returns {Promise<boolean>} Whether the remove succeeded
  */
 export async function removeSpellFromActorFavorites(spellUuid, actor) {
   const actorSpell = findActorSpellByUuid(spellUuid, actor);
@@ -50,72 +40,75 @@ export async function removeSpellFromActorFavorites(spellUuid, actor) {
 }
 
 /**
- * Sync favorites on spell preparation save.
- * @param {object} actor - The actor whose favorites should be synchronized
- * @param {object} spellData - Spell preparation data containing spell UUIDs
+ * Batch-sync favorites on spell preparation save.
+ * @param {object} actor - The actor
+ * @param {object} spellData - Spell preparation data keyed by UUID
  * @returns {Promise<void>}
  */
 export async function syncFavoritesOnSave(actor, spellData) {
+  const targetUserId = getTargetUserId(actor);
+  const allUserData = await loadUserSpellData(targetUserId);
+  const spellsToFavorite = [];
   for (const uuid of Object.keys(spellData)) {
-    const userData = await DataUtils.UserData.getUserDataForSpell(uuid, null, actor.id);
-    if (userData?.favorited) await addSpellToActorFavorites(uuid, actor);
+    const userData = allUserData[uuid];
+    if (userData?.actorData?.[actor.id]?.favorited) {
+      const actorSpell = findActorSpellByUuid(uuid, actor);
+      if (actorSpell) spellsToFavorite.push(actorSpell);
+    }
   }
-  log(3, 'Favorites synced on save.', { actor: actor.name, spellCount: Object.keys(spellData).length });
+  if (spellsToFavorite.length === 0) return;
+  const currentFavorites = actor.system.favorites || [];
+  const existingIds = new Set(currentFavorites.map((f) => f.id));
+  const newEntries = spellsToFavorite.map((spell) => ({ type: 'item', id: `.Item.${spell.id}`, sort: 100000 + currentFavorites.length })).filter((entry) => !existingIds.has(entry.id));
+  if (newEntries.length > 0) {
+    await actor.update({ 'system.favorites': [...currentFavorites, ...newEntries] });
+    log(3, 'Favorites batch synced on save.', { actor: actor.name, added: newEntries.length });
+  }
 }
 
 /**
- * Process favorites from form state and update actor.system.favorites to match journal.
- * @param {HTMLFormElement} _form - The form element (unused but kept for API consistency)
+ * Batch-sync all favorites from journal user data to actor.system.favorites.
  * @param {object} actor - The actor to update
  * @returns {Promise<void>}
  */
-export async function processFavoritesFromForm(_form, actor) {
-  const targetUserId = DataUtils.getTargetUserId(actor);
+export async function processFavoritesFromJournal(actor) {
+  const targetUserId = getTargetUserId(actor);
+  const allUserData = await loadUserSpellData(targetUserId);
   const actorSpells = actor.itemTypes.spell;
-  const favoritesToAdd = [];
+  const favoritedSpells = [];
   for (const spell of actorSpells) {
-    const canonicalUuid = DataUtils.getCanonicalSpellUuid(spell.uuid);
-    const userData = await DataUtils.UserData.getUserDataForSpell(canonicalUuid, targetUserId, actor.id);
-    const isFavoritedInJournal = userData?.favorited || false;
-    if (isFavoritedInJournal) favoritesToAdd.push(spell);
+    const canonicalUuid = getCanonicalSpellUuid(spell.uuid);
+    const userData = allUserData[canonicalUuid];
+    if (userData?.actorData?.[actor.id]?.favorited) favoritedSpells.push(spell);
   }
-  if (favoritesToAdd.length > 0 || actor.system.favorites?.some((fav) => fav.type === 'item' && fav.id.startsWith('.Item.'))) {
-    const newSpellFavorites = favoritesToAdd.map((spell, index) => ({ type: 'item', id: `.Item.${spell.id}`, sort: 100000 + index }));
-    const existingFavorites = actor.system.favorites || [];
-    const spellItemIds = new Set(actorSpells.map((spell) => spell.id));
-    const nonSpellFavorites = existingFavorites.filter((fav) => {
-      if (fav.type !== 'item') return true;
-      if (!fav.id.startsWith('.Item.')) return true;
-      const itemId = fav.id.replace('.Item.', '');
-      return !spellItemIds.has(itemId);
-    });
-    const allFavorites = [...nonSpellFavorites, ...newSpellFavorites];
-    await actor.update({ 'system.favorites': allFavorites });
-    log(3, 'Favorites processed from form.', { favoritesToAdd: favoritesToAdd.length });
-  }
+  const spellItemIds = new Set(actorSpells.map((s) => s.id));
+  const existingFavorites = actor.system.favorites || [];
+  const nonSpellFavorites = existingFavorites.filter((fav) => {
+    if (fav.type !== 'item' || !fav.id.startsWith('.Item.')) return true;
+    return !spellItemIds.has(fav.id.replace('.Item.', ''));
+  });
+  const spellFavorites = favoritedSpells.map((spell, i) => ({ type: 'item', id: `.Item.${spell.id}`, sort: 100000 + i }));
+  await actor.update({ 'system.favorites': [...nonSpellFavorites, ...spellFavorites] });
+  log(3, 'Favorites synced from journal.', { actor: actor.name, count: spellFavorites.length });
 }
 
 /**
- * Find actor spell by UUID with enhanced UUID matching.
+ * Find an actor's spell item by UUID with enhanced matching.
  * @param {string} spellUuid - The spell UUID to find
  * @param {object} actor - The actor to search
- * @returns {object | null} The actor's spell item or null if not found
+ * @returns {object|null} The actor's spell item or null
  */
 export function findActorSpellByUuid(spellUuid, actor) {
   let spell = actor.items.get(spellUuid);
-  if (spell && spell.type === 'spell') return spell;
+  if (spell?.type === 'spell') return spell;
   spell = actor.itemTypes.spell.find((s) => {
-    if (s._stats?.compendiumSource === spellUuid) return true;
-    if (s.uuid === spellUuid) return true;
-    const parsedUuid = foundry.utils.parseUuid(spellUuid);
-    if (parsedUuid.collection) {
+    if (s._stats?.compendiumSource === spellUuid || s.uuid === spellUuid) return true;
+    const parsed = foundry.utils.parseUuid(spellUuid);
+    if (parsed.collection) {
       const sourceSpell = fromUuidSync(spellUuid);
-      if (sourceSpell && sourceSpell.name === s.name) return true;
+      if (sourceSpell?.name === s.name) return true;
     }
     return false;
   });
-  if (spell) log(3, 'Found actor spell by UUID match.', { spell: spell.name, actor: actor.name });
-  else log(3, 'Actor spell not found.', { spellUuid, actor: actor.name });
   return spell || null;
 }
-

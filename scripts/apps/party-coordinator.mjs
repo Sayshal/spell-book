@@ -1,471 +1,403 @@
-/**
- * Party Spell Coordination Application
- *
- * A party management interface for coordinating spells across multiple
- * party members. This application provides spell comparison, focus assignment, synergy
- * analysis, and collaborative spell planning capabilities for groups of spellcasters.
- * @module Applications/PartyCoordinator
- * @author Tyler
- */
-
-import { FLAGS, TEMPLATES } from '../constants/_module.mjs';
-import * as DataUtils from '../data/_module.mjs';
-import { PartyMode } from '../managers/_module.mjs';
-import { FocusSettings, SynergyAnalysis } from '../dialogs/_module.mjs';
-import { log } from '../logger.mjs';
+import { FLAGS, MODULE, TEMPLATES } from '../constants.mjs';
+import { SynergyAnalysis } from '../dialogs/_module.mjs';
+import { PartyMode } from '../managers/party-mode.mjs';
+import { log } from '../utils/logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-/**
- * Party Spell Manager application for viewing party spell coordination.
- */
+/** Party spell coordination App — displays the shared spell matrix and per-member filters. */
 export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) {
-  /** @inheritdoc */
+  /** @override */
   static DEFAULT_OPTIONS = {
     id: 'party-spell-manager',
     tag: 'div',
-    actions: {
-      openSynergy: this.#openSynergy,
-      refreshData: this.#refreshData,
-      toggleSpellHeader: this.#toggleSpellHeader,
-      filterMemberSpells: this.#filterMemberSpell,
-      openFocus: this.#openFocus
-    },
     classes: ['spell-book', 'party-spell-manager'],
     window: { icon: 'spell-book-module-icon', resizable: true, minimizable: true, positioned: true },
-    position: { height: 1200, width: 750 }
+    position: { height: 1200, width: 750 },
+    actions: {
+      openSynergy: PartyCoordinator.#onOpenSynergy,
+      refreshData: PartyCoordinator.#onRefreshData,
+      toggleSpellHeader: PartyCoordinator.#onToggleSpellHeader,
+      filterMemberSpells: PartyCoordinator.#onFilterMemberSpells,
+    }
   };
 
-  /** @inheritdoc */
-  static PARTS = { main: { template: TEMPLATES.PARTY_SPELL_MANAGER.MAIN } };
+  /** @override */
+  static PARTS = { main: { template: TEMPLATES.APPS.PARTY.MAIN } };
 
   /**
-   * Create a new Party Spell Manager application.
-   * @param {Array<object>} [partyActors] - Array of party member actors
-   * @param {object} [viewingActor] - The actor who opened this view
-   * @param {object} [groupActor] - The group actor if opened from group sheet
-   * @param {object} [options] - Additional application options
+   * @param {object} [opts] - Constructor options
+   * @param {object} [opts.actor] - The viewing actor (falls back to resolving group/party from this)
+   * @param {object} [opts.groupActor] - Group actor that owns the party (auto-resolved from `actor` if omitted)
+   * @param {object[]} [opts.partyActors] - Party spellcasters (auto-resolved from `groupActor` if omitted)
+   * @param {object} [opts.options] - Additional AppV2 options
    */
-  constructor(partyActors = [], viewingActor = null, groupActor = null, options = {}) {
+  constructor({ actor = null, groupActor = null, partyActors = null, ...options } = {}) {
     super(options);
-    this.partyManager = new PartyMode(partyActors, viewingActor);
-    this.viewingActor = viewingActor;
-    this.groupActor = groupActor;
+    this.viewingActor = actor;
+    this.groupActor = groupActor || (actor ? PartyMode.getPrimaryGroupForActor(actor) : null);
+    this.partyActors = partyActors || (this.groupActor ? PartyMode.getPartyActors(this.groupActor) : []);
     this._comparisonData = null;
     this._filteredActorId = null;
-    log(3, 'PartyCoordinator constructed.');
+    this._contextMenu = null;
+    this._onDocumentClick = null;
+    this._onActorUpdate = null;
+    this._onItemChange = null;
   }
 
-  /** @inheritdoc */
+  /** @override */
   get title() {
-    return game.i18n.localize('SPELLBOOK.Party.ManagerTitle');
+    return _loc('SPELLBOOK.Party.ManagerTitle');
   }
 
-  /** @inheritdoc */
+  /** @override */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    if (!this._comparisonData) this._comparisonData = this.partyManager.getPartySpellComparison();
+    if (!this._comparisonData) this._comparisonData = PartyMode.analyzePartySpells(this.partyActors);
     context.comparison = this._comparisonData;
-    context.availableFocuses = this.getAvailableFocusOptions();
-    context.canEditFocus = game.user.isGM || (this.viewingActor && this.viewingActor.isOwner);
-    context.spellLevels = this.getSpellLevelGroups(this._comparisonData.spellsByLevel);
-    context.groupName = this.groupActor?.name || game.i18n.localize('SPELLBOOK.Party.DefaultGroupName');
-    if (context.comparison?.actors) {
-      const partyUsers = PartyMode.getPartyUsers(this.groupActor);
-      context.comparison.actors.forEach((actorData) => {
-        if (actorData.hasPermission) {
-          const actor = game.actors.get(actorData.id);
-          actorData.isOwner = actor ? actor.isOwner : false;
-          const associatedUser = partyUsers.find((user) => {
-            return user.actorId === actorData.id;
-          });
-          if (associatedUser) {
-            const focusObject = this.partyManager.getUserSelectedFocus(this.groupActor, associatedUser.id);
-            actorData.selectedFocus = focusObject?.name || null;
-            actorData.selectedFocusId = focusObject?.id || null;
-            actorData.selectedFocusIcon = focusObject?.icon || null;
-          } else {
-            actorData.selectedFocus = null;
-            actorData.selectedFocusId = null;
-            actorData.selectedFocusIcon = null;
-          }
-        } else {
-          const actor = game.actors.get(actorData.id);
-          actorData.isOwner = actor ? actor.isOwner : false;
-        }
-      });
-    }
-    log(3, 'PartyCoordinator Context:', { context });
+    context.isGM = game.user.isGM;
+    context.spellLevels = this._buildSpellLevelGroups(this._comparisonData.spellsByLevel);
+    context.groupName = this.groupActor?.name || _loc('SPELLBOOK.Party.DefaultGroupName');
+    this._decorateActors(context.comparison?.actors);
     return context;
   }
 
-  /** @inheritdoc */
-  _onRender(context, options) {
-    super._onRender(context, options);
-    this._setupPartyMemberHover();
-    this._setupMemberCardContextMenu();
-    this._restoreCollapsedLevels();
-    this._globalClickHandler = (event) => {
-      if (!this._filteredActorId) return;
-      if (this.element && this.element.contains(event.target)) {
-        const clickedMemberCard = event.target.closest('.member-card');
-        if (!clickedMemberCard) this._clearSpellFilter();
-      }
-      if (!event.target.closest('#member-card-context-menu')) this._hideMemberCardContextMenu();
+  /** @override */
+  _onFirstRender(context, options) {
+    super._onFirstRender(context, options);
+    this._onActorUpdate = (actor) => {
+      if (!this._isRelevantActor(actor)) return;
+      this._invalidateAndRender();
     };
-    document.addEventListener('click', this._globalClickHandler);
-    log(3, 'Rendering.');
+    this._onItemChange = (item) => {
+      if (item?.type !== 'spell') return;
+      if (!this._isRelevantActor(item.parent)) return;
+      this._invalidateAndRender();
+    };
+    Hooks.on('updateActor', this._onActorUpdate);
+    Hooks.on('updateItem', this._onItemChange);
+    Hooks.on('createItem', this._onItemChange);
+    Hooks.on('deleteItem', this._onItemChange);
   }
 
-  /** @inheritdoc */
-  async _onClose(options = {}) {
-    if (this._globalClickHandler) document.removeEventListener('click', this._globalClickHandler);
-    this._hideMemberCardContextMenu();
-    log(3, 'Closing window.');
+  /** @override */
+  _onRender(context, options) {
+    super._onRender(context, options);
+    this._setupMemberHover();
+    this._setupMemberContextMenu();
+    this._restoreCollapsedLevels();
+    this._onDocumentClick = (event) => {
+      if (this._filteredActorId && this.element.contains(event.target) && !event.target.closest('.member-card')) this._clearSpellFilter();
+      if (this._contextMenu && !event.target.closest('.party-member-context-menu')) this._hideContextMenu();
+    };
+    document.addEventListener('click', this._onDocumentClick);
+  }
+
+  /** @override */
+  _onClose(options) {
+    if (this._onDocumentClick) document.removeEventListener('click', this._onDocumentClick);
+    this._hideContextMenu();
+    if (this._onActorUpdate) Hooks.off('updateActor', this._onActorUpdate);
+    if (this._onItemChange) {
+      Hooks.off('updateItem', this._onItemChange);
+      Hooks.off('createItem', this._onItemChange);
+      Hooks.off('deleteItem', this._onItemChange);
+    }
     return super._onClose(options);
   }
 
   /**
-   * Get available focus options for dropdown selection.
-   * @returns {Array<{value: string, label: string}>} Array of formatted focus options
+   * Check whether a changed actor is part of this coordinator's scope.
+   * @param {object|null} actor - The actor that changed
+   * @returns {boolean} Whether the change is relevant
+   * @private
    */
-  getAvailableFocusOptions() {
-    const focuses = PartyMode.getAvailableFocuses();
-    const availableFocuses = focuses.map((focus) => ({ value: focus, label: focus }));
-    log(3, 'Constructed available focuses:', { availableFocuses });
-    return availableFocuses;
+  _isRelevantActor(actor) {
+    if (!actor) return false;
+    if (actor.id === this.groupActor?.id) return true;
+    return this.partyActors.some((a) => a.id === actor.id);
   }
 
   /**
-   * Get spell level groups for display organization.
-   * @param {Object<string, Object>} spellsByLevel - Spells organized by level
-   * @returns {Array<{level: number, levelName: string, spells: object[]}>} Array of spell level group objects
+   * Drop cached comparison data and re-render.
+   * @private
    */
-  getSpellLevelGroups(spellsByLevel) {
-    const levelsMapped = Object.keys(spellsByLevel)
-      .map((l) => parseInt(l))
-      .sort((a, b) => a - b)
-      .map((level) => ({
-        level,
-        levelName: level === 0 ? game.i18n.localize('SPELLBOOK.SpellLevel.Cantrip') : game.i18n.format('SPELLBOOK.SpellLevel.Numbered', { level }),
-        spells: Object.values(spellsByLevel[level]).sort((a, b) => a.name.localeCompare(b.name))
-      }));
-
-    log(3, 'Spell levels mapped:', levelsMapped);
-    return levelsMapped;
-  }
-
-  /**
-   * Handle opening synergy analysis dialog.
-   * @this PartyCoordinator
-   * @param {PointerEvent} _event - The originating click event.
-   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
-   */
-  static #openSynergy(_event, _target) {
-    log(3, 'Show Analysis called.');
-    if (!this._comparisonData?.synergy) return;
-    new SynergyAnalysis(this._comparisonData.synergy).render({ force: true });
-  }
-
-  /**
-   * Handle refreshing data.
-   * @this PartyCoordinator
-   * @param {PointerEvent} _event - The originating click event.
-   * @param {HTMLElement} _target - The capturing HTML element which defined a [data-action].
-   */
-  static #refreshData(_event, _target) {
-    log(3, 'Refresh Data called.');
+  _invalidateAndRender() {
     this._comparisonData = null;
-    this.partyManager._spellDataCache.clear();
     this.render();
   }
 
   /**
-   * Handle toggling spell header.
-   * @this PartyCoordinator
-   * @param {PointerEvent} _event - The originating click event.
-   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
+   * Decorate actor rows with ownership metadata for the template.
+   * @param {object[]|undefined} actors - Actor data from analyzePartySpells
+   * @private
    */
-  static async #toggleSpellHeader(_event, target) {
+  _decorateActors(actors) {
+    if (!actors) return;
+    for (const actorData of actors) {
+      const actor = game.actors.get(actorData.id);
+      actorData.isOwner = actor ? actor.isOwner : false;
+    }
+  }
+
+  /**
+   * Sort the level-keyed spell map into an array suitable for template rendering.
+   * @param {Object<string, Object>} spellsByLevel - Level-keyed spell data
+   * @returns {Array<{level:number, levelName:string, spells:object[]}>} Spell level groups
+   * @private
+   */
+  _buildSpellLevelGroups(spellsByLevel) {
+    return Object.keys(spellsByLevel)
+      .map((l) => parseInt(l))
+      .sort((a, b) => a - b)
+      .map((level) => ({
+        level,
+        levelName: level === 0 ? _loc('DND5E.SpellLevel0') : _loc('SPELLBOOK.SpellLevel.Numbered', { level }),
+        spells: Object.values(spellsByLevel[level]).sort((a, b) => a.name.localeCompare(b.name))
+      }));
+  }
+
+  /**
+   * Toggle a value in a user-flag array.
+   * @param {string} flagKey - Flag key
+   * @param {string} id - Value to toggle
+   * @returns {Promise<boolean>} Whether the value is now present
+   * @private
+   */
+  async _toggleUserFlagArray(flagKey, id) {
+    const current = game.user.getFlag(MODULE.ID, flagKey) || [];
+    const exists = current.includes(id);
+    const next = exists ? current.filter((x) => x !== id) : [...current, id];
+    await game.user.setFlag(MODULE.ID, flagKey, next);
+    return !exists;
+  }
+
+  /** Open the synergy analysis dialog. */
+  static #onOpenSynergy() {
+    if (!this._comparisonData?.synergy) return;
+    new SynergyAnalysis(this._comparisonData.synergy).render({ force: true });
+  }
+
+  /** Drop cached analysis and re-render. */
+  static #onRefreshData() {
+    this._invalidateAndRender();
+  }
+
+  /**
+   * Toggle collapsed state for a spell-level group.
+   * @param {Event} _event - The triggering event
+   * @param {HTMLElement} target - The clicked header element
+   */
+  static async #onToggleSpellHeader(_event, target) {
     const levelContainer = target.closest('.spell-level-group');
-    if (!levelContainer) return;
-    const levelId = levelContainer.dataset.spellLevel;
-    const isCollapsed = await DataUtils.CollapsedStateManager.toggle(FLAGS.PARTY_COLLAPSED_LEVELS, levelId);
+    const levelId = levelContainer?.dataset?.spellLevel;
+    if (!levelId) return;
+    const isCollapsed = await this._toggleUserFlagArray(FLAGS.PARTY_COLLAPSED_LEVELS, levelId);
     levelContainer.classList.toggle('collapsed', isCollapsed);
     const header = levelContainer.querySelector('.level-header');
     const spellList = levelContainer.querySelector('.spells-grid');
-    const collapseIcon = header?.querySelector('.collapse-indicator');
-    if (header) header.setAttribute('aria-expanded', !isCollapsed);
+    const icon = header?.querySelector('.collapse-indicator');
+    if (header) header.setAttribute('aria-expanded', String(!isCollapsed));
     if (spellList) spellList.style.display = isCollapsed ? 'none' : '';
-    if (collapseIcon) collapseIcon.className = `fas fa-caret-${isCollapsed ? 'right' : 'down'} collapse-indicator`;
-    log(3, 'Toggle Spell Level called.', { levelContainer, isCollapsed });
+    if (icon) icon.className = `fas fa-caret-${isCollapsed ? 'right' : 'down'} collapse-indicator`;
   }
 
   /**
-   * Handle filtering member spells.
-   * @this PartyCoordinator
-   * @param {PointerEvent} event - The originating click event.
-   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
+   * Toggle the per-member spell filter.
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} target - The clicked member card
    */
-  static #filterMemberSpell(event, target) {
-    log(3, 'Filter Member Spells called.');
+  static #onFilterMemberSpells(event, target) {
     event.stopPropagation();
     const actorId = target.dataset.actorId;
     if (!actorId) return;
-    if (this._filteredActorId === actorId) {
-      this._clearSpellFilter();
-      return;
-    }
-    this._applySpellFilter(actorId);
+    if (this._filteredActorId === actorId) this._clearSpellFilter();
+    else this._applySpellFilter(actorId);
   }
 
-  /**
-   * Handle opening focus settings.
-   * @this PartyCoordinator
-   * @param {PointerEvent} event - The originating click event.
-   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
-   */
-  static async #openFocus(event, target) {
-    event.stopPropagation();
-    const actor = game.actors.get(target.dataset.actorId || '');
-    const isGM = game.user.isGM;
-    const actorAllowed = actor && actor.isOwner;
-    const actorForSettings = isGM ? null : actorAllowed ? actor : null;
-    if (!isGM && actor && !actor.isOwner) return;
-    new FocusSettings(this.groupActor, actorForSettings, this).render(true);
-    log(3, 'Open Focus Settings called.', { actor, isGM, actorAllowed, actorForSettings });
-  }
 
   /**
-   * Set up hover functionality to highlight party member spells.
+   * Highlight a member's prepared spells on card hover.
    * @private
    */
-  _setupPartyMemberHover() {
-    log(3, 'Setup Party Member Hover called.');
-    const memberCards = this.element.querySelectorAll('.member-card');
-    memberCards.forEach((card) => {
+  _setupMemberHover() {
+    for (const card of this.element.querySelectorAll('.member-card')) {
       const actorId = card.dataset.actorId;
-      if (!actorId) return;
+      if (!actorId) continue;
       card.addEventListener('mouseenter', () => {
-        const memberSpells = this.element.querySelectorAll(`.actor-spell-status[data-actor-id="${actorId}"].prepared`);
-        memberSpells.forEach((spell) => {
-          const spellItem = spell.closest('.spell-comparison-item');
-          if (spellItem) {
-            spellItem.classList.add('member-focused');
-            spell.classList.add('highlighted-actor');
-          }
-        });
+        for (const spell of this.element.querySelectorAll(`.actor-spell-status[data-actor-id="${actorId}"].prepared`)) {
+          const item = spell.closest('.spell-comparison-item');
+          if (item) item.classList.add('member-focused');
+          spell.classList.add('highlighted-actor');
+        }
         card.classList.add('focused');
       });
       card.addEventListener('mouseleave', () => {
-        this.element.querySelectorAll('.spell-comparison-item.member-focused').forEach((item) => {
-          item.classList.remove('member-focused');
-        });
-        this.element.querySelectorAll('.actor-spell-status.highlighted-actor').forEach((actor) => {
-          actor.classList.remove('highlighted-actor');
-        });
+        for (const item of this.element.querySelectorAll('.spell-comparison-item.member-focused')) item.classList.remove('member-focused');
+        for (const spell of this.element.querySelectorAll('.actor-spell-status.highlighted-actor')) spell.classList.remove('highlighted-actor');
         card.classList.remove('focused');
       });
-    });
+    }
   }
 
   /**
-   * Set up context menu functionality for member cards.
+   * Bind right-click context menus on member cards.
    * @private
    */
-  _setupMemberCardContextMenu() {
-    log(3, 'Setup Member Card Context called.');
-    const memberCards = this.element.querySelectorAll('.member-card');
-    memberCards.forEach((card) => {
+  _setupMemberContextMenu() {
+    for (const card of this.element.querySelectorAll('.member-card')) {
       const actorId = card.dataset.actorId;
-      if (!actorId) return;
+      if (!actorId) continue;
       const actor = game.actors.get(actorId);
-      if (!actor) return;
-      if (!actor.testUserPermission(game.user, 'LIMITED')) return;
+      if (!actor?.testUserPermission(game.user, 'LIMITED')) continue;
       card.addEventListener('contextmenu', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        this._showMemberCardContextMenu(event, actor);
+        this._showContextMenu(event, actor);
       });
+    }
+  }
+
+  /**
+   * Build and show the member-card context menu.
+   * @param {PointerEvent} event - The triggering event
+   * @param {object} actor - The actor for the clicked card
+   * @private
+   */
+  _showContextMenu(event, actor) {
+    this._hideContextMenu();
+    const menu = document.createElement('div');
+    menu.className = 'party-member-context-menu';
+    const item = document.createElement('div');
+    item.className = 'context-menu-item';
+    const icon = document.createElement('i');
+    icon.className = 'fas fa-user';
+    icon.setAttribute('aria-hidden', 'true');
+    const label = document.createElement('span');
+    label.textContent = _loc('SPELLBOOK.Party.OpenActor');
+    item.append(icon, label);
+    item.addEventListener('click', async () => {
+      if (actor.testUserPermission(game.user, 'LIMITED')) await actor.sheet.render(true);
+      this._hideContextMenu();
     });
+    menu.appendChild(item);
+    document.body.appendChild(menu);
+    this._positionContextMenu(event, menu);
+    this._contextMenu = menu;
   }
 
   /**
-   * Show context menu for member card.
-   * @param {Event} event - The right-click event
-   * @param {object} actor - The actor associated with the card
+   * Clamp the context menu into the viewport.
+   * @param {PointerEvent} event - The triggering event
+   * @param {HTMLElement} menu - The menu element
    * @private
    */
-  async _showMemberCardContextMenu(event, actor) {
-    log(3, 'Show Member Card Context called.');
-    this._hideMemberCardContextMenu();
-    try {
-      const contextMenu = document.createElement('div');
-      contextMenu.id = 'member-card-context-menu';
-      contextMenu.className = 'member-card-context-menu';
-      contextMenu.innerHTML = `
-        <div class="context-menu-item" data-action="open-actor" data-actor-id="${actor.id}">
-          <i class="fas fa-user" aria-hidden="true"></i>
-          <span>${game.i18n.localize('SPELLBOOK.Party.OpenActor')}</span>
-        </div>
-      `;
-      document.body.appendChild(contextMenu);
-      this._positionMemberCardContextMenu(event, contextMenu);
-      contextMenu.addEventListener('click', async (clickEvent) => {
-        const item = clickEvent.target.closest('.context-menu-item');
-        if (!item) return;
-        const action = item.dataset.action;
-        const actorId = item.dataset.actorId;
-        if (action === 'open-actor' && actorId) {
-          const targetActor = game.actors.get(actorId);
-          if (targetActor && targetActor.testUserPermission(game.user, 'LIMITED')) await targetActor.sheet.render(true);
-        }
-        this._hideMemberCardContextMenu();
-      });
-      this._activeMemberCardContextMenu = contextMenu;
-    } catch (error) {
-      log(1, 'Error showing member card context menu:', error);
-    }
+  _positionContextMenu(event, menu) {
+    const rect = menu.getBoundingClientRect();
+    let x = event.clientX + 5;
+    let y = event.clientY + 5;
+    if (x + rect.width > window.innerWidth - 10) x = event.clientX - rect.width - 5;
+    if (y + rect.height > window.innerHeight - 10) y = event.clientY - rect.height - 5;
+    menu.style.left = `${Math.max(10, x)}px`;
+    menu.style.top = `${Math.max(10, y)}px`;
   }
 
   /**
-   * Position member card context menu near the clicked card.
-   * @param {Event} event - The click event
-   * @param {HTMLElement} menu - The context menu element
+   * Remove the active context menu, if any.
    * @private
    */
-  _positionMemberCardContextMenu(event, menu) {
-    log(3, 'Position Member Card Context called.');
-    const menuRect = menu.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    const viewportWidth = window.innerWidth;
-    let finalX = event.clientX + 5;
-    let finalY = event.clientY + 5;
-    if (finalX + menuRect.width > viewportWidth - 10) finalX = event.clientX - menuRect.width - 5;
-    if (finalY + menuRect.height > viewportHeight - 10) finalY = event.clientY - menuRect.height - 5;
-    if (finalX < 10) finalX = 10;
-    if (finalY < 10) finalY = 10;
-    menu.style.left = `${finalX}px`;
-    menu.style.top = `${finalY}px`;
+  _hideContextMenu() {
+    if (!this._contextMenu) return;
+    this._contextMenu.remove();
+    this._contextMenu = null;
   }
 
   /**
-   * Hide member card context menu.
-   * @private
-   */
-  _hideMemberCardContextMenu() {
-    log(3, 'Hide Member Card Context called.');
-    if (this._activeMemberCardContextMenu) {
-      this._activeMemberCardContextMenu.remove();
-      this._activeMemberCardContextMenu = null;
-    }
-  }
-
-  /**
-   * Restore collapsed level states from user flags.
+   * Restore collapsed spell-level headers from user flags.
    * @private
    */
   _restoreCollapsedLevels() {
-    log(3, 'Restore Collapsed Levels called.');
-    const collapsedLevels = DataUtils.CollapsedStateManager.get(FLAGS.PARTY_COLLAPSED_LEVELS);
-    collapsedLevels.forEach((levelId) => {
-      const levelContainer = this.element.querySelector(`.spell-level-group[data-spell-level="${levelId}"]`);
-      if (levelContainer) {
-        levelContainer.classList.add('collapsed');
-        const header = levelContainer.querySelector('.level-header');
-        const spellList = levelContainer.querySelector('.spells-grid');
-        const collapseIcon = header?.querySelector('.collapse-indicator');
-        if (header) header.setAttribute('aria-expanded', 'false');
-        if (spellList) spellList.style.display = 'none';
-        if (collapseIcon) collapseIcon.className = 'fas fa-caret-right collapse-indicator';
-      }
-    });
+    const collapsed = game.user.getFlag(MODULE.ID, FLAGS.PARTY_COLLAPSED_LEVELS) || [];
+    for (const levelId of collapsed) {
+      const container = this.element.querySelector(`.spell-level-group[data-spell-level="${levelId}"]`);
+      if (!container) continue;
+      container.classList.add('collapsed');
+      const header = container.querySelector('.level-header');
+      const spellList = container.querySelector('.spells-grid');
+      const icon = header?.querySelector('.collapse-indicator');
+      if (header) header.setAttribute('aria-expanded', 'false');
+      if (spellList) spellList.style.display = 'none';
+      if (icon) icon.className = 'fas fa-caret-right collapse-indicator';
+    }
   }
 
   /**
-   * Apply spell filter to show only spells for a specific actor.
-   * @param {string} actorId - The actor ID to filter by
+   * Show only spells for the given actor.
+   * @param {string} actorId - Actor ID to filter by
    * @private
    */
   _applySpellFilter(actorId) {
-    log(3, 'Apply Spell Filter called.');
     this._filteredActorId = actorId;
-    const spellItems = this.element.querySelectorAll('.spell-comparison-item');
-    spellItems.forEach((spellItem) => {
-      const actorSpellStatus = spellItem.querySelector(`.actor-spell-status[data-actor-id="${actorId}"]`);
-      if (actorSpellStatus) {
-        spellItem.style.display = '';
-        spellItem.classList.add('member-filtered');
-        actorSpellStatus.classList.add('filtered-actor');
-        const otherStatuses = spellItem.querySelectorAll(`.actor-spell-status:not([data-actor-id="${actorId}"])`);
-        otherStatuses.forEach((status) => status.classList.add('dimmed'));
-      } else spellItem.style.display = 'none';
-    });
+    for (const spellItem of this.element.querySelectorAll('.spell-comparison-item')) {
+      const status = spellItem.querySelector(`.actor-spell-status[data-actor-id="${actorId}"]`);
+      if (!status) {
+        spellItem.style.display = 'none';
+        continue;
+      }
+      spellItem.style.display = '';
+      spellItem.classList.add('member-filtered');
+      status.classList.add('filtered-actor');
+      for (const other of spellItem.querySelectorAll(`.actor-spell-status:not([data-actor-id="${actorId}"])`)) other.classList.add('dimmed');
+    }
     this._updateLevelHeadersForFilter();
     this._updateMemberCardStates(actorId);
     this.element.classList.add('member-filter-active');
   }
 
   /**
-   * Clear the spell filter and show all spells.
+   * Restore full spell visibility.
    * @private
    */
   _clearSpellFilter() {
-    log(3, 'Clear Spell Filter called.');
     this._filteredActorId = null;
-    const spellItems = this.element.querySelectorAll('.spell-comparison-item');
-    spellItems.forEach((spellItem) => {
+    for (const spellItem of this.element.querySelectorAll('.spell-comparison-item')) {
       spellItem.style.display = '';
       spellItem.classList.remove('member-filtered');
-      const actorStatuses = spellItem.querySelectorAll('.actor-spell-status');
-      actorStatuses.forEach((status) => {
-        status.classList.remove('filtered-actor', 'dimmed');
-      });
-    });
+      for (const status of spellItem.querySelectorAll('.actor-spell-status')) status.classList.remove('filtered-actor', 'dimmed');
+    }
     this._updateLevelHeadersForFilter();
     this._updateMemberCardStates(null);
     this.element.classList.remove('member-filter-active');
   }
 
   /**
-   * Update member card visual states based on current filter.
-   * @param {string|null} filteredActorId - The currently filtered actor ID
+   * Update member-card active/inactive classes to reflect the current filter.
+   * @param {string|null} filteredActorId - The currently filtered actor
    * @private
    */
   _updateMemberCardStates(filteredActorId) {
-    log(3, 'Updating member card states.');
-    const memberCards = this.element.querySelectorAll('.member-card');
-    memberCards.forEach((card) => {
+    for (const card of this.element.querySelectorAll('.member-card')) {
       const actorId = card.dataset.actorId;
-      if (filteredActorId === actorId) {
-        card.classList.add('filter-active');
-        card.classList.remove('filter-inactive');
-      } else if (filteredActorId) {
-        card.classList.remove('filter-active');
-        card.classList.add('filter-inactive');
-      } else card.classList.remove('filter-active', 'filter-inactive');
-    });
+      card.classList.remove('filter-active', 'filter-inactive');
+      if (!filteredActorId) continue;
+      if (filteredActorId === actorId) card.classList.add('filter-active');
+      else card.classList.add('filter-inactive');
+    }
   }
 
   /**
-   * Update level headers to reflect filtered spell counts.
+   * Recompute level-header spell counts to reflect filtering.
    * @private
    */
   _updateLevelHeadersForFilter() {
-    log(3, 'Updating level headers for filter.');
-    const levelGroups = this.element.querySelectorAll('.spell-level-group');
-    levelGroups.forEach((levelGroup) => {
-      const spellItems = levelGroup.querySelectorAll('.spell-comparison-item');
-      const visibleSpells = Array.from(spellItems).filter((item) => item.style.display !== 'none');
-      const spellCountElement = levelGroup.querySelector('.spell-count');
-      if (spellCountElement) {
-        const totalCount = spellItems.length;
-        const visibleCount = visibleSpells.length;
-        if (this._filteredActorId) spellCountElement.textContent = `(${visibleCount}/${totalCount} ${game.i18n.localize('SPELLBOOK.Party.Spells')})`;
-        else spellCountElement.textContent = `(${totalCount} ${game.i18n.localize('SPELLBOOK.Party.Spells')})`;
-      }
-      if (visibleSpells.length === 0) levelGroup.style.display = 'none';
-      else levelGroup.style.display = '';
-    });
+    const spellsLabel = _loc('SPELLBOOK.Party.Spells');
+    for (const group of this.element.querySelectorAll('.spell-level-group')) {
+      const spellItems = group.querySelectorAll('.spell-comparison-item');
+      const visible = Array.from(spellItems).filter((item) => item.style.display !== 'none');
+      const count = group.querySelector('.spell-count');
+      if (count) count.textContent = this._filteredActorId ? `(${visible.length}/${spellItems.length} ${spellsLabel})` : `(${spellItems.length} ${spellsLabel})`;
+      group.style.display = visible.length === 0 ? 'none' : '';
+    }
+    log(3, 'Party coordinator: level headers updated.');
   }
 }

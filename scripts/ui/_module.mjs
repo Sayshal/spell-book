@@ -1,19 +1,11 @@
-/**
- * UI Utilities and Helpers Module Exports
- * @module UIUtils
- * @author Tyler
- */
-
 export * from './chat.mjs';
 export * from './colors.mjs';
+export { SpellBookContextMenu } from './context-menu.mjs';
 export * from './custom-ui.mjs';
-export * from './description-injector.mjs';
+export { DescriptionInjector } from './description-injector.mjs';
 export * from './dialogs.mjs';
 export * from './favorites.mjs';
-export * from './filters.mjs';
+export * from './filter-state.mjs';
 export * from './formatting.mjs';
-export * from './spell-filter-service.mjs';
-export * from './search-engine.mjs';
-export * from './spell-book-ui.mjs';
-export * from './context-menu.mjs';
-export * from './spell-processor.mjs';
+export * from './search-parser.mjs';
+export * from './spell-render.mjs';

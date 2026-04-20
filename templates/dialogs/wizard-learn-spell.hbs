@@ -1,21 +1,15 @@
 <form class="wizard-copy-form">
-  <!-- Spell Learning Confirmation Prompt -->
-  <p>{{localize 'SPELLBOOK.Wizard.LearnSpellPromptPrefix'}} <strong>{{spell.name}}</strong>
-    {{localize 'SPELLBOOK.Wizard.LearnSpellPromptSuffix'}}
-  </p>
-
-  <!-- Spell Learning Cost and Time Details -->
-  <div class="copy-details">
-    <!-- Learning Cost Information -->
-    <div class="form-group">
-      <label>{{localize 'SPELLBOOK.Wizard.CostLabel'}}:</label>
-      <span>{{costText}}</span>
-    </div>
-
-    <!-- Learning Time Information -->
-    <div class="form-group">
-      <label>{{localize 'SPELLBOOK.Wizard.TimeLabel'}}:</label>
-      <span>{{time}}</span>
-    </div>
-  </div>
+	<p>{{localize 'SPELLBOOK.Wizard.LearnSpellPromptPrefix'}} <strong>{{spell.name}}</strong>
+		{{localize 'SPELLBOOK.Wizard.LearnSpellPromptSuffix'}}
+	</p>
+	<div class="copy-details">
+		<div class="form-group">
+			<label>{{localize 'SPELLBOOK.Wizard.CostLabel'}}:</label>
+			<span>{{costText}}</span>
+		</div>
+		<div class="form-group">
+			<label>{{localize 'SPELLBOOK.Wizard.TimeLabel'}}:</label>
+			<span>{{time}}</span>
+		</div>
+	</div>
 </form>

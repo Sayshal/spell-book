@@ -1,14 +1,11 @@
 /**
  * Spell List Registry Integration
- *
- * Provides integration with the D&D 5e system's SpellListRegistry API.
- * Handles opt-in registration of custom spell lists.
  * @module DataUtils/Registry
  * @author Tyler
  */
 
-import { MODULE, SETTINGS } from '../constants/_module.mjs';
-import { log } from '../logger.mjs';
+import { MODULE, SETTINGS } from '../constants.mjs';
+import { log } from '../utils/logger.mjs';
 
 /**
  * Register custom spell lists with the D&D 5e SpellListRegistry.
@@ -69,13 +66,36 @@ export async function toggleListForRegistry(uuid) {
   const enabledLists = game.settings.get(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS);
   const isEnabled = enabledLists.includes(uuid);
   if (isEnabled) {
-    const index = enabledLists.indexOf(uuid);
-    enabledLists.splice(index, 1);
+    enabledLists.splice(enabledLists.indexOf(uuid), 1);
     await game.settings.set(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS, enabledLists);
+    ui.notifications.info('SPELLBOOK.Registry.DisableReloadHint', { localize: true });
     return false;
-  } else {
-    enabledLists.push(uuid);
-    await game.settings.set(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS, enabledLists);
-    return true;
+  }
+  enabledLists.push(uuid);
+  await game.settings.set(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS, enabledLists);
+  try {
+    await dnd5e.registry.spellLists.register(uuid);
+  } catch (err) {
+    log(1, 'Failed to live-register spell list, will apply on next reload.', err);
+  }
+  return true;
+}
+
+/**
+ * Register a spell list with dnd5e immediately (used after saving a modified list to
+ * push its current contents into the registry without requiring a world reload).
+ * @param {string} uuid - UUID of the spell list
+ * @returns {Promise<void>}
+ */
+export async function ensureListRegistered(uuid) {
+  const enabled = game.settings.get(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS) || [];
+  if (!enabled.includes(uuid)) {
+    enabled.push(uuid);
+    await game.settings.set(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS, enabled);
+  }
+  try {
+    await dnd5e.registry.spellLists.register(uuid);
+  } catch (err) {
+    log(1, 'ensureListRegistered failed.', err);
   }
 }

@@ -1,107 +1,56 @@
 <div class="manager-footer" role="contentinfo">
 	<div class="footer-content">
-		<!-- Left Footer Section - Utility and customization controls -->
 		<div class="footer-left">
-			<!-- UI Customization Access Button -->
-			<button type="button" class="ui-customization-button footer-button" data-action="openCustomization"
-				data-tooltip="{{localize 'SPELLBOOK.Settings.DetailsCustomization.MenuLabel'}}"
-				aria-label="{{localize 'SPELLBOOK.Settings.DetailsCustomization.MenuLabel'}}">
+			<button type="button" class="footer-button" data-action="openCustomization"
+				data-tooltip="{{localize 'SPELLBOOK.Settings.DetailsCustomization.MenuLabel'}}">
 				<i class="fas fa-palette" aria-hidden="true"></i>
-				{{localize "SPELLBOOK.Settings.DetailsCustomization.MenuLabel"}}
 			</button>
-			<!-- Help Documentation Access -->
-			<button type="button" class="help-button" data-action="showDocs"
-				aria-label="{{localize 'SPELLMANAGER.Buttons.Help'}}">
+			<button type="button" class="footer-button" data-action="showDocs"
+				data-tooltip="{{localize 'SPELLMANAGER.Buttons.Help'}}">
 				<i class="fas fa-question-circle" aria-hidden="true"></i>
-				{{localize "SPELLMANAGER.Buttons.Help"}}
 			</button>
 		</div>
-
-		<!-- Center Footer Section - Primary application controls -->
 		<div class="footer-center">
-			{{#if isEditing}}
-				{{!-- Edit Mode: Show stats for current spell list --}}
-				{{#if selectedSpellList}}
-					<div class="edit-mode-stats">
-						<span class="spell-count-stat" data-tooltip="{{localize 'SPELLMANAGER.Footer.SpellCountTooltip'}}">
-							<i class="fas fa-magic" aria-hidden="true"></i>
-							{{localize "SPELLMANAGER.Status.SpellCount" count=selectedSpellList.spellCount}}
-						</span>
-						{{#if selectedSpellList.spellSources}}
-							<span class="spell-sources-stat" data-tooltip="{{localize 'SPELLMANAGER.Footer.SpellSourcesTooltip'}}">
-								<i class="fas fa-book" aria-hidden="true"></i>
-								{{#each selectedSpellList.spellSources as |source index|}}
-									{{source}}{{#unless @last}}, {{/unless}}
-								{{/each}}
-							</span>
-						{{/if}}
-					</div>
-				{{/if}}
+			{{#if selectedList}}
+				<span class="spell-count-stat">
+					<i class="fas fa-magic" aria-hidden="true"></i>
+					{{localize "SPELLMANAGER.Status.SpellCount" count=selectedList.spellCount}}
+				</span>
 			{{else}}
-				{{!-- Non-Edit Mode: Show total stats --}}
-				<div class="global-stats">
-					{{#if availableSpells}}
-						<span class="total-spells-stat" data-tooltip="{{localize 'SPELLMANAGER.Footer.TotalSpellsTooltip'}}">
-							<i class="fas fa-scroll" aria-hidden="true"></i>
-							{{localize "SPELLMANAGER.Footer.TotalSpells" count=availableSpells.length}}
-						</span>
-					{{/if}}
-					{{#if availableSpellLists}}
-						<span class="total-lists-stat" data-tooltip="{{localize 'SPELLMANAGER.Footer.TotalListsTooltip'}}">
-							<i class="fas fa-list" aria-hidden="true"></i>
-							{{localize "SPELLMANAGER.Footer.TotalLists" count=visibleSpellListsCount}}
-							{{#if hiddenSpellListsCount}}
-								<span class="hidden-count" data-tooltip="{{localize 'SPELLMANAGER.Footer.HiddenCountTooltip'}}">
-									({{localize "SPELLMANAGER.Footer.HiddenCount" count=hiddenSpellListsCount}})
-								</span>
-							{{/if}}
-						</span>
-					{{/if}}
-				</div>
+				{{#if totalSpellCount}}
+					<span class="total-spells-stat">
+						<i class="fas fa-scroll" aria-hidden="true"></i>
+						{{localize "SPELLMANAGER.Footer.TotalSpells" count=totalSpellCount}}
+					</span>
+				{{/if}}
 			{{/if}}
 		</div>
-
-		<!-- Right Footer Section - Editing and selection controls -->
 		<div class="footer-right">
-			{{#if isEditing}}
+			{{#if selectedList}}
 				<div class="selection-controls">
 					{{#if selectionMode}}
-						<!-- Bulk Selection Mode Controls -->
-						<div class="selection-info">
-							<!-- Dynamic Selection Summary -->
-							<span class="selection-summary">
-								{{#if (and selectedToAddCount selectedToRemoveCount)}}
-									{{localize "SPELLMANAGER.Selection.AddAndRemoveCount" addCount=selectedToAddCount removeCount=selectedToRemoveCount}}
-								{{else if selectedToAddCount}}
-									{{localize "SPELLMANAGER.Selection.AddCount" count=selectedToAddCount}}
-								{{else if selectedToRemoveCount}}
-									{{localize "SPELLMANAGER.Selection.RemoveCount" count=selectedToRemoveCount}}
-								{{else}}
-									{{localize "SPELLMANAGER.Selection.NoneSelected"}}
-								{{/if}}
-							</span>
-						</div>
-
-						<!-- Bulk Save Operation Button -->
+						<span class="selection-summary">
+							{{#if (and selectedToAddCount selectedToRemoveCount)}}
+								{{localize "SPELLMANAGER.Selection.AddAndRemoveCount" addCount=selectedToAddCount removeCount=selectedToRemoveCount}}
+							{{else if selectedToAddCount}}
+								{{localize "SPELLMANAGER.Selection.AddCount" count=selectedToAddCount}}
+							{{else if selectedToRemoveCount}}
+								{{localize "SPELLMANAGER.Selection.RemoveCount" count=selectedToRemoveCount}}
+							{{else}}
+								{{localize "SPELLMANAGER.Selection.NoneSelected"}}
+							{{/if}}
+						</span>
 						<button type="button" class="bulk-save-btn" data-action="bulkSave"
-							{{#unless totalSelectedCount}}disabled{{/unless}}
-							aria-label="{{localize 'SPELLMANAGER.BulkOps.SaveChanges' count=totalSelectedCount}}">
+							{{#unless totalSelectedCount}}disabled{{/unless}}>
 							<i class="fas fa-save" aria-hidden="true"></i>
-							<span class="button-text">{{localize "SPELLMANAGER.BulkOps.SaveChanges" count=totalSelectedCount}}</span>
 						</button>
-
-						<!-- Cancel Selection Mode Button -->
-						<button type="button" class="cancel-selection-btn" data-action="cancelSelection"
-							aria-label="{{localize 'SPELLBOOK.UI.Cancel'}}">
+						<button type="button" class="cancel-selection-btn" data-action="cancelSelection">
 							<i class="fas fa-times" aria-hidden="true"></i>
-							{{localize "SPELLBOOK.UI.Cancel"}}
 						</button>
 					{{else}}
-						<!-- Enter Bulk Selection Mode Button -->
 						<button type="button" class="toggle-selection-mode" data-action="toggleSelectionMode"
-							aria-label="{{localize 'SPELLMANAGER.Selection.SelectionMode'}}">
+							data-tooltip="{{localize 'SPELLMANAGER.Selection.SelectionMode'}}">
 							<i class="fas fa-check-square" aria-hidden="true"></i>
-							{{localize "SPELLMANAGER.Selection.SelectionMode"}}
 						</button>
 					{{/if}}
 				</div>

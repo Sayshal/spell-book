@@ -1,0 +1,22 @@
+<section class="tab spell-tab-panel learn-mode {{tab.cssClass}}" data-tab="{{tab.id}}" data-group="primary"
+	data-class-identifier="{{tab.classIdentifier}}">
+	<div class="results-loading">
+		{{> modules/spell-book/templates/components/loading-spinner.hbs}}
+	</div>
+	<ol class="spell-list-items"></ol>
+	<footer class="preparation-footer">
+		<span class="footer-label">{{tab.label}}</span>
+		<span class="footer-divider" aria-hidden="true"></span>
+		<span class="wizard-total-count"></span>
+		<span class="wizard-free-count"></span>
+		<div class="footer-spacer"></div>
+		<nav class="footer-class-nav tabs" data-group="primary" role="tablist">
+			{{#each tabArr}}
+				<a data-action="tab" data-tab="{{id}}" data-group="primary" class="class-tab-icon-btn {{cssClass}}"
+					role="tab" aria-selected="{{#if active}}true{{else}}false{{/if}}" data-tooltip="{{label}}">
+					<img src="{{img}}" alt="{{label}}" width="20" height="20" loading="lazy">
+				</a>
+			{{/each}}
+		</nav>
+	</footer>
+</section>

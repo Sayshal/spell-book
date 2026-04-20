@@ -1,14 +1,8 @@
-/**
- * Dialogs module exports for the Spell Book module.
- * @module Dialogs
- * @author Tyler
- */
-
-export { CompendiumSelection } from './compendium-selection.mjs';
+export { ClassRules } from './class-rules.mjs';
+export { CustomSpellList } from './custom-spell-list.mjs';
 export { DetailsCustomization } from './details-customization.mjs';
-export { FocusSettings } from './focus-settings.mjs';
+export { showLearnFromScrollDialog } from './learn-from-scroll.mjs';
 export { LoadoutSelector } from './loadout-selector.mjs';
-export { SpellBookSettings } from './spell-book-settings.mjs';
 export { SpellComparison } from './spell-comparison.mjs';
 export { SpellNotes } from './spell-notes.mjs';
 export { SynergyAnalysis } from './synergy-analysis.mjs';

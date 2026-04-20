@@ -1,90 +1,87 @@
-/**
- * Synergy Analysis Dialog Application
- *
- * A dedicated application for displaying party spell synergy analysis with
- * interactive visualizations including pie charts, damage distribution,
- * and strategic recommendations.
- * @module Dialogs/SynergyAnalysis
- * @author Tyler
- */
-
-import { TEMPLATES } from '../constants/_module.mjs';
-import { log } from '../logger.mjs';
+import { TEMPLATES } from '../constants.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-/**
- * Synergy Analysis Dialog for displaying party spell analysis.
- */
+/** Display dialog for party spell synergy analysis. */
 export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
-  /** @inheritdoc */
+  /** @override */
   static DEFAULT_OPTIONS = {
-    id: 'synergy-analysis-dialog',
+    id: 'spellbook-synergy-analysis',
     tag: 'div',
     classes: ['spell-book', 'synergy-analysis-dialog'],
-    window: { icon: 'fas fa-chart-pie', resizable: true, minimizable: true, positioned: true, title: 'SPELLBOOK.Party.SynergyAnalysisTitle' },
-    position: { width: 700, height: 800 }
+    position: { width: 700, height: 800 },
+    window: { icon: 'fas fa-chart-pie', resizable: true, title: 'SPELLBOOK.Party.SynergyAnalysisTitle' }
   };
 
-  /** @inheritdoc */
-  static PARTS = { main: { template: TEMPLATES.PARTY_SPELL_MANAGER.SYNERGY_ANALYSIS } };
+  /** @override */
+  static PARTS = { main: { template: TEMPLATES.APPS.PARTY.SYNERGY_ANALYSIS } };
 
   /**
-   * Create a new Synergy Analysis Dialog.
-   * @param {object} synergyData - The synergy analysis data to display
-   * @param {object} [options] - Additional application options
+   * @param {object} synergyData - Pre-computed synergy analysis from PartyMode
+   * @param {object} [options] - Application options
    */
   constructor(synergyData, options = {}) {
     super(options);
-    log(3, 'SynergyAnalysis constructed.', { synergyData, options });
     this.synergyData = synergyData;
   }
 
-  /** @inheritdoc */
+  /** @override */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     foundry.utils.mergeObject(context, this.synergyData);
-    context.componentTooltips = this._prepareComponentTooltips(this.synergyData);
-    log(3, 'Context prepared.', { options, context });
+    context.componentTooltips = this.#buildComponentTooltips(this.synergyData);
+    for (const item of (context.spellSchoolDistribution || [])) item.tooltipHtml = SynergyAnalysis.#groupMembersTooltip(item.localizedSchool, item.members);
+    for (const item of (context.damageDistribution || [])) item.tooltipHtml = SynergyAnalysis.#groupMembersTooltip(item.localizedType, item.members);
+    for (const item of (context.duplicateSpells || [])) item.tooltipHtml = SynergyAnalysis.#groupMembersTooltip(item.name, item.actors);
     return context;
   }
 
   /**
-   * Prepare component tooltips with spell lists.
-   * @param {object} synergy - The synergy analysis data
-   * @returns {object} Object containing tooltip strings for each component type (verbal, somatic, material, materialCost)
-   * @private
+   * Group "Name: Spell" entries by name and build an HTML tooltip.
+   * @param {string} title - Tooltip heading
+   * @param {string[]} entries - Flat list like ["Akra: Light", "Akra: Sacred Flame", "Zanna: Fire Bolt"]
+   * @returns {string} HTML with one line per member
    */
-  _prepareComponentTooltips(synergy) {
-    log(3, 'Preparing component tooltips.', { synergy });
-    const maxSpells = 25;
-    const tooltips = {
-      verbal: this._formatSpellList(synergy.memberContributions?.components?.verbal, maxSpells),
-      somatic: this._formatSpellList(synergy.memberContributions?.components?.somatic, maxSpells),
-      material: this._formatSpellList(synergy.memberContributions?.components?.material, maxSpells),
-      materialCost: this._formatSpellList(synergy.memberContributions?.components?.materialCost, maxSpells)
-    };
-    log(3, 'Component tooltips prepared.', { tooltips });
-    return tooltips;
+  static #groupMembersTooltip(title, entries) {
+    if (!entries?.length) return title;
+    const grouped = new Map();
+    for (const entry of entries) {
+      const sep = entry.indexOf(':');
+      const name = sep > -1 ? entry.slice(0, sep).trim() : entry;
+      const spell = sep > -1 ? entry.slice(sep + 1).trim() : null;
+      if (!grouped.has(name)) grouped.set(name, []);
+      if (spell) grouped.get(name).push(spell);
+    }
+    const lines = [...grouped.entries()].map(([name, spells]) => spells.length ? `<div><strong>${name}:</strong> ${spells.join(', ')}</div>` : `<div>${name}</div>`).join('');
+    return `<strong>${title}</strong><hr>${lines}`;
   }
 
   /**
-   * Format spell list for tooltips.
-   * @param {string[]} spells - Array of spell names
-   * @param {number} maxSpells - Maximum number of spells to display before truncating
-   * @returns {string} Formatted spell list string, truncated if necessary
-   * @private
+   * Build truncated component spell-list tooltips for hover details.
+   * @param {object} synergy - The synergy analysis data
+   * @returns {object} Tooltip strings keyed by component type
    */
-  _formatSpellList(spells, maxSpells) {
-    log(3, 'Formatting spell list.', { spellCount: spells?.length, maxSpells });
+  #buildComponentTooltips(synergy) {
+    const max = 25;
+    const components = synergy.memberContributions?.components || {};
+    return {
+      verbal: this.#formatSpellList(components.verbal, max),
+      somatic: this.#formatSpellList(components.somatic, max),
+      material: this.#formatSpellList(components.material, max),
+      materialCost: this.#formatSpellList(components.materialCost, max)
+    };
+  }
+
+  /**
+   * Format a list of spell names into a truncated tooltip string.
+   * @param {string[]} spells - Spell names
+   * @param {number} max - Maximum spells to include before truncating
+   * @returns {string} Formatted comma-separated list
+   */
+  #formatSpellList(spells, max) {
     if (!spells?.length) return '';
-    const displaySpells = spells.slice(0, maxSpells);
-    let tooltip = displaySpells.join(', ');
-    if (spells.length > maxSpells) {
-      const remaining = spells.length - maxSpells;
-      tooltip += game.i18n.format('SPELLBOOK.Party.AndMoreSpells', { count: remaining });
-    }
-    log(3, 'Spell list formatted.', { tooltip });
+    let tooltip = spells.slice(0, max).join(', ');
+    if (spells.length > max) tooltip += _loc('SPELLBOOK.Party.AndMoreSpells', { count: spells.length - max });
     return tooltip;
   }
 }

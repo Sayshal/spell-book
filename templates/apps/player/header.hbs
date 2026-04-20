@@ -1,0 +1,17 @@
+<header class="spell-book-header">
+	<img src="modules/spell-book/assets/icon_colored.png" class="header-icon" alt="" width="20" height="20">
+	<span class="header-title">{{actor.name}}</span>
+	{{#if isGM}}
+		<button type="button" class="detach-btn" data-action="openManager"
+			data-tooltip="{{localize 'SPELLBOOK.UI.OpenManager'}}">
+			<i class="fas fa-bars-progress" aria-hidden="true"></i>
+		</button>
+	{{/if}}
+	<button type="button" class="detach-btn" data-action="toggleDetach"
+		data-tooltip="{{#if detached}}{{localize 'APPLICATION.ACTIONS.Attach'}}{{else}}{{localize 'APPLICATION.ACTIONS.Detach'}}{{/if}}">
+		<i class="fas {{#if detached}}fa-arrow-down-to-square{{else}}fa-arrow-up-right-from-square{{/if}}" aria-hidden="true"></i>
+	</button>
+	<button type="button" class="close-btn" data-action="closeSpellBook" data-tooltip="Close">
+		<i class="fas fa-times" aria-hidden="true"></i>
+	</button>
+</header>

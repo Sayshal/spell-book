@@ -1,314 +1,202 @@
 /**
  * Spell Loadout Management Dialog
- *
- * Interface for saving, loading, and managing spell preparation configurations.
- * Provides loadout management capabilities for quickly switching between
- * different spell preparation setups and tactical configurations.
  * @module Dialogs/LoadoutSelector
  * @author Tyler
  */
 
-import { FLAGS, MODULE, TEMPLATES } from '../constants/_module.mjs';
-import { log } from '../logger.mjs';
-import { Loadouts } from '../managers/_module.mjs';
-import * as UIUtils from '../ui/_module.mjs';
-import * as ValidationUtils from '../validation/_module.mjs';
+import { FLAGS, MODULE, TEMPLATES } from '../constants.mjs';
+import { Loadouts } from '../managers/loadouts.mjs';
+import { SpellManager } from '../managers/spell-manager.mjs';
+import { detachedRenderOptions } from '../ui/dialogs.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-/**
- * Dialog application for managing spell loadouts.
- */
+/** Dialog for managing spell loadouts (save/apply/overwrite/delete). */
 export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
-  /** @inheritdoc */
+  /** @override */
   static DEFAULT_OPTIONS = {
-    id: 'spell-loadout-dialog',
+    id: 'spellbook-loadout-selector',
     tag: 'form',
-    actions: {
-      save: this.#save,
-      apply: this.#apply,
-      overwrite: this.#overwrite,
-      delete: this.#delete
-    },
     classes: ['spell-book', 'spell-loadout-dialog'],
-    window: { icon: 'fas fa-toolbox', resizable: true, minimizable: false, positioned: true },
-    position: { width: 600, height: 'auto' }
+    position: { width: 520, height: 'auto' },
+    window: { icon: 'fas fa-toolbox', resizable: false, contentClasses: ['standard-form'] },
+    actions: {
+      save: LoadoutSelector.#onSave,
+      apply: LoadoutSelector.#onApply,
+      overwrite: LoadoutSelector.#onOverwrite,
+      delete: LoadoutSelector.#onDelete
+    }
   };
 
-  /** @inheritdoc */
-  static PARTS = {
-    form: { template: TEMPLATES.DIALOGS.SPELL_LOADOUT }
-  };
+  /** @override */
+  static PARTS = { form: { template: TEMPLATES.DIALOGS.LOADOUT_SELECTOR } };
 
   /**
-   * Create a new Spell Loadout dialog instance.
-   * @param {object} actor - The actor whose loadouts to manage
-   * @param {object} spellbook - The parent Spell Book application reference
-   * @param {string} classIdentifier - The current class identifier for loadout scope
-   * @param {object} [options] - Additional application options
+   * @param {object} options - Options including actor and classIdentifier
+   * @param {object} options.actor - The actor whose loadouts to manage
+   * @param {string} options.classIdentifier - The class identifier
+   * @param {object} [options.parent] - Parent SpellBook (used to read live checkbox state)
    */
-  constructor(actor, spellbook, classIdentifier, options = {}) {
+  constructor(options = {}) {
     super(options);
-    log(3, 'Constructing LoadoutSelector dialog.', { actorId: actor?.id, classIdentifier });
-    this.spellbook = spellbook;
-    this.classIdentifier = classIdentifier;
-    this.loadoutManager = new Loadouts(actor, spellbook);
+    this.actor = options.actor;
+    this.classIdentifier = options.classIdentifier;
+    this.parentApp = options.parent || null;
   }
 
-  /** @inheritdoc */
+  /** Pull UUIDs from the parent SpellBook's live checkboxes, or the actor flag as fallback. */
+  #captureCurrentSpellUuids() {
+    if (this.parentApp?.getCurrentPreparedUuids) return this.parentApp.getCurrentPreparedUuids(this.classIdentifier);
+    const flag = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
+    const keys = Array.isArray(flag) ? [] : flag[this.classIdentifier] || [];
+    return keys.map((k) => k.split(':').slice(1).join(':'));
+  }
+
+  /** @override */
   get title() {
-    log(3, 'Getting loadout selector title.', { classIdentifier: this.classIdentifier });
-    const className = this.spellbook._state.classSpellData[this.classIdentifier]?.className || this.classIdentifier;
-    return game.i18n.format('SPELLBOOK.Loadouts.DialogTitle', { class: className });
+    const className = this.actor?.spellcastingClasses?.[this.classIdentifier]?.name || this.classIdentifier;
+    return _loc('SPELLBOOK.Loadouts.DialogTitle', { class: className });
   }
 
-  /** @inheritdoc */
+  /** @override */
   async _prepareContext(options) {
-    log(3, 'Preparing context for loadout selector.', { options, classIdentifier: this.classIdentifier });
     const context = await super._prepareContext(options);
-    context.classIdentifier = this.classIdentifier;
-    context.className = this.spellbook._state.classSpellData[this.classIdentifier]?.className || this.classIdentifier;
-    const existingLoadouts = this.loadoutManager.getAvailableLoadouts(this.classIdentifier);
-    context.existingLoadouts = existingLoadouts.map((loadout) => ({
-      ...loadout,
-      spellCount: Array.isArray(loadout.spellConfiguration) ? loadout.spellConfiguration.length : 0,
-      formattedDate: loadout.updatedAt ? foundry.utils.timeSince(loadout.updatedAt) : null
+    const loadouts = Loadouts.getLoadouts(this.actor, this.classIdentifier);
+    context.existingLoadouts = loadouts.map((l) => ({
+      ...l,
+      spellCount: Array.isArray(l.spellConfiguration) ? l.spellConfiguration.length : 0,
+      formattedDate: l.updatedAt ? foundry.utils.timeSince(l.updatedAt) : null,
+      spellList: LoadoutSelector.#buildSpellListTooltip(l.spellConfiguration)
     }));
-    const currentState = this.loadoutManager.captureCurrentState(this.classIdentifier);
-    context.currentSpellCount = currentState.length;
-    log(3, 'Prepared loadout context.', { loadoutCount: existingLoadouts.length, currentSpellCount: context.currentSpellCount });
-    const nameInput = ValidationUtils.createTextInput({
-      name: 'loadout-name',
-      placeholder: game.i18n.localize('SPELLBOOK.Loadouts.NamePlaceholder'),
-      ariaLabel: game.i18n.localize('SPELLBOOK.Loadouts.LoadoutName')
-    });
-    context.nameInputHtml = ValidationUtils.elementToHtml(nameInput);
-    const descriptionInput = ValidationUtils.createTextInput({
-      name: 'loadout-description',
-      placeholder: game.i18n.localize('SPELLBOOK.Loadouts.DescriptionPlaceholder'),
-      ariaLabel: game.i18n.localize('SPELLBOOK.Loadouts.LoadoutDescription')
-    });
-    context.descriptionInputHtml = ValidationUtils.elementToHtml(descriptionInput);
     return context;
   }
 
-  /** @inheritdoc */
-  async _onRender(context, options) {
-    log(3, 'Rendering loadout selector dialog.', { context, options });
-    await super._onRender(context, options);
-    this._setupSpellPreviewHandlers();
+  /**
+   * Resolve UUIDs to spell docs and build an HTML tooltip grouped by spell level.
+   * @param {string[]} uuids - Spell UUIDs
+   * @returns {string} HTML string for data-tooltip-html
+   */
+  static #buildSpellListTooltip(uuids) {
+    if (!Array.isArray(uuids) || !uuids.length) return '';
+    const spells = uuids.map((u) => fromUuidSync(u)).filter(Boolean);
+    if (!spells.length) return '';
+    spells.sort((a, b) => (a.system?.level ?? 0) - (b.system?.level ?? 0) || a.name.localeCompare(b.name));
+    const rowStyle = 'display:flex;align-items:center;gap:0.4rem;white-space:nowrap;';
+    const imgStyle = 'flex-shrink:0;width:1.25rem;height:1.25rem;border-radius:50%;object-fit:cover;border:0.0625rem solid rgba(255,255,255,0.15);';
+    return spells
+      .map((s) => {
+        const img = foundry.utils.escapeHTML(s.img || 'icons/svg/book.svg');
+        return `<div style="${rowStyle}"><img src="${img}" alt="" style="${imgStyle}"><span>${foundry.utils.escapeHTML(s.name)}</span></div>`;
+      })
+      .join('');
   }
 
   /**
-   * Handle saving loadout.
-   * @this LoadoutSelector
-   * @param {PointerEvent} _event - The originating click event.
-   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
+   * Apply a list of spell UUIDs as the new prepared set for a class.
+   * @param {object} actor - The actor document
+   * @param {string} classIdentifier - The class identifier
+   * @param {string[]} loadoutUuids - UUIDs to mark prepared
    */
-  static async #save(_event, target) {
-    log(3, 'Saving new loadout.');
+  static async applySpellConfiguration(actor, classIdentifier, loadoutUuids) {
+    const flag = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
+    const currentKeys = Array.isArray(flag) ? [] : flag[classIdentifier] || [];
+    const current = new Set(currentKeys.map((k) => k.split(':').slice(1).join(':')));
+    const target = new Set(loadoutUuids);
+    const allUuids = new Set([...current, ...target]);
+    const classSpellData = {};
+    for (const uuid of allUuids) {
+      const spell = fromUuidSync(uuid);
+      if (!spell) continue;
+      const key = `${classIdentifier}:${uuid}`;
+      classSpellData[key] = {
+        uuid,
+        isPrepared: target.has(uuid),
+        wasPrepared: current.has(uuid),
+        spellLevel: spell.system?.level ?? 0,
+        name: spell.name || '',
+        isRitual: spell.system?.components?.ritual ?? false
+      };
+    }
+    await SpellManager.saveClassSpecificPreparedSpells(actor, classIdentifier, classSpellData);
+  }
+
+  /**
+   * Save the actor's currently-prepared spells as a new named loadout.
+   * @this LoadoutSelector
+   * @param {PointerEvent} _event - Click event
+   * @param {HTMLElement} target - The save button
+   */
+  static async #onSave(_event, target) {
     const form = target.closest('form');
-    const formData = new FormData(form);
-    const name = formData.get('loadout-name')?.trim();
-    const description = formData.get('loadout-description')?.trim() || '';
+    const name = form.querySelector('input[name="loadout-name"]')?.value?.trim();
+    const description = form.querySelector('input[name="loadout-description"]')?.value?.trim() || '';
     if (!name) {
-      ui.notifications.warn(game.i18n.localize('SPELLBOOK.Loadouts.NameRequired'));
+      ui.notifications.warn('SPELLBOOK.Loadouts.NameRequired', { localize: true });
       return;
     }
-    try {
-      const spellConfiguration = this.loadoutManager.captureCurrentState(this.classIdentifier);
-      if (spellConfiguration.length === 0) {
-        ui.notifications.warn(game.i18n.localize('SPELLBOOK.Loadouts.NoSpellsPrepared'));
-        return;
-      }
-      log(3, 'Captured spell configuration.', { name, spellCount: spellConfiguration.length });
-      const success = await this.loadoutManager.saveLoadout(name, description, spellConfiguration, this.classIdentifier);
-      if (success) {
-        form.reset();
-        await this.render({ force: true });
-      }
-    } catch (error) {
-      log(1, 'Error saving loadout.', { error });
+    const spellConfig = this.#captureCurrentSpellUuids();
+    if (spellConfig.length === 0) {
+      ui.notifications.warn('SPELLBOOK.Loadouts.NoSpellsPrepared', { localize: true });
+      return;
+    }
+    const id = await Loadouts.saveLoadout(this.actor, this.classIdentifier, name, description, spellConfig);
+    if (id) {
+      form.reset();
+      this.render(false);
     }
   }
 
   /**
-   * Handle overwriting loadout.
+   * Replace an existing loadout's spell configuration with the current prepared set.
    * @this LoadoutSelector
-   * @param {PointerEvent} _event - The originating click event.
-   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
+   * @param {PointerEvent} _event - Click event
+   * @param {HTMLElement} target - The overwrite button
    */
-  static async #overwrite(_event, target) {
-    log(3, 'Overwriting existing loadout.', { loadoutId: target.dataset.loadoutId });
+  static async #onOverwrite(_event, target) {
     const loadoutId = target.dataset.loadoutId;
     if (!loadoutId) return;
-    try {
-      const existingLoadout = this.loadoutManager.loadLoadout(loadoutId);
-      if (!existingLoadout) return;
-      const spellConfiguration = this.loadoutManager.captureCurrentState(this.classIdentifier);
-      if (spellConfiguration.length === 0) return;
-      const updatedLoadout = { ...existingLoadout, spellConfiguration, updatedAt: Date.now() };
-      await this.loadoutManager.actor.update({ [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.${loadoutId}`]: updatedLoadout });
-      this.loadoutManager._invalidateCache();
-      await this.render(false);
-    } catch (error) {
-      log(1, 'Error overwriting loadout.', { error });
-    }
+    const existing = Loadouts.getLoadout(this.actor, loadoutId);
+    if (!existing) return;
+    const spellConfig = this.#captureCurrentSpellUuids();
+    if (spellConfig.length === 0) return;
+    const updated = { ...existing, spellConfiguration: spellConfig, updatedAt: Date.now() };
+    await this.actor.update({ [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.${loadoutId}`]: updated });
+    Loadouts.invalidateCache(this.actor);
+    this.render(false);
   }
 
   /**
-   * Handle deleting loadout.
+   * Delete a loadout after a confirmation prompt.
    * @this LoadoutSelector
-   * @param {PointerEvent} _event - The originating click event.
-   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
+   * @param {PointerEvent} _event - Click event
+   * @param {HTMLElement} target - The delete button
    */
-  static async #delete(_event, target) {
-    log(3, 'Deleting loadout.', { loadoutId: target.dataset.loadoutId });
+  static async #onDelete(_event, target) {
     const loadoutId = target.dataset.loadoutId;
     if (!loadoutId) return;
     const confirmed = await foundry.applications.api.DialogV2.confirm({
-      title: game.i18n.localize('SPELLBOOK.Loadouts.ConfirmDelete'),
-      content: game.i18n.format('SPELLBOOK.Loadouts.ConfirmDeleteContent', { name: target.dataset.loadoutName })
+      title: _loc('SPELLBOOK.Loadouts.ConfirmDelete'),
+      content: _loc('SPELLBOOK.Loadouts.ConfirmDeleteContent', { name: target.dataset.loadoutName }),
+      renderOptions: detachedRenderOptions(this)
     });
-    if (confirmed) {
-      try {
-        const success = await this.loadoutManager.deleteLoadout(loadoutId);
-        if (success) await this.render(false);
-      } catch (error) {
-        log(1, 'Error deleting loadout.', { error });
-      }
-    }
+    if (!confirmed) return;
+    const ok = await Loadouts.deleteLoadout(this.actor, loadoutId);
+    if (ok) this.render(false);
   }
 
   /**
-   * Handle applying loadout.
+   * Apply a saved loadout to the actor's prepared spells and close the dialog.
    * @this LoadoutSelector
-   * @param {PointerEvent} _event - The originating click event.
-   * @param {HTMLElement} target - The capturing HTML element which defined a [data-action].
+   * @param {PointerEvent} _event - Click event
+   * @param {HTMLElement} target - The apply button
    */
-  static #apply(_event, target) {
-    log(3, 'Applying loadout.', { loadoutId: target.dataset.loadoutId });
+  static async #onApply(_event, target) {
     const loadoutId = target.dataset.loadoutId;
     if (!loadoutId) return;
-    try {
-      const success = this.loadoutManager.applyLoadout(loadoutId, this.classIdentifier);
-      if (success) this.close();
-    } catch (error) {
-      log(1, 'Error applying loadout.', { error });
-    }
-  }
-
-  /**
-   * Set up event handlers for spell preview tooltip functionality.
-   * @private
-   */
-  _setupSpellPreviewHandlers() {
-    log(3, 'Setting up spell preview handlers.');
-    const previewIcons = this.element.querySelectorAll('.spell-preview-icon');
-    previewIcons.forEach((icon) => {
-      icon.addEventListener('mouseenter', async (event) => {
-        await this._showSpellPreview(event);
-      });
-      icon.addEventListener('mouseleave', () => {
-        UIUtils.hideTooltip('spell-preview-tooltip');
-      });
-      icon.addEventListener('mousemove', (event) => {
-        UIUtils.updateTooltipPosition('spell-preview-tooltip', event, 15);
-      });
-      icon.addEventListener(
-        'wheel',
-        (event) => {
-          const tooltip = document.getElementById('spell-preview-tooltip');
-          if (tooltip && tooltip.style.display !== 'none') {
-            const scrollableList = tooltip.querySelector('.spell-preview-list');
-            if (scrollableList) {
-              event.preventDefault();
-              scrollableList.scrollTop += event.deltaY;
-            }
-          }
-        },
-        { passive: false }
-      );
-    });
-  }
-
-  /**
-   * Display spell preview tooltip for a loadout on mouse hover.
-   * @param {Event} event - The mouse event containing loadout information
-   * @returns {Promise<void>}
-   * @private
-   */
-  async _showSpellPreview(event) {
-    log(3, 'Showing spell preview.', { loadoutId: event.target.dataset.loadoutId });
-    const loadoutId = event.target.dataset.loadoutId;
-    const loadout = this.loadoutManager.loadLoadout(loadoutId);
-    if (!loadout || !loadout.spellConfiguration) return;
-    const loadingContent = `
-      <div class="tooltip-content">
-        <div class="loading">${game.i18n.localize('SPELLBOOK.Loadouts.LoadingSpells')}</div>
-      </div>
-    `;
-    UIUtils.showTooltip('spell-preview-tooltip', loadingContent, event, 'spell-preview-tooltip');
-    try {
-      const spellData = await Promise.all(
-        loadout.spellConfiguration.map(async (uuid) => {
-          const spell = await fromUuid(uuid);
-          return spell ? { name: spell.name, img: spell.img, level: spell.system?.level || 0, uuid: uuid } : null;
-        })
-      );
-      const validSpells = spellData
-        .filter((spell) => spell !== null)
-        .sort((a, b) => {
-          if (a.level !== b.level) return a.level - b.level;
-          return a.name.localeCompare(b.name);
-        });
-      log(3, 'Loaded spell preview data.', { validSpellCount: validSpells.length });
-      if (validSpells.length === 0) {
-        const noSpellsContent = `
-          <div class="tooltip-content">
-            <div class="no-spells">${game.i18n.localize('SPELLBOOK.Loadouts.NoValidSpells')}</div>
-          </div>
-        `;
-        UIUtils.showTooltip('spell-preview-tooltip', noSpellsContent, null, 'spell-preview-tooltip');
-        return;
-      }
-      const spellsHtml = validSpells
-        .map(
-          (spell) => `
-      <div class="spell-preview-item">
-        <img src="${spell.img}" alt="${spell.name}" class="spell-icon" />
-        <span class="spell-name">${spell.name}</span>
-        ${spell.level > 0 ? `<span class="spell-level">${spell.level}</span>` : 'C'}
-      </div>
-    `
-        )
-        .join('');
-      const content = `
-        <div class="tooltip-content">
-          <div class="tooltip-header">
-            <strong>${loadout.name}</strong> ${game.i18n.format('SPELLBOOK.Loadouts.SpellCountParens', { count: validSpells.length })}
-          </div>
-          <div class="spell-preview-list">
-            ${spellsHtml}
-          </div>
-        </div>
-      `;
-      UIUtils.showTooltip('spell-preview-tooltip', content, null, 'spell-preview-tooltip');
-    } catch (error) {
-      log(1, 'Error showing spell preview.', { error });
-      const errorContent = `
-        <div class="tooltip-content">
-          <div class="error">${game.i18n.localize('SPELLBOOK.Loadouts.ErrorLoadingPreview')}</div>
-        </div>
-      `;
-      UIUtils.showTooltip('spell-preview-tooltip', errorContent, null, 'spell-preview-tooltip');
-    }
-  }
-
-  /** @inheritdoc */
-  _onClose() {
-    log(3, 'Closing loadout selector dialog.');
-    UIUtils.removeTooltip('spell-preview-tooltip');
-    super._onClose();
+    const loadout = Loadouts.getLoadout(this.actor, loadoutId);
+    if (!loadout?.spellConfiguration) return;
+    await LoadoutSelector.applySpellConfiguration(this.actor, this.classIdentifier, loadout.spellConfiguration);
+    await this.parentApp?.refreshClassTab?.(this.classIdentifier);
+    this.close();
   }
 }

@@ -1,13 +1,26 @@
 <div class="spell-comparison-content">
+  <header class="comparison-drag-handle">
+    <span class="comparison-title">
+      <i class="fas fa-scale-balanced" aria-hidden="true"></i>
+      {{localize "SPELLBOOK.Comparison.DialogTitle"}}
+    </span>
+    <button type="button" class="comparison-detach" data-action="toggleDetach"
+      data-tooltip="{{#if detached}}{{localize 'APPLICATION.ACTIONS.Attach'}}{{else}}{{localize 'APPLICATION.ACTIONS.Detach'}}{{/if}}"
+      aria-label="{{#if detached}}{{localize 'APPLICATION.ACTIONS.Attach'}}{{else}}{{localize 'APPLICATION.ACTIONS.Detach'}}{{/if}}">
+      <i class="fas {{#if detached}}fa-arrow-down-to-square{{else}}fa-arrow-up-right-from-square{{/if}}" aria-hidden="true"></i>
+    </button>
+    <button type="button" class="comparison-close" data-action="close"
+      data-tooltip="{{localize 'Close'}}" aria-label="{{localize 'Close'}}">
+      <i class="fas fa-xmark" aria-hidden="true"></i>
+    </button>
+  </header>
   {{#if spells.length}}
-    <!-- Spell Comparison Table -->
     <table class="comparison-table">
       <thead>
         <tr>
-          <th></th> <!-- Empty header for property names column -->
+          <th class="corner"></th>
           {{#each spells}}
-            <!-- Spell Header Column -->
-            <th class="spell-header">
+            <th class="spell-header" scope="col">
               <div class="spell-info">
                 {{{enrichedIcon}}}
                 <span class="spell-name">{{name}}</span>
@@ -18,22 +31,16 @@
       </thead>
       <tbody>
         {{#each comparisonData.properties}}
-          <tr>
-            <!-- Property Name Row Header -->
-            <td class="property-name">{{name}}</td>
-
-            <!-- Property Values for Each Spell -->
+          <tr data-key="{{key}}">
+            <th class="property-name" scope="row">{{name}}</th>
             {{#each values}}
-              <td class="property-value {{#if highlight}}highlighted{{/if}}">
-                {{value}}
-              </td>
+              <td class="property-value{{#if highlight}} highlighted{{/if}}">{{value}}</td>
             {{/each}}
           </tr>
         {{/each}}
       </tbody>
     </table>
   {{else}}
-    <!-- Empty Comparison State -->
     <div class="empty-comparison">
       <p>{{localize "SPELLBOOK.Comparison.NoSpellsSelected"}}</p>
     </div>

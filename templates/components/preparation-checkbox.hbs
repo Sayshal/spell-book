@@ -1,0 +1,11 @@
+<label class="sb-checkbox{{#if spell.preparation.prepared}} checked{{/if}}{{#if spell.preparation.disabled}} disabled{{/if}}"
+	{{#if spell.preparation.disabledReason}}data-tooltip="{{spell.preparation.disabledReason}}"{{/if}}>
+	<input type="checkbox" name="spell-{{spell.preparation.identifier}}" id="prep-{{spell.preparation.identifier}}"
+		{{#if spell.preparation.prepared}}checked{{/if}} {{#if spell.preparation.disabled}}disabled{{/if}}
+		data-uuid="{{spell.compendiumUuid}}" data-name="{{spell.name}}"
+		data-ritual="{{spell.preparation.isRitual}}" data-was-prepared="{{spell.preparation.prepared}}"
+		{{#if spell.preparation.classIdentifier}}data-class-identifier="{{spell.preparation.classIdentifier}}"{{/if}}
+		{{#if spell.preparation.crossClass}}data-cross-class="true"{{/if}}
+		class="sr-only" aria-label="{{spell.preparation.ariaLabel}}">
+	<span class="sb-check-mark" aria-hidden="true"></span>
+</label>

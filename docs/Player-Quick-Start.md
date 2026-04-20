@@ -1,190 +1,94 @@
 # Player Quick Start
 
-This guide helps players get started with the Spell Book module quickly and efficiently.
+A minimal walkthrough for using Spell Book as a player. For a full tour of the interface, see [SpellBook Interface Overview](SpellBook-Interface-Overview).
 
-## Before You Begin
+## Opening the Spell Book
 
-### Clean Up Your Spell List
+![Player Spell Book in dark theme](https://raw.githubusercontent.com/Sayshal/spell-book/main/docs/images/psb-hero.png)
 
-For the best experience, **delete all spells from your character sheet that aren't granted by your class, subclass, or items** before opening Spell Book for the first time.
+Open your character sheet and click the **Spell Book** button. The button appears on the default dnd5e sheet and on Tidy5e if you have it installed. The window that opens is your personal spell book. You can drag it around by its header.
 
-The module will automatically detect and organize spells that belong to your character, but starting with a clean slate prevents any confusion about which spells should be available.
+If you want it out of the way, click the **detach** button (arrow pointing up-right) in the header to pop it into its own browser window. Click attach to bring it back.
 
-## Opening Your Spell Book
+## Nothing in a Class Tab?
 
-You can open your Spell Book through:
+If a class tab shows **"No spell list assigned"** with a button:
 
-- The **Spell Book button** on your character sheet
-- A **macro** from your hotbar
-- Token controls (if configured by your GM)
+1. Click the button. This opens [Class Rules](Class-Rules) scrolled to that class.
+2. Find the **Custom Spell List** dropdown for the class.
+3. Pick a spell list (for example, *Wizard* for a wizard).
+4. Save.
 
-## Basic Spell Preparation
+The tab will populate the next time you view it.
 
-### Understanding the Interface
+## Preparing Spells
 
-When you open your Spell Book, you'll see:
+1. Pick a class tab.
+2. Click the checkbox on each spell row you want prepared.
+3. Click the **Save** button at the bottom of the sidebar.
 
-- **Class tabs** on the right side showing each of your spellcasting classes
-- **Spell levels** organized from cantrips through 9th level
-- **Checkboxes** next to each spell for preparation
-- **Footer information** showing your preparation limits and current count
+Each class prepares independently. The footer shows `X/Y Spells` and `X/Y Cantrips` for the active class. When you hit the max, the counter turns green to mean "at capacity".
 
-![Main interface showing a single-class character](https://raw.githubusercontent.com/Sayshal/spell-book/main/github_media/01_SINGLECLASSCHAR.png)
+Exceeding the class max does **not** block saving. If the GM has enabled `Notify GM on Spell Changes`, they will receive a notification. See [Spell Preparation System](Spell-Preparation-System) for the full story.
 
-### Preparing Spells
+Pending checkbox changes are remembered across tab switches — you can tweak spells on multiple class tabs, then Save once at the end.
 
-1. **Select your class tab** — Each class prepares spells independently
-2. **Check the boxes** next to spells you want to prepare
-3. **Monitor the footer** — It shows your current prepared count vs. your limit
-4. **Cantrips are separate** — They have their own selection rules and limits
+## Spell Row Icons
 
-### Understanding Spell Tags
+Each spell row may show:
 
-Spells display various tags to indicate their status:
+- **Checkbox** — prepare/unprepare.
+- **Star** — toggle favorite (per actor, per user).
+- **Sticky note** — open [Spell Notes](Spell-Notes) to add personal notes. Notes can be injected into the spell's description.
+- **Balance scale** — add to comparison. Shown when enabled in [Details Customization](Details-Customization). Any number of spells can be compared side by side; the dialog widens as you add more.
 
-- **Prepared** — Currently prepared and ready to cast
-- **Granted** — Automatically prepared by class feature or item
-- **At Will** — Can be cast without using spell slots
-- **Pact** — Uses pact magic slots (Warlock)
-- **Ritual** — Can be cast as a ritual
-- **Innate** — Innate spellcasting ability
+Spells granted by class features, items, or always-prepared effects show a disabled checkbox with a tooltip explaining the source.
 
-### Checkbox States
+## Filtering
 
-- ☐ **Empty checkbox** — Spell not prepared, click to prepare
-- ☑ **Checked checkbox** — Spell prepared, click to unprepare
-- **Disabled checkbox** — Spell always prepared (granted by class/item). Shown as a disabled checkbox with a tooltip explaining why it cannot be changed
+The sidebar offers:
 
-## Reading the Footer
+- **Name** search box (substring, case-insensitive).
+- **Spell Level** — min/max number inputs.
+- **School, Casting Time, Target, Damage Type, Condition, Save, Source** — dropdowns.
+- **Range** — min/max number inputs (unit auto-matches your world setting).
+- **Properties** — five tri-state toggles (Verbal, Somatic, Material, Concentration, Ritual). Click to cycle `ignore → include → exclude`; right-click to cycle backwards. Exclude turns the indicator red with an × icon.
+- **Costly Material Components** — checkbox; hides spells that don't consume valuable materials.
+- **Prepared Only** — show only currently-prepared spells.
+- **Favorites Only** — show only starred spells.
 
-The footer provides crucial information about your spell preparation:
+### Reset Button
 
-- **Preparation Count**: Shows "X / Y Prepared" for each class
-- **Cantrip Count**: Displays separately from leveled spells
-- **Class-Specific Limits**: Each class shows its own preparation limit
-- **Real-Time Updates**: Numbers update as you check/uncheck spells
+The circular-arrow **Reset** button (sidebar footer, between the action row and Save) clears all filters. **Shift-click** also unchecks every preparation checkbox across every class tab — useful for starting a full re-prep from scratch. The unchecks are staged until you press Save, so you can Shift-click, re-prepare, then Save.
 
-## Multiclass Characters
+## Loadouts
 
-If you have multiple spellcasting classes, Spell Book makes management simple:
+Save and reload prepared-spell sets per class. Click the **Loadouts** sidebar button (toolbox icon) to open [Spell Loadouts](Spell-Loadouts). Useful for swapping between combat and utility preparations.
 
-![Multiclass character with multiple class tabs](https://raw.githubusercontent.com/Sayshal/spell-book/main/github_media/03_MULTICLASS.png)
+**Tip:** right-click the Loadouts button to pop up a quick-select menu of saved loadouts for the active class — click one to apply it immediately.
 
-- **Separate tabs** for each spellcasting class (shown with class icons)
-- **Independent preparation** — Each class maintains its own prepared spells
-- **Shared spell slots** — The system automatically calculates multiclass slots
-- **Clear organization** — Never mix up which spells belong to which class
+## Wizard Learn Tab
 
-### Tab Navigation
+Wizards (and classes with **Force Wizard Mode** enabled in [Class Rules](Class-Rules)) get an extra **Spellbook** tab per wizard class. Use it to learn spells into your spellbook. See [Wizard Spellbook Management](Wizard-Spellbook-Management) for copying costs, free-at-levelup spells, and learning from scrolls.
 
-- Click the **class icon** on the right to switch between classes
-- Each tab maintains its own filter and preparation state
-- The active tab is highlighted for clarity
+![Wizard Learn tab with learnable, scroll-learnable, and in-spellbook rows](https://raw.githubusercontent.com/Sayshal/spell-book/main/docs/images/psb-wizard-learn.png)
 
-## Wizard Spellbook Management
+## Long Rest Swap Prompt
 
-Wizards have a special **Spellbook tab** for managing their learned spells:
+If your class has a swap mode configured in [Class Rules](Class-Rules), completing a long rest can prompt you to swap cantrips or spells. Disable globally with the `DISABLE_LONG_REST_SWAP_PROMPT` setting.
 
-![Wizard spellbook tab](https://raw.githubusercontent.com/Sayshal/spell-book/main/github_media/02_WIZARDBOOK.png)
+## Party Mode
 
-### Learning New Spells
+If your actor is part of a party group (set by the GM), the sidebar shows a **Party Manager** button:
 
-1. **Navigate to your Spellbook tab** (look for the Spell Book icon)
-2. **Find spells to learn** — They'll have a "Learn Spell" button
-3. **Check the footer** — It shows how many spells you know and if you have free spells remaining
-4. **Learn the spell** — Click the button and confirm the cost (if any)
-5. **Already Learned** — Once learned, spells show this tag instead of the button
-
-### Free Spells vs. Purchased Spells
-
-- **Free Spells**: Gained when you level up (configurable by your GM)
-- **Purchased Spells**: Copied from scrolls or other sources for gold
-- The footer tracks how many free spells you have remaining
-
-## Filter and Search
-
-### Quick Filtering
-
-Use the sidebar filters to quickly find spells:
-
-![Filter panel with school, level, and source options](https://raw.githubusercontent.com/Sayshal/spell-book/main/github_media/06_FILTERS.png)
-
-- **School**: Filter by spell school (Evocation, Illusion, etc.)
-- **Level**: Show only specific spell levels
-- **Source**: Filter by spell source (PHB, XGE, etc.)
-- **Prepared**: Show only prepared or unprepared spells
-- **Ritual**: Find ritual spells quickly
-
-### Search Function
-
-- Type in the **search box** to find spells by name
-- Use **advanced search** by typing the prefix character (default: `^`) followed by field-based queries (e.g., `^level:1 AND school:evocation`). See [SpellBook Interface Overview](SpellBook-Interface-Overview) for full syntax details
-- Search works across all spell properties
-
-## Favorites
-
-Mark frequently used spells as favorites for quick access. Toggle a spell's favorite status from the context menu. Use the **Favorited** filter to show only your favorites. Favorites sync with your character's system favorites.
-
-## Resetting the Interface
-
-- **Click Reset** — Clears active filters and collapsed spell levels
-- **Shift+Click Reset** — Full reset: clears prepared spells, filters, favorites, and collapsed levels
-
-## Quick Actions
-
-### Right-Click Context Menu
-
-Right-click any spell to access quick actions:
-
-- View spell details
-- Add to favorites
-- Add personal notes
-- Compare with other spells
-
-### Spell Comparison
-
-1. **Select multiple spells** using Ctrl+Click or the compare button
-2. **Click Compare** to see them side-by-side
-3. **Analyze differences** in range, damage, components, etc.
-
-## Settings and Customization
-
-Access your personal settings through the **wand icon** in the Spell Book:
-
-![Spell settings dialog](https://raw.githubusercontent.com/Sayshal/spell-book/main/github_media/04_SPELLSETTINGS.png)
-
-Key settings to review:
-
-- **UI Customization** — Choose what spell information to display
-- **Filter Configuration** — Show/hide specific filters
-
-## Tips for Success
-
-### First Time Setup
-
-1. Open your Spell Book and select your primary class tab
-2. Review available spells at each level
-3. Prepare spells up to your limit (shown in footer)
-4. Save your preparation as a loadout for quick swapping
-
-### Daily Preparation
-
-1. After a long rest, review your prepared spells
-2. Swap spells based on your anticipated needs
-3. Check if you gained new spells or spell slots
-4. Save different loadouts for different scenarios
-
-### Using Loadouts
-
-Save time with spell loadouts:
-
-1. Prepare spells for a specific situation
-2. Click the **loadout button** and save with a descriptive name
-3. Load saved configurations instantly when needed
+- Left-click opens the [Party Spell Coordinator](PartySpells-Interface-Overview).
+- Right-click toggles party-mode display on your actor. When on, each spell row shows tiny avatar icons for other party members who have the spell prepared.
 
 ## Next Steps
 
-- Review [Spell Preparation System](Spell-Preparation-System) for detailed preparation rules
-- Check [SpellBook Interface Overview](SpellBook-Interface-Overview) for advanced features
-- Multiclass players should read [Multiclass Spellcasting](Multiclass-Spellcasting)
-- Wizards should review [Wizard Spellbook Management](Wizard-Spellbook-Management)
+- [SpellBook Interface Overview](SpellBook-Interface-Overview)
+- [Spell Preparation System](Spell-Preparation-System)
+- [Multiclass Spellcasting](Multiclass-Spellcasting)
+- [Wizard Spellbook Management](Wizard-Spellbook-Management)
+- [Class Rules](Class-Rules)
+- [Details Customization](Details-Customization)

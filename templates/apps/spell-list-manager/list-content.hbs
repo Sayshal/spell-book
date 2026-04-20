@@ -1,160 +1,140 @@
-<section class="selected-list-content" role="main" aria-label="{{localize 'SPELLMANAGER.UI.SelectedList'}}">
-	{{#if selectedSpellList}}
-		<!-- Selected List Header - Title and action controls -->
-		<div class="selected-list-header">
-			<div class="header-title">
-				<h2 id="selected-list-title">{{selectedSpellList.name}}</h2>
-			</div>
-
-			<!-- Header Action Buttons - Context-sensitive list management controls -->
-			<div class="header-buttons" role="toolbar" aria-label="{{localize 'SPELLMANAGER.UI.ListActions'}}">
-
-				{{#unless isEditing}}
-					<!-- View Mode Actions -->
-
-					<!-- Edit List Button -->
-					<button type="button" class="edit-button action-button" data-action="editList"
-						data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Edit'}}">
-						<i class="fas fa-edit" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Edit"}}
-					</button>
-
-					<!-- Rename List Button - Only for renameable lists -->
-					{{#if selectedSpellList.isRenameable}}
-						<button type="button" class="rename-button action-button" data-action="renameList"
-							data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Rename'}}"
-							data-tooltip="{{localize 'SPELLMANAGER.Tooltips.Rename'}}">
-							<i class="fas fa-pen" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Rename"}}
-						</button>
-					{{/if}}
-
-					<!-- Open Actor Button - For player spellbooks -->
-					{{#if selectedSpellList.isPlayerSpellbook}}
-						<button type="button" class="open-actor-button action-button" data-action="openActor"
-							aria-label="{{localize 'SPELLMANAGER.Buttons.OpenActor'}}">
-							<i class="fas fa-user" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.OpenActor"}}
-						</button>
-					{{/if}}
-
-					<!-- Open Class/Subclass Button - For class spell lists -->
-					{{#if selectedSpellList.isClassSpellList}}
-						<button type="button" class="open-class-button action-button" data-action="openClass"
-							aria-label="{{localize 'SPELLMANAGER.Buttons.Open' type=selectedSpellList.classType}}">
-							<i class="fas fa-scroll" aria-hidden="true"></i>
-							{{localize "SPELLMANAGER.Buttons.Open" type=selectedSpellList.classType}}
-						</button>
-					{{/if}}
-
-					<!-- Registry Integration Toggle -->
-					<div class="registry-toggle action-button" data-tooltip="{{localize 'SPELLBOOK.Registry.ToggleTooltip'}}">
-						<label class="checkbox-label">
-							{{{selectedSpellList.registryCheckboxHtml}}}
-							<span>{{localize 'SPELLBOOK.Registry.EnableLabel'}}</span>
-						</label>
-					</div>
-
-				{{else}}
-					<!-- Edit Mode Actions - Custom list management controls -->
-					<div class="custom-list-controls">
-						{{#if selectedSpellList.canRestore}}
-							<!-- Update Notification - Shows when original list has changed -->
-							{{#if selectedSpellList.compareInfo.hasOriginalChanged}}
-								<span class="update-notice" role="status">{{localize "SPELLMANAGER.Status.UpdateNotice"}}</span>
-							{{/if}}
-
-							<!-- Restore to Original Button -->
-							<button type="button" class="restore-button action-button" data-action="restoreList"
-								data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Restore'}}">
-								<i class="fas fa-sync" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Restore"}}
-							</button>
-						{{/if}}
-
-						<!-- Delete Custom List Button -->
-						<button type="button" class="delete-button action-button" data-action="deleteList"
-							data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Delete'}}">
-							<i class="fas fa-trash" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Delete"}}
-						</button>
-
-						<!-- Save Custom List Button -->
-						<button type="button" class="save-button action-button" data-action="saveList"
-							data-uuid="{{selectedSpellList.uuid}}" aria-label="{{localize 'SPELLMANAGER.Buttons.Save'}}">
-							<i class="fas fa-save" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.Save"}}
-						</button>
-					</div>
-				{{/unless}}
-
-				<!-- Bulk Selection Control - Select all for removal during selection mode -->
-				{{#if (and isEditing selectionMode)}}
-					<div class="select-all-remove-container">
-						<span class="selection-label">{{localize "SPELLMANAGER.Selection.SelectAllToRemove"}}</span>
-						{{{selectAllRemoveCheckboxHtml}}}
-					</div>
-				{{/if}}
-			</div>
-		</div>
-
-		<!-- Selected List Spells Display -->
-		<div class="selected-list-spells" aria-labelledby="selected-list-title">
-			{{#if selectedSpellList.isLoadingSpells}}
-				<!-- Loading State -->
-				{{> "modules/spell-book/templates/components/loading-spinner.hbs" size=2 message=(localize "SPELLMANAGER.Application.LoadingSpells")}}
-			{{else if selectedSpellList.hasError}}
-				<!-- Error State -->
-				{{> "modules/spell-book/templates/components/error-message.hbs" message=(localize "SPELLMANAGER.Application.SpellsError")}}
-			{{else if selectedSpellList.spells.length}}
-				<!-- Spells Content - Organized by spell level using shared component -->
-				<div class="spells-container">
-					{{#each selectedSpellList.spellsByLevel as |levelData|}}
-						{{#> "modules/spell-book/templates/apps/spell-list-manager/spell-level.hbs" level=levelData.level levelName=levelData.levelName spells=levelData.spells}}
-							<!-- Individual Spell Item within spell level component -->
-							<li
-								class="spell-item{{#if @root.selectionMode}} selectable{{/if}}{{#if (lookup @root.selectedSpellsToRemove uuid)}} selected{{/if}}"
-								data-uuid="{{uuid}}" data-selection-type="remove" role="listitem">
-
-								<!-- Spell Name and Details -->
-								<div class="spell-name">
-									{{{enrichedIcon}}}
-									<div class="name-stacked">
-										<span class="title">{{name}}</span>
-										<span class="subtitle">{{#if showCompareLink}}{{#if showCompare}}<button
-														class="compare-button compare-link{{#if isInComparison}} active{{/if}}"
-														data-action="compareSpell" data-uuid="{{uuid}}"
-														aria-label="{{localize 'SPELLBOOK.Comparison.CompareSpell' name=name}}"
-														data-tooltip="{{localize "SPELLBOOK.Comparison.Compare"}}">
-														<i class="fa-solid fa-clipboard-question"></i>
-													</button> {{/if}}{{/if}}{{formattedDetails}}</span>
-									</div>
-								</div>
-
-								<!-- Spell Removal Controls - Available during editing -->
-								{{#if @root.isEditing}}
-									<div class="spell-preparation">
-										{{#if @root.selectionMode}}
-											<!-- Bulk Selection Checkbox -->
-											{{{selectRemoveCheckboxHtml}}}
-										{{else}}
-											<!-- Individual Remove Button -->
-											<button type="button" class="remove-spell" data-action="removeSpell" data-uuid="{{uuid}}"
-												aria-label="{{localize 'SPELLMANAGER.Buttons.RemoveSpell' name=name}}">
-												<i class="fas fa-trash" aria-hidden="true"></i>
-											</button>
-										{{/if}}
-									</div>
-								{{/if}}
-							</li>
-							{{/modules/spell-book/templates/apps/spell-list-manager/spell-level.hbs}}
-					{{/each}}
-				</div>
-			{{else}}
-				<!-- Empty List State - Context-sensitive messaging -->
-				{{> "modules/spell-book/templates/components/empty-state.hbs" message=(ifThen isEditing (localize "SPELLMANAGER.Columns.AddSpellsPrompt") (localize "SPELLMANAGER.Columns.NoSpells"))}}
-			{{/if}}
-		</div>
-	{{else}}
-		<!-- No List Selected State -->
-		{{#unless isLoading}}
-			<div class="no-selection">
-				<p>{{localize "SPELLMANAGER.Columns.NoListSelected"}}</p>
-			</div>
-		{{/unless}}
-	{{/if}}
+<section class="selected-list-content" role="main">
+  {{#if selectedList}}
+    <div class="selected-list-header">
+      <div class="header-title">
+        <h2>{{selectedList.name}}</h2>
+      </div>
+      <div class="header-buttons" role="toolbar">
+        <div class="registry-toggle action-button" data-tooltip="{{localize 'SPELLBOOK.Registry.ToggleTooltip'}}">
+          <label class="checkbox-label">
+            <dnd5e-checkbox data-action="registerList" data-uuid="{{selectedList.uuid}}"
+              {{#if selectedList.isRegistryEnabled}}checked{{/if}}></dnd5e-checkbox>
+            <span>{{localize 'SPELLBOOK.Registry.EnableLabel'}}</span>
+          </label>
+        </div>
+        {{#if selectedList.isRenameable}}
+          <button type="button" class="action-button" data-action="renameList" data-uuid="{{selectedList.uuid}}"
+            data-tooltip="{{localize 'SPELLMANAGER.Tooltips.Rename'}}">
+            <i class="fas fa-pen" aria-hidden="true"></i>
+          </button>
+        {{/if}}
+        {{#if selectedList.isPlayerSpellbook}}
+          <button type="button" class="action-button" data-action="openActor"
+            data-tooltip="{{localize 'SPELLMANAGER.Buttons.OpenActor'}}">
+            <i class="fas fa-user" aria-hidden="true"></i>
+          </button>
+        {{/if}}
+        {{#if selectedList.isClassSpellList}}
+          <button type="button" class="action-button" data-action="openClass"
+            data-tooltip="{{localize 'SPELLMANAGER.Buttons.Open' type=selectedList.classType}}">
+            <i class="fas fa-scroll" aria-hidden="true"></i>
+          </button>
+        {{/if}}
+        {{#if selectedList.canRestore}}
+          <button type="button" class="action-button" data-action="restoreList" data-uuid="{{selectedList.uuid}}"
+            data-tooltip="{{localize 'SPELLMANAGER.Buttons.Restore'}}">
+            <i class="fas fa-sync" aria-hidden="true"></i>
+          </button>
+        {{/if}}
+        <button type="button" class="action-button" data-action="deleteList" data-uuid="{{selectedList.uuid}}"
+          data-tooltip="{{localize 'SPELLMANAGER.Buttons.Delete'}}">
+          <i class="fas fa-trash" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="action-button save-btn" data-action="saveList" data-uuid="{{selectedList.uuid}}"
+          data-tooltip="{{localize 'SPELLMANAGER.Buttons.Save'}}">
+          <i class="fas fa-save" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+    <div class="split-view">
+      <div class="available-spells-panel">
+        <h3 class="panel-header">{{localize "SPELLMANAGER.Sidebar.AvailableSpells"}}
+          {{#if filteredSpells}}({{filteredSpells.totalFiltered}}){{/if}}</h3>
+        <div class="panel-scroll">
+          {{#if filteredSpells.spells.length}}
+            <ul class="spell-list-items" role="list">
+              {{#each filteredSpells.spells as |spell|}}
+                <li class="spell-item available{{#if ../selectionMode}} selectable{{/if}}{{#if spell.isSelectedForAdd}} selected{{/if}}"
+                  data-uuid="{{spell.uuid}}" draggable="true">
+                  <div class="spell-name">
+                    {{{spell.enrichedIcon}}}
+                    <div class="name-stacked">
+                      <span class="title">{{spell.name}}</span>
+                      <span class="subtitle">{{spell.formattedDetails}}</span>
+                    </div>
+                  </div>
+                  {{#if spell.showCompare}}
+                    <i class="fa-solid fa-scale-balanced spell-compare-icon{{#if spell.isInComparison}} active{{/if}}"
+                      data-action="compareSpell" data-uuid="{{spell.uuid}}"
+                      data-tooltip="{{localize 'SPELLBOOK.Comparison.CompareSpell' name=spell.name}}"
+                      aria-label="{{localize 'SPELLBOOK.Comparison.CompareSpell' name=spell.name}}"></i>
+                  {{/if}}
+                  <button type="button" class="add-spell{{#if ../selectionMode}} select-toggle{{/if}}" data-action="addSpell" data-uuid="{{spell.uuid}}"
+                    data-tooltip="{{localize 'SPELLMANAGER.Buttons.AddSpell' name=spell.name}}">
+                    {{#if ../selectionMode}}
+                      <i class="fas fa-{{#if spell.isSelectedForAdd}}check-square{{else}}square{{/if}}" aria-hidden="true"></i>
+                    {{else}}
+                      <i class="fas fa-plus" aria-hidden="true"></i>
+                    {{/if}}
+                  </button>
+                </li>
+              {{/each}}
+            </ul>
+          {{else}}
+            {{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize "SPELLMANAGER.Columns.NoMatchingSpells")}}
+          {{/if}}
+        </div>
+      </div>
+      <div class="current-list-panel">
+        <h3 class="panel-header">{{selectedList.name}} ({{selectedList.spellCount}})</h3>
+        <div class="panel-scroll">
+          {{#if selectedList.spells.length}}
+            {{#each selectedList.spellsByLevel as |levelData|}}
+              <div class="spell-level" data-level="{{levelData.level}}">
+                <h4 class="spell-level-heading" data-action="toggleSpellHeader" data-level="{{levelData.level}}"
+                  role="button" aria-expanded="true">
+                  <i class="fas fa-caret-down collapse-indicator" aria-hidden="true"></i>
+                  {{levelData.levelName}}
+                </h4>
+                <ul class="spell-list" role="list">
+                  {{#each levelData.spells as |spell|}}
+                    <li class="spell-item{{#if @root.selectionMode}} selectable{{/if}}{{#if spell.isSelectedForRemoval}} selected{{/if}}"
+                      data-uuid="{{spell.uuid}}" draggable="true">
+                      <div class="spell-name">
+                        {{{spell.enrichedIcon}}}
+                        <div class="name-stacked">
+                          <span class="title">{{spell.name}}</span>
+                          <span class="subtitle">{{spell.formattedDetails}}</span>
+                        </div>
+                      </div>
+                      {{#if spell.showCompare}}
+                        <i class="fa-solid fa-scale-balanced spell-compare-icon{{#if spell.isInComparison}} active{{/if}}"
+                          data-action="compareSpell" data-uuid="{{spell.uuid}}"
+                          data-tooltip="{{localize 'SPELLBOOK.Comparison.CompareSpell' name=spell.name}}"
+                          aria-label="{{localize 'SPELLBOOK.Comparison.CompareSpell' name=spell.name}}"></i>
+                      {{/if}}
+                      <button type="button" class="remove-spell{{#if @root.selectionMode}} select-toggle{{/if}}" data-action="removeSpell" data-uuid="{{spell.uuid}}"
+                        data-tooltip="{{localize 'SPELLMANAGER.Buttons.RemoveSpell' name=spell.name}}">
+                        {{#if @root.selectionMode}}
+                          <i class="fas fa-{{#if spell.isSelectedForRemoval}}check-square{{else}}square{{/if}}" aria-hidden="true"></i>
+                        {{else}}
+                          <i class="fas fa-trash" aria-hidden="true"></i>
+                        {{/if}}
+                      </button>
+                    </li>
+                  {{/each}}
+                </ul>
+              </div>
+            {{/each}}
+          {{else}}
+            {{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize "SPELLMANAGER.Columns.NoSpells")}}
+          {{/if}}
+        </div>
+      </div>
+    </div>
+  {{else}}
+    <div class="no-selection">
+      <p>{{localize "SPELLMANAGER.Columns.NoListSelected"}}</p>
+    </div>
+  {{/if}}
 </section>

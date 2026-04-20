@@ -1,129 +1,93 @@
 # Spell Book
 
+Because preparing your spells shouldn't feel like an IRS audit.
+
+![Player Spell Book hero view](https://raw.githubusercontent.com/Sayshal/spell-book/main/docs/images/psb-hero.png)
+
 ![GitHub release](https://img.shields.io/github/v/release/Sayshal/spell-book?style=for-the-badge)
 ![GitHub Downloads (specific asset, all releases)](<https://img.shields.io/github/downloads/Sayshal/spell-book/module.zip?style=for-the-badge&logo=foundryvirtualtabletop&logoColor=white&logoSize=auto&label=Downloads%20(Total)&color=ff144f>)
-![GitHub Downloads (specific asset, latest release)](<https://img.shields.io/github/downloads/Sayshal/spell-book/latest/module.zip?sort=date&style=for-the-badge&logo=foundryvirtualtabletop&logoColor=white&logoSize=auto&label=Downloads%20(Latest)&color=ff144f>)
 
 ![Foundry Version](https://img.shields.io/endpoint?url=https%3A%2F%2Ffoundryshields.com%2Fversion%3Fstyle%3Dfor-the-badge%26url%3Dhttps%3A%2F%2Fgithub.com%2FSayshal%2Fspell-book%2Freleases%2Flatest%2Fdownload%2Fmodule.json)
 ![D&D5E Version](https://img.shields.io/endpoint?url=https%3A%2F%2Ffoundryshields.com%2Fsystem%3FnameType%3Dfoundry%26showVersion%3D1%26style%3Dfor-the-badge%26url%3Dhttps%3A%2F%2Fgithub.com%2FSayshal%2Fspell-book%2Freleases%2Flatest%2Fdownload%2Fmodule.json)
-
-## Supporting The Module
-
 [![Discord](https://dcbadge.limes.pink/api/server/PzzUwU9gdz)](https://discord.gg/PzzUwU9gdz)
 
-## Introduction
+**[Read the Wiki](https://github.com/Sayshal/spell-book/wiki)** for the full walkthrough.
 
-**Spell Book** transforms spell management in FoundryVTT with two powerful tools: the **Spell Book** interface for players and the **Spell List Manager** for GMs. Navigate your magical arsenal through an intuitive interface that fully supports both 2014 and 2024 D&D rules. From preparation to casting, handle everything in one centralized location with full multiclass support and class-specific rule customization.
+---
 
-The module streamlines spell management so you can focus on what matters—playing your game and unleashing arcane power in your adventures.
+## What You Get
 
-## Why Spell Book?
+**Player Spell Book.** A separate window for managing a character's spellcasting, opened from a button the module adds to the dnd5e sheet's Spells tab. One tab per spellcasting class, plus a Learn tab for wizard-enabled classes. Preparation checkboxes, filters, favorites, personal notes, comparison, loadouts, party-mode indicators. Draggable detachable into its own browser window, supports 2014 and 2024 rules.
 
-Traditional spell management in FoundryVTT requires endless compendium searches and confusing spell tracking across multiple interfaces. Spell Book solves these problems by providing:
+![Spell List Manager hero view](https://raw.githubusercontent.com/Sayshal/spell-book/main/docs/images/slm-hero.png)
 
-- **Unified Interface**: All spell management in one location
-- **Rule Automation**: Automatic enforcement of preparation limits and casting rules
-- **Smart Organization**: Separate tabs for each class, wizard spellbooks, and spell lists
-- **Party Coordination**: See what spells your party has prepared at a glance
-- **Flexible Configuration**: Customize rules for each class individually
+**Spell List Manager.** GM tool for authoring class spell lists. Create new lists, merge existing ones, or edit any stock list from a locked pack. Edits to locked packs auto-clone into your world on save and hide the original. Split-panel view with drag-and-drop between Available Spells and the current list, bulk-select mode for large edits, and a per-list registry toggle that surfaces the list's spells in class labels across Foundry.
 
-## Key Features
+**Filters.** Substring search on name. Level and range as min/max inputs. Dropdowns for school, casting time, target, damage type, condition, save, and source. A five-checkbox Properties group (Verbal, Somatic, Material, Concentration, Ritual) with tri-state click cycling: include, exclude, or ignore. Flat toggles for Costly Material Components, Prepared Only, and Favorites Only. Shift-clicking the reset button also unchecks every prepared spell on every tab.
 
-### Spell Book
+**Wizard Spellbook.** Per-class journal-backed spellbook for wizards and wizard-enabled classes. Gold and time copying (50 gp and 2 hours per spell level by default). Scroll learning with optional scroll consumption. Free spells on character creation (6 by default) and on level-up (2 per level). Ritual casting modes: none, prepared, or always-from-book (the last auto-injects ritual-mode items on save). Unlearn support.
 
-The main player interface provides complete spell management with:
+![Wizard Learn tab](https://raw.githubusercontent.com/Sayshal/spell-book/main/docs/images/psb-wizard-learn.png)
 
-- **Multiclass Support**: Each spellcasting class gets its own tab with independent tracking
-- **Rule Set Flexibility**: Support for both 2014 Legacy and 2024 Modern D&D rules
-- **Preparation Management**: Visual indicators for prepared, always-prepared, and ritual spells
-- **Wizard Spellbook**: Dedicated tab for tracking learned spells, copying costs, and ritual access
-- **Advanced Filtering**: Customizable filters for school, level, source, components, and more
-- **Spell Comparison**: Side-by-side comparison of multiple spells
-- **Scroll Scanner**: Automatically detect spell scrolls in inventory for learning
-- **Spell Notes**: Personal annotations for each spell that inject into descriptions
-- **Spell Loadouts**: Save and restore different spell preparation sets
-- **Long Rest Integration**: Optional prompts for spell swapping during rests
-- **Smart Cantrip Management**: Automatic cantrip swapping based on rule set
+**Spell Loadouts.** Per-class named preparation sets. Capture whatever's currently checked (no need to save first). Apply from the dialog, or right-click the Loadouts sidebar button for a quick-apply context menu. Hovering a loadout shows every spell in it, sorted by level, with inline icons.
 
-### Spell List Manager
+![Spell Loadouts dialog](https://raw.githubusercontent.com/Sayshal/spell-book/main/docs/images/loadout-selector.png)
 
-GM tool for complete control over spell lists:
+**Spell Comparison.** Side-by-side table for any number of spells. Columns: level, school, casting time, range, duration, components, damage. The damage cell highlights whichever spell rolls the most dice.
 
-- **List Customization**: Edit any existing spell list from any compendium
-- **Custom Creation**: Build new spell lists for homebrew classes or variants
-- **Merge Lists**: Combine multiple spell lists into unified collections
-- **Player Integration**: Custom lists automatically appear in player spell books
-- **Version Tracking**: Monitor when source lists have been updated
-- **Bulk Operations**: Add or remove multiple spells at once with multi-select
-- **List Organization**: Folder structure with hiding and filtering capabilities
-- **Character Access**: View and manage individual player spellbooks
+**Party Coordination.** Every party caster's prepared set on one screen. Per-level spell chips with actor tags, click a member card to filter to that caster, and a Synergy Analysis panel that flags low ritual count, damage-type overlap, duplicated prep, and save diversity.
 
-### Misc
+![Party Spell Coordination](https://raw.githubusercontent.com/Sayshal/spell-book/main/docs/images/party-coordinator.png)
 
-Additional tools that enhance the spell management experience:
+![Synergy Analysis](https://raw.githubusercontent.com/Sayshal/spell-book/main/docs/images/synergy-analysis.png)
 
-- **Party Spells Interface**: View all party spells in a unified grid with member indicators
-- **Spell Analytics Dashboard**: Track spell usage, favorites, and casting patterns
-- **Focus Distribution**: Manage arcane/druidic focus assignments across the party
-- **Synergy Analysis**: Strategic recommendations for party spell optimization
-- **Troubleshooter**: Diagnostic tool for resolving configuration issues
-- **Macro Support**: Extensive macro API for automation and custom workflows
-- **UI Customization**: Configure which spell details and metadata to display
-- **Rule Enforcement Options**: Choose between unenforced, GM notification, or full enforcement
-- **Class-Specific Overrides**: Customize preparation limits, ritual access, and swapping rules per class
+**Details Customization.** Turn specific metadata pieces on and off per spell row: level, components, school, casting time, range, damage type, condition, save, concentration, material components. Player and GM configurations are independent. Changes apply to open windows live.
+
+![Details Customization dialog](https://raw.githubusercontent.com/Sayshal/spell-book/main/docs/images/details-customization.png)
+
+---
+
+## Also Included
+
+- **Spell Notes.** Per-user personal annotations on any spell. Optional injection into the dnd5e sheet's spell description (before or after).
+- **Subclass Spell Lists.** Pick the Life Domain or Oath of Devotion list directly instead of relying on dnd5e's registry to auto-merge.
+- **Swap Timing.** Per-class cantrip and spell swapping: level-up, long-rest, or never. Long-rest completion prompts when the window opens.
+- **GM Notifications.** Optional chat message when a player prepares past their class limit. World toggle with per-actor override.
+- **Troubleshooter.** GM diagnostic that generates a JSON report to paste into a GitHub issue or Discord.
+- **Light and dark themes.** Light uses the dnd5e parchment texture with copper accents.
+
+---
+
+## For the Tinkerers
+
+Public API at `SPELLBOOK.api` (also at `game.modules.get('spell-book').api`):
+
+```javascript
+// Launch the Spell Book for the current actor
+SPELLBOOK.api.spellBookQuickAccess();
+
+// Find spells not covered by any class list
+await SPELLBOOK.api.spellsNotInLists();
+
+// Scroll scan for a wizard
+const scrolls = await SPELLBOOK.api.scrollScanner(actor);
+
+// Dump everything about a spell (pack, source book, filter data)
+SPELLBOOK.api.debugSpell('Revivify');
+```
+
+Hooks: `spellBookOpened { actor, app }`, `spellBookClosed { actor }`.
+
+---
 
 ## Installation
 
-Get Spell Book through Foundry's Module Manager or The Forge's Bazaar for instant setup.
+Find **Spell Book** in Foundry's Module Browser, or paste this manifest URL:
 
-### Manual Installation
+```
+https://github.com/Sayshal/spell-book/releases/latest/download/module.json
+```
 
-1. Open Foundry's Configuration and Setup screen
-2. Click Install Module in the Add-on Modules section
-3. Paste this URL in the Manifest URL field: `https://github.com/Sayshal/spell-book/releases/latest/download/module.json`
-4. Click Install
-5. Enable the module in your world
+Compatible with Foundry v14+ and dnd5e 5.3+.
 
-## Getting Started
-
-### Quick Setup
-
-1. **Configure Compendiums**: Select which compendiums contain your spells
-2. **Choose Rule Set**: Select Legacy (2014) or Modern (2024) rules
-3. **Set Enforcement**: Decide how strictly to enforce spellcasting limits
-4. **Open Spell Book**: Click the book icon in the token controls or use the character sheet button
-
-For detailed setup instructions, see the [Installation and Settings](https://github.com/Sayshal/spell-book/wiki/Installation-and-Settings) wiki page.
-
-### Player Quick Start
-
-1. Open your Spell Book from the token controls or character sheet
-2. Navigate to your class tab to see available spells
-3. Check spells to prepare them (up to your preparation limit)
-4. Use filters to find specific spells quickly
-5. Save preparation sets as loadouts for easy swapping
-
-See the [Player Quick Start](https://github.com/Sayshal/spell-book/wiki/Player-Quick-Start) guide for detailed instructions.
-
-### GM Quick Start
-
-1. Open the Spell List Manager from the Settings menu
-2. Browse existing spell lists or create custom ones
-3. Edit lists by adding or removing spells
-4. Custom lists automatically appear in player spell books
-
-Check the [GM Quick Start](https://github.com/Sayshal/spell-book/wiki/DM-Quick-Start) guide for more information.
-
-## Documentation
-
-Complete documentation is available in the [Spell Book Wiki](https://github.com/Sayshal/spell-book/wiki):
-
-- [SpellBook Interface Overview](https://github.com/Sayshal/spell-book/wiki/SpellBook-Interface-Overview)
-- [SpellListManager Interface Overview](https://github.com/Sayshal/spell-book/wiki/SpellListManager-Interface-Overview)
-- [Spell Preparation System](https://github.com/Sayshal/spell-book/wiki/Spell-Preparation-System)
-- [Multiclass Spellcasting](https://github.com/Sayshal/spell-book/wiki/Multiclass-Spellcasting)
-- [Wizard Spellbook Management](https://github.com/Sayshal/spell-book/wiki/Wizard-Spellbook-Management)
-- [PartySpells Interface Overview](https://github.com/Sayshal/spell-book/wiki/PartySpells-Interface-Overview)
-- [Creating New Spell Lists](https://github.com/Sayshal/spell-book/wiki/Creating-New-Spell-Lists)
-- [Modifying Existing Spell Lists](https://github.com/Sayshal/spell-book/wiki/Modifying-Existing-Spell-Lists)
-- [Macros](https://github.com/Sayshal/spell-book/wiki/Macros)
+Questions? Ideas? Ping us on [Discord](https://discord.gg/PzzUwU9gdz) or check the [Wiki](https://github.com/Sayshal/spell-book/wiki).

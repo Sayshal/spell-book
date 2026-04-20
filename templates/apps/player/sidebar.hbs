@@ -1,53 +1,31 @@
-<div class="sidebar card" role="complementary">
-  <!-- Sidebar Control Buttons - External button bar for sidebar management -->
-  <div class="sidebar-controls">
-    <!-- UI Customization Access Button -->
-    <button type="button" class="ui-customization-button unbutton interface-only" data-action="openCustomization"
-      data-tooltip="{{localize 'SPELLBOOK.Settings.DetailsCustomization.MenuLabel'}}"
-      aria-label="{{localize 'SPELLBOOK.Settings.DetailsCustomization.MenuLabel'}}">
-      <i class="fas fa-palette" aria-hidden="true"></i>
-    </button>
-
-    <!-- Filter Configuration Access Button -->
-    <button type="button" class="filter-config-button unbutton interface-only" data-action="openFilterConfig"
-      data-tooltip="{{localize 'SPELLBOOK.UI.FilterControls'}}" aria-label="{{localize 'SPELLBOOK.UI.FilterControls'}}">
-      <i class="fas fa-cog" aria-hidden="true"></i>
-    </button>
-
-    <!-- GM-Only Cantrip Settings Button -->
-    {{#if isGM}}
-      <button type="button" class="cantrip-config-button unbutton interface-only" data-action="openSettings"
-        data-tooltip="{{localize 'SPELLBOOK.UI.SpellSettings'}}" aria-label="{{localize 'SPELLBOOK.UI.SpellSettings'}}">
-        <i class="fas fa-magic" aria-hidden="true"></i>
-      </button>
-    {{/if}}
-
-    <!-- Sidebar Collapse/Expand Toggle -->
-    <button type="button" class="sidebar-collapser collapser vertical unbutton interface-only"
-      data-action="toggleSidebar" data-tooltip="{{localize 'SPELLBOOK.UI.ToggleSidebar'}}"
-      aria-label="{{localize 'SPELLBOOK.UI.ToggleSidebar'}}" aria-expanded="true">
-      <i class="fas fa-caret-left collapse-indicator" aria-hidden="true"></i>
-    </button>
-  </div>
-
-  <!-- Spell Filtering Section - Dynamic filter controls for spell browsing -->
-  <div class="spell-filters" role="search" aria-label="{{localize 'SPELLBOOK.UI.SpellFilters'}}">
-    {{#each filters as |filter|}}
-      <!-- Individual Filter Item - Conditionally visible based on enabled state -->
-      <div class="filter-item filter-{{filter.type}}" data-filter-id="{{filter.id}}"
-        {{#unless filter.enabled}}style="display: none;" {{/unless}}>
-
-        <!-- Filter Label - Hidden for checkbox filters which have integrated labels -->
-        {{#if (ne filter.type "checkbox")}}
-          <label for="{{filter.id}}">{{filter.label}}</label>
-        {{/if}}
-
-        <!-- Pre-rendered Filter Element HTML - Supports various input types -->
-        {{{filter.elementHtml}}}
-      </div>
-    {{/each}}
-  </div>
-
-  <!-- Footer Container - Used for spell preparation display when sidebar is open -->
-  <div class="sidebar-footer-container"></div>
-</div>
+<aside class="spell-book-sidebar">
+	<div class="sidebar-search">
+		<input type="text" name="filter-name" class="filter-search-input"
+			placeholder="{{localize 'SPELLBOOK.Filters.Search'}}" aria-label="{{localize 'SPELLBOOK.Filters.Search'}}">
+	</div>
+	<div class="sidebar-filter-section"></div>
+	<div class="sidebar-controls">
+		<button type="button" class="sidebar-btn" data-action="openSettings"
+			data-tooltip="{{localize 'SPELLBOOK.UI.Settings'}}">
+			<i class="fas fa-cog" aria-hidden="true"></i>
+		</button>
+		<button type="button" class="sidebar-btn" data-action="openLoadoutDialog"
+			data-tooltip="{{localize 'SPELLBOOK.Loadouts.Title'}}">
+			<i class="fas fa-toolbox" aria-hidden="true"></i>
+		</button>
+		{{#if hasParty}}
+			<button type="button" class="sidebar-btn{{#if partyModeActive}} active{{/if}}" data-action="openPartyManager"
+				data-tooltip="{{localize 'SPELLBOOK.Party.Title'}}">
+				<i class="fas fa-users" aria-hidden="true"></i>
+			</button>
+		{{/if}}
+		<button type="button" class="sidebar-btn" data-action="resetState"
+			data-tooltip="{{localize 'SPELLBOOK.UI.Reset'}}">
+			<i class="fas fa-rotate-left" aria-hidden="true"></i>
+		</button>
+		<button type="button" class="sidebar-btn save-spells-btn" data-action="saveSpells"
+			data-tooltip="{{localize 'SPELLBOOK.UI.Save'}}">
+			<i class="fas fa-save" aria-hidden="true"></i>
+		</button>
+	</div>
+</aside>
