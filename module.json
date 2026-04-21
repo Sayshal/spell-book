@@ -9,8 +9,8 @@
   "bugs": "https://github.com/Sayshal/spell-book/issues",
   "changelog": "https://github.com/Sayshal/spell-book/releases",
   "compatibility": {
-    "minimum": "14.361",
-    "verified": "14.361"
+    "minimum": "14",
+    "verified": "14"
   },
   "description": "Enhanced spell management for DnD5e. Easily view, prepare, and customize spell lists.",
   "download": "",
