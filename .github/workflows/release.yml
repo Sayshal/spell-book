@@ -74,6 +74,7 @@ jobs:
           LICENSE \
           module.json \
           README.md \
+          spell-book.mjs \
           -x "*.lock" \
           -x "package*.json" \
           -x "node_modules/*"
