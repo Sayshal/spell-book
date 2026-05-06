@@ -27,15 +27,15 @@ Each spell row on the Learn tab resolves to one of three states:
 |---|---|---|
 | Available from the spell list | **Learn Spell** button | Free copies are added immediately. Paid copies open a confirmation dialog quoting the gold cost and time from `WizardBook.getCopyingCost()` and `WizardBook.getCopyingTime()`. |
 | Available from a scroll | **Learn Spell** button with scroll icon | Calls `learnSpellFromScroll`. If `Consume Scrolls When Learning` (world setting) is enabled, the scroll's `quantity` is decremented; the scroll is deleted when quantity hits zero. |
-| Already in the spellbook | **In Spellbook** badge | Shows a source icon (book / scroll / shopping cart / level-up arrow — see [Learning Sources](#learning-sources)). Hovering reveals an eraser-icon unlearn affordance; clicking removes the spell from the spellbook. |
+| Already in the spellbook | **In Spellbook** badge | Shows a source icon (book / scroll / shopping cart / level-up arrow; see [Learning Sources](#learning-sources)). Hovering reveals an eraser-icon unlearn affordance; clicking removes the spell from the spellbook. |
 
 ### Footer Counters
 
 The Learn tab footer displays:
 
-- **Cantrip counter** — only when `showCantrips` is true for the class.
-- **Known spells** — `current / max`, where max is `getMaxSpellsAllowed()`.
-- **Free copies remaining** — from `getRemainingFreeSpells()`. When this reaches zero, any further non-scroll copies require gold and time.
+- **Cantrip counter:** only when `showCantrips` is true for the class.
+- **Known spells:** `current / max`, where max is `getMaxSpellsAllowed()`.
+- **Free copies remaining:** from `getRemainingFreeSpells()`. When this reaches zero, any further non-scroll copies require gold and time.
 
 ---
 
@@ -97,8 +97,8 @@ Both multipliers are configurable per class in [Class Rules](Ruleset-Types-and-M
 max = startingSpells + max(0, classLevel - 1) * spellsPerLevel
 ```
 
-- `startingSpells` default: **6** (`WIZARD_DEFAULTS.STARTING_SPELLS`) — granted on first processing of the class with source `initial`.
-- `spellsPerLevel` default: **2** (`WIZARD_DEFAULTS.SPELLS_PER_LEVEL`) — granted on level-up with source `levelUp`.
+- `startingSpells` default: **6** (`WIZARD_DEFAULTS.STARTING_SPELLS`); granted on first processing of the class with source `initial`.
+- `spellsPerLevel` default: **2** (`WIZARD_DEFAULTS.SPELLS_PER_LEVEL`); granted on level-up with source `levelUp`.
 
 Both are configurable per class in Class Rules. Class level reads from `actor.spellcastingClasses[classId].system.levels`.
 
@@ -144,7 +144,7 @@ Spells learned as `copied` or `scroll` append an entry to the `actor.flags.spell
 | `timeSpent` | Minutes taken |
 | `fromScroll` | `true` for scroll learns, `false` for paid copies |
 
-Unlearning removes the entry. Spells learned via `initial`, `free`, or `levelUp` have no flag entry — absence of an entry is what marks a spell as a free-pool occupant.
+Unlearning removes the entry. Spells learned via `initial`, `free`, or `levelUp` have no flag entry; absence of an entry is what marks a spell as a free-pool occupant.
 
 ---
 
@@ -179,7 +179,7 @@ Every spell in the spellbook resolves to one of five sources, defined in `WIZARD
 
 ### Filtering
 
-Scrolls whose contained spell UUID is already in the wizard's spellbook are excluded from the Learn tab — the spell is already known.
+Scrolls whose contained spell UUID is already in the wizard's spellbook are excluded from the Learn tab; the spell is already known.
 
 ---
 
@@ -210,7 +210,7 @@ The first time a wizard-enabled class is processed for an actor, `WizardBook._in
 
 Each subsequent class level grants `WIZARD_DEFAULTS.SPELLS_PER_LEVEL` (default **2**) spells as source `levelUp`. These are free.
 
-Both grants simply add UUIDs to the spellbook page without creating copied-spell flag entries — they behave identically to `free` adds for accounting purposes.
+Both grants simply add UUIDs to the spellbook page without creating copied-spell flag entries; they behave identically to `free` adds for accounting purposes.
 
 ---
 
@@ -262,15 +262,15 @@ Key static methods on `WizardBook` (`scripts/managers/wizard-book.mjs`):
 | `getCopyingTime(actor, classId, spell)` | Formatted time string |
 | `getMaxSpellsAllowed(actor, classId)` | Capacity formula result |
 | `getUsedFreeSpells(actor, classId)` | Count of non-paid spells in the spellbook |
-| `getRemainingFreeSpells(actor, classId)` | `max − used`, floored at zero |
+| `getRemainingFreeSpells(actor, classId)` | `max - used`, floored at zero |
 | `isSpellFree(actor, classId, spell)` | Whether the next copy would be free |
 | `getSpellLearningSource(actor, classId, uuid)` | Resolves to `free` / `copied` / `scroll` from the flag |
 | `invalidateCache(actor)` | Drop journal and spellbook caches |
 
 Related modules:
 
-- `scripts/apps/player-spell-book.mjs` — Learn tab render (`_buildRenderContext` with `isLearn`), `#onLearnSpell`, `#onLearnSpellFromScroll`, `#onUnlearnSpell`.
-- `scripts/managers/spell-manager.mjs` — save flow and ritual auto-injection.
-- `scripts/data/scroll-processor.mjs` — `scanForScrollSpells`.
-- `scripts/constants.mjs` — `WIZARD_DEFAULTS`, `WIZARD_SPELL_SOURCE`, `FLAGS.WIZARD_COPIED_SPELLS`.
-- `templates/apps/player/tab-learn.hbs`, `templates/components/spell-item.hbs` — Learn tab and per-row wizard action block.
+- `scripts/apps/player-spell-book.mjs`: Learn tab render (`_buildRenderContext` with `isLearn`), `#onLearnSpell`, `#onLearnSpellFromScroll`, `#onUnlearnSpell`.
+- `scripts/managers/spell-manager.mjs`: save flow and ritual auto-injection.
+- `scripts/data/scroll-processor.mjs`: `scanForScrollSpells`.
+- `scripts/constants.mjs`: `WIZARD_DEFAULTS`, `WIZARD_SPELL_SOURCE`, `FLAGS.WIZARD_COPIED_SPELLS`.
+- `templates/apps/player/tab-learn.hbs`, `templates/components/spell-item.hbs`: Learn tab and per-row wizard action block.

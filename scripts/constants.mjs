@@ -109,9 +109,6 @@ export const CLASS_IDENTIFIERS = {
 /** @type {object} Default wizard configuration */
 export const WIZARD_DEFAULTS = { RITUAL_CASTING: true, SPELL_LEARNING_COST_MULTIPLIER: 50, SPELL_LEARNING_TIME_MULTIPLIER: 120, SPELLS_PER_LEVEL: 2, STARTING_SPELLS: 6 };
 
-/** @type {object} Default preparation bonuses */
-export const PREPARATION_DEFAULTS = { SPELL_PREPARATION_BONUS: 0, CANTRIP_PREPARATION_BONUS: 0 };
-
 /** @enum {string} Wizard spell source types */
 export const WIZARD_SPELL_SOURCE = { COPIED: 'copied', FREE: 'free', INITIAL: 'initial', LEVEL_UP: 'levelUp', SCROLL: 'scroll' };
 
@@ -120,9 +117,6 @@ export const DEBOUNCE_DELAY = 150;
 
 /** @type {number} Debounce delay for text search (ms) */
 export const SEARCH_DEBOUNCE_DELAY = 800;
-
-/** @type {number} Maximum recent searches retained per actor */
-export const MAX_RECENT_SEARCHES = 8;
 
 /** @type {object} Template path constants */
 export const TEMPLATES = {

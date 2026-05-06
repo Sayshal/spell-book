@@ -129,18 +129,6 @@ export function formatMaterialComponents(spell) {
 }
 
 /**
- * Get localized preparation mode text.
- * @param {string} mode - The preparation mode identifier
- * @returns {string} Localized preparation mode text (e.g., "Prepared", "Known")
- */
-export function getLocalizedPreparationMode(mode) {
-  if (!mode) return '';
-  const label = getConfigLabel(CONFIG.DND5E.spellcasting, mode);
-  if (label) return label;
-  return mode.charAt(0).toUpperCase() + mode.slice(1);
-}
-
-/**
  * Extracts additional spell data for filtering.
  * @param {object} spell - The spell document
  * @returns {object} Additional data for filtering

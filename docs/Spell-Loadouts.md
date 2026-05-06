@@ -43,12 +43,12 @@ It is divided into two fieldsets.
 |---|---|---|
 | **Loadout Name** | Yes | Human-readable label shown in the list. Trimmed before saving. |
 | **Loadout Description** | No | Optional note. Appears inline next to the loadout name. |
-| **Save Current Configuration** button | — | Captures the **live checkbox state** for the active class and stores it as a new loadout. |
+| **Save Current Configuration** button | n/a | Captures the **live checkbox state** for the active class and stores it as a new loadout. |
 
 Validation:
 
-- Empty name → rejected with `SPELLBOOK.Loadouts.NameRequired` (`"Loadout name is required"`).
-- Empty spell set → rejected with `SPELLBOOK.Loadouts.NoSpellsPrepared` (`"No spells are currently prepared to save"`).
+- Empty name: rejected with `SPELLBOOK.Loadouts.NameRequired` (`"Loadout name is required"`).
+- Empty spell set: rejected with `SPELLBOOK.Loadouts.NoSpellsPrepared` (`"No spells are currently prepared to save"`).
 
 On success, the form resets and the dialog re-renders with the new entry in the list.
 
@@ -56,21 +56,21 @@ On success, the form resets and the dialog re-renders with the new entry in the 
 
 Save does **not** read the actor's persisted prep flag. It calls `parent.getCurrentPreparedUuids(classIdentifier)` on the PSB, which resolves the spell set in this order:
 
-1. **Live checkboxes** in the rendered class tab — the boxes currently ticked by the user, even if the sheet hasn't been saved yet.
+1. **Live checkboxes** in the rendered class tab: the boxes currently ticked by the user, even if the sheet hasn't been saved yet.
 2. **Pending changes** stored for the tab (for tabs that were edited then switched away from but not yet submitted).
 3. **Actor flag** (`flags.spell-book.preparedSpellsByClass`) as a last fallback if the tab isn't loaded.
 
-This means players can design loadouts interactively — tick the spells they want, name the loadout, save — without ever committing the prep to the sheet.
+This means players can design loadouts interactively (tick the spells they want, name the loadout, save) without ever committing the prep to the sheet.
 
 ### Saved Loadouts
 
 Each existing loadout renders as a row with two regions:
 
-**Left — text block:**
+**Left side, text block:**
 - **Name** and optional **description**.
 - **Meta line**: `{count} spells • Last updated {relative time}` (via `foundry.utils.timeSince`).
 
-**Right — action group** (icon-only, bare buttons that pick up theme color on hover):
+**Right side, action group** (icon-only, bare buttons that pick up theme color on hover):
 
 | Icon | Action | Behavior |
 |---|---|---|
@@ -84,7 +84,7 @@ If no loadouts exist for the class, the list is replaced by a `SPELLBOOK.Loadout
 
 ### Delete Confirmation
 
-Clicking **Delete** opens a `DialogV2.confirm` titled `SPELLBOOK.Loadouts.ConfirmDelete`, rendered with `detachedRenderOptions(this)` so it detaches cleanly on the popout. Cancelling leaves the loadout untouched. On confirm, `Loadouts.deleteLoadout` is called — this removes the entry from the actor flag and invalidates the cache. Loadouts are actor flags, not journal pages, so no custom-spell-list cleanup is involved.
+Clicking **Delete** opens a `DialogV2.confirm` titled `SPELLBOOK.Loadouts.ConfirmDelete`, rendered with `detachedRenderOptions(this)` so it detaches cleanly on the popout. Cancelling leaves the loadout untouched. On confirm, `Loadouts.deleteLoadout` is called; this removes the entry from the actor flag and invalidates the cache. Loadouts are actor flags, not journal pages, so no custom-spell-list cleanup is involved.
 
 ---
 
@@ -95,9 +95,9 @@ Clicking **Delete** opens a `DialogV2.confirm` titled `SPELLBOOK.Loadouts.Confir
 1. Reads the current prepared set from `flags.spell-book.preparedSpellsByClass`.
 2. Builds the union `current ∪ loadout`.
 3. For each UUID, resolves the spell via `fromUuidSync` and constructs an entry with:
-   - `isPrepared` — `true` if the UUID is in the loadout.
-   - `wasPrepared` — `true` if the UUID was currently prepared.
-   - `spellLevel`, `name`, `isRitual` — read from the resolved spell.
+   - `isPrepared`: `true` if the UUID is in the loadout.
+   - `wasPrepared`: `true` if the UUID was currently prepared.
+   - `spellLevel`, `name`, `isRitual`: read from the resolved spell.
 4. Hands the combined map to `SpellManager.saveClassSpecificPreparedSpells`, which performs the actual grant/revoke work on the actor.
 5. Calls `parent.refreshClassTab(classIdentifier)` so the PSB re-renders the tab with the new checkbox state immediately.
 

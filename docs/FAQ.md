@@ -24,35 +24,35 @@ Spell Book is built exclusively for the **dnd5e** system (5.3.0 or later). It is
 
 No. Packaged macros were replaced with a public [API](API-Reference). Create your own hotbar macro that calls one of:
 
-- `SPELLBOOK.api.spellBookQuickAccess()` — open the Spell Book for the selected token
-- `SPELLBOOK.api.spellSlotTracker()` — post a chat card listing slot usage
-- `SPELLBOOK.api.scrollScanner()` — scan every Item compendium for spell scrolls
-- `SPELLBOOK.api.spellsNotInLists()` — GM-only: find spells not referenced by any spell list
-- `SPELLBOOK.api.debugSpell('name')` — dump index entries for spells matching a name
-- `SPELLBOOK.api.flagPurge()` — GM-only: purge Spell Book flags from an actor
+- `SPELLBOOK.api.spellBookQuickAccess()`: open the Spell Book for the selected token
+- `SPELLBOOK.api.spellSlotTracker()`: post a chat card listing slot usage
+- `SPELLBOOK.api.scrollScanner()`: scan every Item compendium for spell scrolls
+- `SPELLBOOK.api.spellsNotInLists()`: GM-only. Find spells not referenced by any spell list
+- `SPELLBOOK.api.debugSpell('name')`: dump index entries for spells matching a name
+- `SPELLBOOK.api.flagPurge()`: GM-only. Purge Spell Book flags from an actor
 
 ---
 
 ## Spell Lists and Class Configuration
 
-### My class tab is empty — what do I do?
+### My class tab is empty. What do I do?
 
 Open **Spell Book Settings** on the actor and pick a **Class Spell List** for that class. Without a list assigned, the class has no spell source and the tab will be empty.
 
 ### Subclass spells aren't showing up.
 
-Open **Spell Book Settings** and set a **Subclass Spell List** explicitly. The automatic subclass fallback was removed — a subclass list only appears if you point at one directly.
+Open **Spell Book Settings** and set a **Subclass Spell List** explicitly. The automatic subclass fallback was removed; a subclass list only appears if you point at one directly.
 
 ### How do I get bonus domain / oath / patron spells?
 
 In **Spell Book Settings**, pick the subclass journal in the **Subclass Spell List** field. That journal holds the expanded list (domain spells for Clerics, oath spells for Paladins, patron spells for Warlocks, etc.) and its spells are granted and always prepared.
 
-### I edited a stock spell list — where did the original go?
+### I edited a stock spell list. Where did the original go?
 
 When you modify a bundled list, the original is moved into the **Hidden Spell Lists** folder automatically so it doesn't shadow your edits. To restore it:
 
 - Open the Spell List Manager, find the entry in the Hidden folder, and toggle its visibility via the eye icon, **or**
-- Delete your modified version — the original becomes visible again.
+- Delete your modified version; the original becomes visible again.
 
 ### After modifying a list, the "Classes" label on a spell isn't right.
 
@@ -61,7 +61,7 @@ When you modify a bundled list, the original is moved into the **Hidden Spell Li
 
 ### Why do some spells (Fire Bolt, Shield, etc.) appear multiple times?
 
-Multiple source packs ship the same spell — SRD 5.1, SRD 5.2, and PHB 2024 all include many overlapping entries. All copies are legitimate; Spell Book no longer dedupes them because doing so silently hid content from some packs. Use [`debugSpell('spell name')`](API-Reference#debugspellname) to see which packs a given spell name comes from, and pick the copy you prefer in the Spell List Manager.
+Multiple source packs ship the same spell. SRD 5.1, SRD 5.2, and PHB 2024 all include many overlapping entries. All copies are legitimate; Spell Book no longer dedupes them because doing so silently hid content from some packs. Use [`debugSpell('spell name')`](API-Reference#debugspellname) to see which packs a given spell name comes from, and pick the copy you prefer in the Spell List Manager.
 
 ### How do I find spells that aren't in any list?
 

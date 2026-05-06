@@ -31,16 +31,16 @@ Each class prepares independently. The footer shows `X/Y Spells` and `X/Y Cantri
 
 Exceeding the class max does **not** block saving. If the GM has enabled `Notify GM on Spell Changes`, they will receive a notification. See [Spell Preparation System](Spell-Preparation-System) for the full story.
 
-Pending checkbox changes are remembered across tab switches — you can tweak spells on multiple class tabs, then Save once at the end.
+Pending checkbox changes are remembered across tab switches; tweak spells on multiple class tabs, then Save once at the end.
 
 ## Spell Row Icons
 
 Each spell row may show:
 
-- **Checkbox** — prepare/unprepare.
-- **Star** — toggle favorite (per actor, per user).
-- **Sticky note** — open [Spell Notes](Spell-Notes) to add personal notes. Notes can be injected into the spell's description.
-- **Balance scale** — add to comparison. Shown when enabled in [Details Customization](Details-Customization). Any number of spells can be compared side by side; the dialog widens as you add more.
+- **Checkbox:** prepare/unprepare.
+- **Star:** toggle favorite (per actor, per user).
+- **Sticky note:** open [Spell Notes](Spell-Notes) to add personal notes. Notes can be injected into the spell's description.
+- **Balance scale:** add to comparison. Shown when enabled in [Details Customization](Details-Customization). Any number of spells can be compared side by side; the dialog widens as you add more.
 
 Spells granted by class features, items, or always-prepared effects show a disabled checkbox with a tooltip explaining the source.
 
@@ -49,23 +49,23 @@ Spells granted by class features, items, or always-prepared effects show a disab
 The sidebar offers:
 
 - **Name** search box (substring, case-insensitive).
-- **Spell Level** — min/max number inputs.
-- **School, Casting Time, Target, Damage Type, Condition, Save, Source** — dropdowns.
-- **Range** — min/max number inputs (unit auto-matches your world setting).
-- **Properties** — five tri-state toggles (Verbal, Somatic, Material, Concentration, Ritual). Click to cycle `ignore → include → exclude`; right-click to cycle backwards. Exclude turns the indicator red with an × icon.
-- **Costly Material Components** — checkbox; hides spells that don't consume valuable materials.
-- **Prepared Only** — show only currently-prepared spells.
-- **Favorites Only** — show only starred spells.
+- **Spell Level:** min/max number inputs.
+- **School, Casting Time, Target, Damage Type, Condition, Save, Source:** dropdowns.
+- **Range:** min/max number inputs (unit auto-matches your world setting).
+- **Properties:** five tri-state toggles (Verbal, Somatic, Material, Concentration, Ritual). Click to cycle `ignore → include → exclude`; right-click to cycle backwards. Exclude turns the indicator red with an × icon.
+- **Costly Material Components:** checkbox; hides spells that don't consume valuable materials.
+- **Prepared Only:** show only currently-prepared spells.
+- **Favorites Only:** show only starred spells.
 
 ### Reset Button
 
-The circular-arrow **Reset** button (sidebar footer, between the action row and Save) clears all filters. **Shift-click** also unchecks every preparation checkbox across every class tab — useful for starting a full re-prep from scratch. The unchecks are staged until you press Save, so you can Shift-click, re-prepare, then Save.
+The circular-arrow **Reset** button (sidebar footer, between the action row and Save) clears all filters. **Shift-click** also unchecks every preparation checkbox across every class tab, which is useful for starting a full re-prep from scratch. The unchecks are staged until you press Save, so you can Shift-click, re-prepare, then Save.
 
 ## Loadouts
 
 Save and reload prepared-spell sets per class. Click the **Loadouts** sidebar button (toolbox icon) to open [Spell Loadouts](Spell-Loadouts). Useful for swapping between combat and utility preparations.
 
-**Tip:** right-click the Loadouts button to pop up a quick-select menu of saved loadouts for the active class — click one to apply it immediately.
+**Tip:** right-click the Loadouts button to pop up a quick-select menu of saved loadouts for the active class. Click one to apply it immediately.
 
 ## Wizard Learn Tab
 

@@ -142,11 +142,6 @@ export async function formatUserSpellsHTML(spellData, userName, userId) {
   });
 }
 
-/** Clear the session cache. Call on relevant hooks (updateJournalEntryPage, etc.). */
-export function clearCache() {
-  cache.clear();
-}
-
 /**
  * Parse spell data from legacy HTML tables (pre-3.1 migration path).
  * @param {string} htmlContent - Journal page HTML content

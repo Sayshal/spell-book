@@ -47,9 +47,9 @@ Toggling Party Mode fires a notification and reloads the active tab so indicator
 
 The Party Coordinator is an `ApplicationV2` (framed, resizable, titled **Party Spell Coordination**) with three stacked sections:
 
-1. **Header** — group name, member count, and action buttons: **Refresh** (sync icon) and **Synergy Analysis** (line-chart icon).
-2. **Member cards** — one card per spellcaster in the party.
-3. **Spell comparison** — a per-level chip-list of every known spell in the party.
+1. **Header.** Group name, member count, and action buttons: **Refresh** (sync icon) and **Synergy Analysis** (line-chart icon).
+2. **Member cards.** One card per spellcaster in the party.
+3. **Spell comparison.** A per-level chip-list of every known spell in the party.
 
 ---
 
@@ -84,7 +84,7 @@ Level headers:
 - Can be **collapsed and expanded**. Collapsed state is persisted per user via the `partyCollapsedLevels` flag.
 - When a member filter is active, the count updates to `(visible/total)` and empty levels are hidden.
 
-The **Refresh** button drops cached analysis and rebuilds the matrix — useful after another character's spell book was saved elsewhere. The window also auto-refreshes on `updateActor`, `createItem`, `updateItem`, and `deleteItem` hooks scoped to party members.
+The **Refresh** button drops cached analysis and rebuilds the matrix. Useful after another character's spell book was saved elsewhere. The window also auto-refreshes on `updateActor`, `createItem`, `updateItem`, and `deleteItem` hooks scoped to party members.
 
 Data is collected locally: the coordinator iterates the group's creatures, filters to spellcasters, and reads each actor's prepared spells directly. There is no socket round-trip.
 
@@ -109,18 +109,18 @@ When the numbers cross internal thresholds, the dialog surfaces short text-only 
 
 ### Overview
 
-- **Total Unique Spells** — unique known spells across the party.
-- **Total Prepared Spells** — unique prepared spells across the party.
-- **Concentration** — count and percentage of prepared spells that require concentration. Tooltip lists each member's concentration spells.
-- **Ritual** — count of prepared rituals. Tooltip lists each member's ritual spells.
+- **Total Unique Spells:** unique known spells across the party.
+- **Total Prepared Spells:** unique prepared spells across the party.
+- **Concentration:** count and percentage of prepared spells that require concentration. Tooltip lists each member's concentration spells.
+- **Ritual:** count of prepared rituals. Tooltip lists each member's ritual spells.
 
 ### Distributions
 
-- **School Distribution** — count and percentage per school, with member breakdown tooltips.
-- **Spell Level Distribution** — count and percentage per level (only levels with prepared spells).
-- **Damage Types** — aggregate damage-type usage, sorted by localized name, with member tooltips.
-- **Components** — Verbal (V), Somatic (S), Material (M), and Material-costly (M*) counts, each with member tooltips.
-- **Duplicate Prepared Spells** — spells prepared by two or more members, with a count badge.
+- **School Distribution:** count and percentage per school, with member breakdown tooltips.
+- **Spell Level Distribution:** count and percentage per level (only levels with prepared spells).
+- **Damage Types:** aggregate damage-type usage, sorted by localized name, with member tooltips.
+- **Components:** Verbal (V), Somatic (S), Material (M), and Material-costly (M*) counts, each with member tooltips.
+- **Duplicate Prepared Spells:** spells prepared by two or more members, with a count badge.
 
 All breakdown tooltips render via Foundry's native `data-tooltip-html`, showing one line per contributing member.
 
@@ -148,9 +148,9 @@ Only spells on actors the current user can **Observe** are counted, so GM and pl
 
 ## Code References
 
-- [[party-coordinator.mjs|scripts/apps/party-coordinator.mjs]] — main Party Coordinator app.
-- [[synergy-analysis.mjs|scripts/dialogs/synergy-analysis.mjs]] — Synergy Analysis dialog.
-- [[party-mode.mjs|scripts/managers/party-mode.mjs]] — `getPrimaryGroupForActor`, `getPartyActors`, analysis pipeline, party-mode flag helpers.
-- [[sheets.mjs|scripts/utils/sheets.mjs]] — group-sheet and Tidy5e button injection.
+- [[party-coordinator.mjs|scripts/apps/party-coordinator.mjs]]: main Party Coordinator app.
+- [[synergy-analysis.mjs|scripts/dialogs/synergy-analysis.mjs]]: Synergy Analysis dialog.
+- [[party-mode.mjs|scripts/managers/party-mode.mjs]]: `getPrimaryGroupForActor`, `getPartyActors`, analysis pipeline, party-mode flag helpers.
+- [[sheets.mjs|scripts/utils/sheets.mjs]]: group-sheet and Tidy5e button injection.
 - [[main.hbs|templates/apps/party/main.hbs]], [[synergy-analysis.hbs|templates/apps/party/synergy-analysis.hbs]].
-- [[constants.mjs|scripts/constants.mjs]] — `PARTY_MODE_TOKEN_LIMIT`, `FLAGS.PARTY_MODE_ENABLED`, `FLAGS.PARTY_COLLAPSED_LEVELS`.
+- [[constants.mjs|scripts/constants.mjs]]: `PARTY_MODE_TOKEN_LIMIT`, `FLAGS.PARTY_MODE_ENABLED`, `FLAGS.PARTY_COLLAPSED_LEVELS`.

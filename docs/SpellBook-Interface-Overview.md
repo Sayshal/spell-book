@@ -18,7 +18,7 @@ The Spell Book can be opened from:
 - The book icon on the spells tab of a character sheet.
 - A [Macro](API-Reference) on the hotbar.
 
-The window is draggable by its custom header. It remembers its last position per client. The window can be **detached** into a separate browser window; any child dialogs (comparison, loadouts, spell notes, class rules, party manager, spell list manager, wizard learn prompt, long-rest swap, etc.) automatically route to the detached window while attached.
+The window is draggable by its custom header and remembers its last position per client. The window can be **detached** into a separate browser window. Any child dialogs (comparison, loadouts, spell notes, class rules, party manager, spell list manager, wizard learn prompt, long-rest swap, etc.) automatically route to the detached window while attached.
 
 ---
 
@@ -26,9 +26,9 @@ The window is draggable by its custom header. It remembers its last position per
 
 The window is divided into three areas:
 
-1. **Header** — actor icon, actor name, a GM-only button that opens the Spell List Manager on the active tab's class list, a detach/attach toggle, and a close button.
-2. **Sidebar** — name search, filter controls, and an action row (Class Rules, Loadouts, Party Manager when applicable, Reset, Save).
-3. **Tab area** — one tab per spellcasting class, plus a separate Learn tab for each wizard-enabled class. The active tab fills the remaining space; a footer at the bottom of every tab holds prepared/cantrip counters and the per-class tab navigation.
+1. **Header.** Actor icon, actor name, a GM-only button that opens the Spell List Manager on the active tab's class list, a detach/attach toggle, and a close button.
+2. **Sidebar.** Name search, filter controls, and an action row (Class Rules, Loadouts, Party Manager when applicable, Reset, Save).
+3. **Tab area.** One tab per spellcasting class, plus a separate Learn tab for each wizard-enabled class. The active tab fills the remaining space; a footer at the bottom of every tab holds prepared/cantrip counters and the per-class tab navigation.
 
 The header is the drag handle. Clicks on header buttons do not initiate dragging.
 
@@ -61,7 +61,7 @@ The footer of every tab shows:
 - A prepared spell counter (`current/max Spells`) for prepare tabs, or the wizard total/free counters for learn tabs.
 - An icon-only nav of all class tabs on the right side.
 
-The cantrip and spell counters show an `at-max` highlight (green, reading as "at capacity") when the current count reaches the printed maximum. There is **no hard cap** — see [Spell Preparation System](Spell-Preparation-System) for over-limit behavior.
+The cantrip and spell counters show an `at-max` highlight (green, reading as "at capacity") when the current count reaches the printed maximum. There is **no hard cap**; see [Spell Preparation System](Spell-Preparation-System) for over-limit behavior.
 
 ---
 
@@ -98,13 +98,13 @@ Filter controls render once the full spell index has loaded. All filters combine
 - **Target**
 - **Damage Type**
 - **Condition**
-- **Save (requires)** — Yes/No/All
-- **Source** — compendium book
+- **Save (requires):** Yes/No/All
+- **Source:** compendium book
 
 #### Range Inputs
 
-- **Spell Level** — min/max (two number inputs, 0–9). Leave either blank for open-ended.
-- **Range (feet/m)** — min/max (two number inputs). The unit label auto-switches based on `dnd5e.utils.defaultUnits('length')`.
+- **Spell Level:** min/max (two number inputs, 0–9). Leave either blank for open-ended.
+- **Range (feet/m):** min/max (two number inputs). The unit label auto-switches based on `dnd5e.utils.defaultUnits('length')`.
 
 #### Properties (tri-state toggles)
 
@@ -112,17 +112,17 @@ Filter controls render once the full spell index has loaded. All filters combine
 
 Five buttons in a two-column grid: **Verbal**, **Somatic**, **Material**, **Concentration**, **Ritual**. Click cycles `ignore → include → exclude → ignore`. Right-click cycles backwards. Semantics:
 
-- **ignore** — no filtering for this property.
-- **include** — spell must have the property.
-- **exclude** — spell must *not* have the property (indicator turns red with an × icon).
+- **ignore:** no filtering for this property.
+- **include:** spell must have the property.
+- **exclude:** spell must *not* have the property (indicator turns red with an × icon).
 
-Stored internally in `filterState.properties` as `{ vocal: 'include', somatic: 'exclude', material: 'include', concentration: 'ignore', ritual: 'include' }` — only non-ignore entries are kept.
+Stored internally in `filterState.properties` as `{ vocal: 'include', somatic: 'exclude', material: 'include', concentration: 'ignore', ritual: 'include' }`. Only non-ignore entries are kept.
 
 #### Checkbox Toggles
 
-- **Costly Material Components** — matches spells whose `system.materials.cost > 0`, or whose materials text / description contains the localized "consumes" keyword, or matches a `\d+\+? gp` pattern.
-- **Prepared Only** — shows only spells currently marked prepared (via live checkbox state).
-- **Favorites Only** — shows only starred spells.
+- **Costly Material Components:** matches spells whose `system.materials.cost > 0`, or whose materials text or description contains the localized "consumes" keyword, or matches a `\d+\+? gp` pattern.
+- **Prepared Only:** shows only spells currently marked prepared (via live checkbox state).
+- **Favorites Only:** shows only starred spells.
 
 ### Action Buttons
 
@@ -131,7 +131,7 @@ The bottom of the sidebar holds the action row:
 | Button | Action |
 | --- | --- |
 | Settings (gear) | Open the [Class-Rules](Class-Rules) dialog for this actor. |
-| Loadouts (toolbox) | Left-click opens the Loadout Selector for the active class. **Right-click** opens a context menu of saved loadouts for the active class — click an entry to apply it immediately. |
+| Loadouts (toolbox) | Left-click opens the Loadout Selector for the active class. **Right-click** opens a context menu of saved loadouts for the active class; click an entry to apply it immediately. |
 | Party Manager (users) | Open the [Party Spells Interface](PartySpells-Interface-Overview). Right-click toggles party mode for this actor. Hidden when the actor is not in a party. |
 | Reset (undo arrow) | Clear all filters (search, selects, number inputs, property tri-states, checkbox toggles). **Shift-click** additionally unchecks every non-disabled preparation checkbox on every prepare tab; the unchecks are staged via `#pendingChanges`, survive tab switches, and are persisted on Save. Tooltip: *"Reset Filters (Shift-click to also uncheck all preparations)"*. |
 | Save (disk) | Persist all pending preparation changes across every class tab. |
@@ -142,8 +142,8 @@ The bottom of the sidebar holds the action row:
 
 Each row in the spell list is rendered from the `spell-item` component and contains:
 
-- **Icon** — dnd5e content link to the spell document (drag-enabled).
-- **Name** — clickable spell title.
+- **Icon.** A dnd5e content link to the spell document (drag-enabled).
+- **Name.** Clickable spell title.
 - **Indicators** to the right of the name:
   - Favorite star (toggle on click; stored per-user, per-actor).
   - Tag chips: cross-class (prepared by another class), always-prepared, granted, pact, and ritual.
@@ -169,7 +169,7 @@ The notes icon opens the Spell Notes dialog for the selected spell. Full referen
 
 ### Comparison
 
-Clicking the scale-balanced icon toggles a spell in or out of the comparison set. When the set reaches two or more spells, the **Spell Comparison dialog** opens. Clicking again removes a spell; when the set drops below two the dialog closes automatically. There is **no upper limit** — the draggable dialog widens as you add more spells and renders them side-by-side with name, image, level, school, casting time, range, duration, components, and damage formulas. The dialog supports detach and follows the parent Spell Book's detached state.
+Clicking the scale-balanced icon toggles a spell in or out of the comparison set. When the set reaches two or more spells, the **Spell Comparison dialog** opens. Clicking again removes a spell; when the set drops below two the dialog closes automatically. There is **no upper limit**. The draggable dialog widens as you add more spells and renders them side-by-side with name, image, level, school, casting time, range, duration, components, and damage formulas. The dialog supports detach and follows the parent Spell Book's detached state.
 
 ---
 
@@ -193,9 +193,9 @@ To revert pending changes without saving, use the Reset button (Shift-click to a
 
 A wizard-enabled class gets a second tab dedicated to its spellbook. Each row shows one of three states:
 
-- **Available to learn** — a `Learn Spell` button. Free spells (initial allotment, level-up grants) are added directly. Other spells open a confirmation dialog quoting the gold cost and copying time, computed by `WizardBook.getCopyingCost` / `getCopyingTime`. If `DEDUCT_SPELL_LEARNING_COST` is enabled, currency is deducted on confirm.
-- **Available from a scroll** — a `Learn Spell` button with a scroll icon. Triggers `learnSpellFromScroll`, which adds the spell and (if `CONSUME_SCROLLS_WHEN_LEARNING` is on) decrements or deletes the scroll item.
-- **Already in spellbook** — an `In Spellbook` badge with a learning-source icon (book / scroll / cart / level-up arrow). Hovering reveals the unlearn affordance, which removes the spell from the wizard journal.
+- **Available to learn.** A `Learn Spell` button. Free spells (initial allotment, level-up grants) are added directly. Other spells open a confirmation dialog quoting the gold cost and copying time, computed by `WizardBook.getCopyingCost` / `getCopyingTime`. If `DEDUCT_SPELL_LEARNING_COST` is enabled, currency is deducted on confirm.
+- **Available from a scroll.** A `Learn Spell` button with a scroll icon. Triggers `learnSpellFromScroll`, which adds the spell and (if `CONSUME_SCROLLS_WHEN_LEARNING` is on) decrements or deletes the scroll item.
+- **Already in spellbook.** An `In Spellbook` badge with a learning-source icon (book / scroll / cart / level-up arrow). Hovering reveals the unlearn affordance, which removes the spell from the wizard journal.
 
 The footer counters show total/max known spells and remaining free copies for the current level.
 
@@ -203,7 +203,7 @@ The footer counters show total/max known spells and remaining free copies for th
 
 ## Loadouts
 
-The Loadouts button (toolbox icon) opens the [Spell Loadouts](Spell-Loadouts) selector, scoped to the active class. Right-clicking the same button opens a quick-select context menu listing saved loadouts — clicking one applies immediately without opening the full dialog. The menu is refreshed on every open.
+The Loadouts button (toolbox icon) opens the [Spell Loadouts](Spell-Loadouts) selector, scoped to the active class. Right-clicking the same button opens a quick-select context menu listing saved loadouts. Clicking an entry applies it immediately without opening the full dialog. The menu is refreshed on every open.
 
 ---
 
@@ -211,7 +211,7 @@ The Loadouts button (toolbox icon) opens the [Spell Loadouts](Spell-Loadouts) se
 
 The Class Rules button opens the per-actor, per-class configuration dialog. This is the canonical place to:
 
-- Assign a custom spell list for a class (`customSpellList`) and, optionally, a custom subclass spell list (`customSubclassSpellList`). Class lists resolve directly from these two fields — there is no automatic subclass-registry fallback.
+- Assign a custom spell list for a class (`customSpellList`) and, optionally, a custom subclass spell list (`customSubclassSpellList`). Class lists resolve directly from these two fields. There is no automatic subclass-registry fallback.
 - Configure ritual casting mode (`none` / `prepared` / `always`).
 - Set spell preparation and cantrip preparation bonuses.
 - Adjust class-specific cantrip and spell swap rules.
@@ -268,17 +268,17 @@ Settings keys frequently relevant to this interface:
 
 The Spell Book emits the following hooks:
 
-- `spellBookOpened` — `{ actor, app }` on first render.
-- `spellBookClosed` — `{ actor }` on close.
+- `spellBookOpened`: `{ actor, app }` on first render.
+- `spellBookClosed`: `{ actor }` on close.
 
 ---
 
 ## Related Pages
 
-- [SpellList-Manager](SpellList-Manager) — GM-side spell list authoring.
-- [Class-Rules](Class-Rules) — per-actor, per-class configuration.
-- [Spell-Preparation-System](Spell-Preparation-System) — preparation, limits, and notifications.
-- [Spell-Loadouts](Spell-Loadouts) — saved preparation sets.
-- [PartySpells-Interface-Overview](PartySpells-Interface-Overview) — party-mode coordination.
-- [Details-Customization](Details-Customization) — per-element UI toggles.
-- [API-Reference](API-Reference) — opening the Spell Book from a hotbar macro.
+- [SpellList-Manager](SpellList-Manager): GM-side spell list authoring.
+- [Class-Rules](Class-Rules): per-actor, per-class configuration.
+- [Spell-Preparation-System](Spell-Preparation-System): preparation, limits, and notifications.
+- [Spell-Loadouts](Spell-Loadouts): saved preparation sets.
+- [PartySpells-Interface-Overview](PartySpells-Interface-Overview): party-mode coordination.
+- [Details-Customization](Details-Customization): per-element UI toggles.
+- [API-Reference](API-Reference): opening the Spell Book from a hotbar macro.

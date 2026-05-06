@@ -6,18 +6,6 @@ import { buildPlayerMetadata } from './custom-ui.mjs';
 import { getSpellDataAttributes, getSpellPreparationTags } from './formatting.mjs';
 
 /**
- * Enrich an array of spells with all data needed for template rendering.
- * @param {Array<object>} spells - Raw spell objects
- * @param {object} actor - The owning actor
- * @param {Set<string>} enabledElements - Which UI elements are enabled
- * @param {object} [appState] - Application state (wizardbookCache, comparisonSpells, etc.)
- * @returns {Array<object>} Enriched spell objects ready for Handlebars
- */
-export function enrichSpellsForTemplate(spells, actor, enabledElements, appState = {}) {
-  return spells.map((spell) => enrichSingleSpell(spell, actor, enabledElements, appState));
-}
-
-/**
  * Enrich a single spell with display data.
  * @param {object} spell - Raw spell object
  * @param {object} actor - The owning actor

@@ -86,20 +86,6 @@ export async function fetchAllSpells({ maxLevel, onProgress } = {}) {
 }
 
 /**
- * Fetch spells matching specific filter criteria.
- * @param {object} [options] - Fetch options
- * @param {object[]} [options.filters] - Filter descriptors for CompendiumBrowser.fetch
- * @param {Set<string>} [options.indexFields] - Additional index fields to request
- * @returns {Promise<object[]>} Array of matching spell index entries
- */
-export async function fetchSpellsForFilters({ filters = [], indexFields } = {}) {
-  const mergedFields = indexFields ? new Set([...DEFAULT_INDEX_FIELDS, ...indexFields]) : new Set(DEFAULT_INDEX_FIELDS);
-  const results = await CompendiumBrowser.fetch(Item, { types: new Set(['spell']), filters, indexFields: mergedFields });
-  applyLabelsFallback(results);
-  return results;
-}
-
-/**
  * Fetch spells from compendiums matching a set of UUIDs, filtered by max level.
  * Uses CompendiumBrowser.fetch for instant index retrieval instead of individual fromUuid calls.
  * @param {Set<string>} uuids - Spell UUIDs to match

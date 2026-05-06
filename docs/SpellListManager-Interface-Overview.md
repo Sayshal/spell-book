@@ -20,7 +20,7 @@ The Spell List Manager is a draggable window. Its custom header shows:
 
 - A `fa-bars-progress` icon on the left.
 - The "Spell List Manager" title.
-- A **Detach** button (arrow-up-right-from-square) — pops the manager into a standalone OS window. When detached, child dialogs opened from the manager (Create, Merge, Rename, Details Customization, Documentation, Spell Comparison) follow into the same detached window.
+- A **Detach** button (arrow-up-right-from-square). This pops the manager into a standalone OS window. When detached, child dialogs opened from the manager (Create, Merge, Rename, Details Customization, Documentation, Spell Comparison) follow into the same detached window.
 - A **Close** button (X).
 
 The window is draggable by the header strip itself. Clicking a button, link, input, or `[data-action]` inside the header does not initiate a drag.
@@ -52,8 +52,8 @@ The sidebar swaps between **list browser** and **filter panel** depending on whe
 
 The header contains two actions:
 
-- **Create** — Opens the Create Spell List dialog.
-- **Merge Lists** — Opens the Merge Spell Lists dialog.
+- **Create.** Opens the Create Spell List dialog.
+- **Merge Lists.** Opens the Merge Spell Lists dialog.
 
 Below the header, lists are grouped into collapsible folder sections:
 
@@ -85,7 +85,7 @@ The header shows a back arrow (**Back to Lists**) that returns to the list brows
 - **Material Components** (select)
 - **Range** (min / max number inputs, ft or m per world units)
 - **Compendium Source** (select)
-- **Spell Source** (select — resolves `class:*` identifiers)
+- **Spell Source** (select; resolves `class:*` identifiers)
 - **Ritual Only** (checkbox)
 - **Reset Filters** button
 
@@ -115,7 +115,7 @@ A header bar shows the list name and a row of action buttons. Buttons appear con
 | **Delete** (trash) | Always |
 | **Save** (floppy) | Always |
 
-There is **no** separate "Edit" button — editing is always implicit. Add or remove a spell and click **Save**. Saving a stock list auto-creates a modified duplicate (see below).
+There is **no** separate "Edit" button. Editing is always implicit: add or remove a spell and click **Save**. Saving a stock list auto-creates a modified duplicate (see below).
 
 Below the header is the split view.
 
@@ -125,7 +125,7 @@ All compendium spells filtered by the sidebar filter panel. Each row has a **+**
 
 The panel renders lazily in batches of **50** rows. Scrolling within ~100 px of the bottom appends the next batch until the filtered set is exhausted. This keeps the DOM manageable even when thousands of spells match the filter.
 
-Clicking **+** adds the spell's UUID to the pending set. The guard only rejects an exact UUID duplicate — the same spell republished under a different pack UUID can be added separately from each source.
+Clicking **+** adds the spell's UUID to the pending set. The guard only rejects an exact UUID duplicate; the same spell republished under a different pack UUID can be added separately from each source.
 
 #### Current List (right panel)
 
@@ -147,7 +147,7 @@ When the currently selected list has none of the `isDuplicate` / `isCustom` / `i
 1. Calls `duplicateSpellList` to create a copy in the `spell-book.custom-spell-lists` pack under the **Modified Spell Lists** folder. The duplicate is stamped with `{ isDuplicate, originalUuid, originalName, originalModTime, originalVersion }` and mapped through `CUSTOM_SPELL_MAPPINGS`.
 2. Adds the original's UUID to `HIDDEN_SPELL_LISTS` so the untouched stock list stops cluttering the sidebar.
 3. Writes your pending edits to the duplicate.
-4. Calls `dnd5e.registry.spellLists.register` on the duplicate so any spells you added start showing the class label on item sheets immediately — no reload required.
+4. Calls `dnd5e.registry.spellLists.register` on the duplicate so any spells you added start showing the class label on item sheets immediately. No reload required.
 
 Subsequent edits of the original UUID transparently route through the mapping to the same duplicate.
 
@@ -155,7 +155,7 @@ Subsequent edits of the original UUID transparently route through the mapping to
 
 ## Compare Tool
 
-When **Compare** is enabled in Details Customization, every spell row in both panels gets a scale icon. Clicking it adds or removes the spell from the comparison set. Once two or more spells are queued, a **Spell Comparison** dialog opens (detaches along with the manager if detached). There is no hard cap — the dialog widens as spells are added.
+When **Compare** is enabled in Details Customization, every spell row in both panels gets a scale icon. Clicking it adds or removes the spell from the comparison set. Once two or more spells are queued, a **Spell Comparison** dialog opens (detaches along with the manager if detached). There is no hard cap; the dialog widens as spells are added.
 
 ---
 
@@ -186,9 +186,9 @@ The top-right checkmark toggle in the footer enables bulk-selection mode. While 
 | Type | Folder | Source | Editable |
 |---|---|---|---|
 | **Standard** | Spell Lists | dnd5e system / other modules | Save auto-forks into a Modified duplicate |
-| **Custom** | Custom Lists | Created via **Create** (`isCustom` / `isNewList`) | Yes — direct |
-| **Merged** | Merged Lists | Built via **Merge Lists** | Yes — independent of sources |
-| **Modified** | Modified Spell Lists | Auto-created on first save against a standard list (`isDuplicate`) | Yes — direct |
+| **Custom** | Custom Lists | Created via **Create** (`isCustom` / `isNewList`) | Yes, direct |
+| **Merged** | Merged Lists | Built via **Merge Lists** | Yes, independent of sources |
+| **Modified** | Modified Spell Lists | Auto-created on first save against a standard list (`isDuplicate`) | Yes, direct |
 | **Actor-Owned** | Player Spellbooks | Wizard-style spellbook journals tied to a specific actor | Yes |
 | **Hidden** | Hidden Lists | Any list whose UUID is in `HIDDEN_SPELL_LISTS` | Same rules as its underlying type |
 
@@ -202,19 +202,19 @@ All dialogs below render using `DialogV2.wait` and inherit the manager's attach/
 
 ![Create Spell List dialog](https://raw.githubusercontent.com/Sayshal/spell-book/main/docs/images/slm-create-dialog.png)
 
-- **Name** — Display name (max 100 chars).
-- **Class Identifier** — Dropdown of detected class identifiers, plus a **Custom** option that enables a manual identifier input (lowercase letters, digits, underscore, hyphen).
-- **Subclass Spell List** — Checkbox; flag the list as a subclass list rather than a base class list.
+- **Name:** display name (max 100 chars).
+- **Class Identifier:** dropdown of detected class identifiers, plus a **Custom** option that enables a manual identifier input (lowercase letters, digits, underscore, hyphen).
+- **Subclass Spell List:** checkbox; flag the list as a subclass list rather than a base class list.
 
 ### Merge Lists
 
-- **Spell Lists to Merge** — Multi-select grouped by folder (Spell Lists, Custom Lists, Merged Lists, Player Spellbooks). Requires at least two selections.
-- **Merged List Name** — Required.
-- **Hide Source Lists** — Optional; when set, the chosen source UUIDs are added to `HIDDEN_SPELL_LISTS` after the merge.
+- **Spell Lists to Merge:** multi-select grouped by folder (Spell Lists, Custom Lists, Merged Lists, Player Spellbooks). Requires at least two selections.
+- **Merged List Name:** required.
+- **Hide Source Lists:** optional. When set, the chosen source UUIDs are added to `HIDDEN_SPELL_LISTS` after the merge.
 
 ### Rename List
 
-Single-input dialog. Available only for custom, merged, newly-created, or duplicated lists (not stock lists — rename a stock list by editing its duplicate instead).
+Single-input dialog. Available only for custom, merged, newly-created, or duplicated lists. Stock lists cannot be renamed directly; rename one by editing its duplicate instead.
 
 ### Details Customization
 
@@ -254,8 +254,8 @@ After deletion the sidebar returns to the list view (not stuck on an empty filte
 
 The Spell List Manager defines and stores lists; it does not load them onto actors. To make a list usable by a character, open that character's sheet and assign the list per class through **Spell Book Settings** ([Class Rules](Class-Rules)). That dialog has two explicit assignments per class:
 
-- `customSpellList` — the class's primary spell list.
-- `customSubclassSpellList` — the subclass list (no more registry-based subclass lookup; this is explicit now).
+- `customSpellList`: the class's primary spell list.
+- `customSubclassSpellList`: the subclass list (no more registry-based subclass lookup; this is explicit now).
 
 See:
 
