@@ -6,9 +6,9 @@ import { loadUserSpellData } from '../data/user-data.mjs';
 import { ClassRules, LoadoutSelector, SpellComparison, SpellNotes } from '../dialogs/_module.mjs';
 import { ClassManager } from '../managers/class-manager.mjs';
 import { Loadouts } from '../managers/loadouts.mjs';
-import { SpellDataManager } from '../managers/spell-data-manager.mjs';
 import { PartyMode } from '../managers/party-mode.mjs';
 import { RuleSet } from '../managers/rule-set.mjs';
+import { SpellDataManager } from '../managers/spell-data-manager.mjs';
 import { SpellManager } from '../managers/spell-manager.mjs';
 import { WizardBook } from '../managers/wizard-book.mjs';
 import { getEnabledPlayerElements } from '../ui/custom-ui.mjs';
@@ -87,12 +87,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @type {Map<string, Map<string, boolean>>} Pending checkbox changes per tab, keyed by spell UUID */
   #pendingChanges = new Map();
-
-  /** @type {boolean} Whether the spell book was opened during a long rest swap window */
-  #isLongRest = false;
-
-  /** @type {boolean} Whether a level-up was detected since last open */
-  #isLevelUp = false;
 
   /**
    * @param {object} [options] - Application options
@@ -218,7 +212,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (spellLevel === 0 && cb.checked && classId) {
         const spell = fromUuidSync(cb.dataset.uuid);
         if (spell) {
-          const check = SpellManager.canChangeCantripStatus(this.actor, spell, true, this.#isLevelUp, this.#isLongRest, null, classId);
+          const check = SpellManager.canChangeCantripStatus(this.actor, spell, true, null, classId);
           if (!check.allowed) {
             cb.checked = false;
             if (check.message) ui.notifications.warn(check.message, { localize: true });
@@ -240,10 +234,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @override */
   _onFirstRender(context, options) {
     super._onFirstRender(context, options);
-    this.#isLongRest = this.actor.getFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED) === true;
-    const previousLevel = this.actor.getFlag(MODULE.ID, FLAGS.PREVIOUS_LEVEL);
-    const currentLevel = this.actor.system.details?.level;
-    this.#isLevelUp = !!(previousLevel && currentLevel && currentLevel > previousLevel);
     Hooks.callAll('spellBookOpened', { actor: this.actor, app: this });
     this._initializeFilters();
     if (this.tabGroups.primary) this._loadClassData(this.tabGroups.primary);
@@ -255,23 +245,42 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.#enableDragging();
   }
 
-  /** Enable drag-to-move via the header strip. Re-wires on every render since PART DOM is replaced. */
+  /** Enable drag-to-move via the header strip and resize via a corner handle. Re-wires on every render since PART DOM is replaced. */
   #enableDragging() {
     const dragHandle = this.element?.querySelector('.spell-book-header');
     if (!dragHandle || dragHandle.dataset.dragWired === '1') return;
     dragHandle.dataset.dragWired = '1';
-    const drag = new foundry.applications.ux.Draggable.implementation(this, this.element, dragHandle, false);
+    this.#ensureResizeHandle();
+    const drag = new foundry.applications.ux.Draggable.implementation(this, this.element, dragHandle, { selector: '.spell-book-resize-handle' });
     const originalMouseDown = drag._onDragMouseDown.bind(drag);
     drag._onDragMouseDown = (event) => {
-      if (event.target.closest('button, a, input, select, [data-action]')) return;
+      if (event.target.closest('button, a, input, select, [data-action], .spell-book-resize-handle')) return;
       originalMouseDown(event);
     };
     const originalMouseUp = drag._onDragMouseUp.bind(drag);
     drag._onDragMouseUp = (event) => {
       originalMouseUp(event);
-      const { left, top } = this.position;
-      game.settings.set(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION, { left, top });
+      const { left, top, width, height } = this.position;
+      game.settings.set(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION, { left, top, width, height });
     };
+    const originalResizeUp = drag._onResizeMouseUp.bind(drag);
+    drag._onResizeMouseUp = (event) => {
+      originalResizeUp(event);
+      const { left, top, width, height } = this.position;
+      game.settings.set(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION, { left, top, width, height });
+    };
+  }
+
+  /** No-op shim for Foundry Draggable, which calls `app._onResize` after a resize drag ends. */
+  _onResize() {}
+
+  /** Inject the resize handle into the app root once. Idempotent across re-renders. */
+  #ensureResizeHandle() {
+    if (!this.element || this.element.querySelector(':scope > .spell-book-resize-handle')) return;
+    const handle = document.createElement('div');
+    handle.className = 'spell-book-resize-handle';
+    handle.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.Resize'));
+    this.element.appendChild(handle);
   }
 
   /** @override */
@@ -285,7 +294,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Read UUIDs currently marked prepared in a class tab, using live checkbox state if loaded.
-   * Falls back to any stored pending changes for non-active tabs, and finally to the actor flag.
    * @param {string} classIdentifier - The class tab id
    * @returns {string[]} UUIDs flagged as prepared
    */
@@ -319,7 +327,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.#pendingChanges.set(activeTab, changes);
   }
 
-  /** Restore pending checkbox states after a tab re-renders. */
+  /**
+   * Restore pending checkbox states after a tab re-renders.
+   * @param {string} tabId - The class tab id whose pending state should be reapplied
+   */
   _restorePendingChanges(tabId) {
     const changes = this.#pendingChanges.get(tabId);
     if (!changes?.size) return;
@@ -566,8 +577,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * GM-only: open the Spell List Manager on the current tab's class list (or subclass list).
-   * Prompts the user to pick if multiple lists are configured.
    * @this SpellBook
+   * @returns {Promise<void>} Resolves once the manager (or picker) has been rendered
    */
   static async #onOpenManager() {
     if (!game.user.isGM) return;
@@ -775,6 +786,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Build the "no spell list assigned" notice element shown when a class has no list configured.
+   * @param {string} tabId - The class tab id whose missing-list notice should be built
    * @returns {HTMLElement} A <li> notice with a button that opens the Class Rules dialog
    * @private
    */
@@ -1105,6 +1117,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Cycle a property toggle through three states: ignore → include → exclude → ignore.
    * @param {HTMLElement} btn - The button element with data-filter-prop
+   * @param {1|-1} [direction] - 1 cycles forward, -1 cycles backward
    */
   #cyclePropertyToggle(btn, direction = 1) {
     const order = ['ignore', 'include', 'exclude'];
@@ -1221,13 +1234,16 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
+  /**
+   * Action handler: collect pending changes across tabs and persist the prepared spell selection.
+   * @param {Event} _event - Triggering event (unused)
+   * @param {HTMLElement} _target - Action button (unused)
+   */
   static async #onSaveSpells(_event, _target) {
-    // Restore pending changes to inactive tabs before collecting
     for (const [tabId] of this.#pendingChanges) {
       if (tabId === this.tabGroups.primary) continue;
       this._restorePendingChanges(tabId);
     }
-    // Collect ALL checkboxes from ALL tabs — like _source
     const spellDataByClass = {};
     for (const cb of this.element.querySelectorAll('input[type="checkbox"][data-class-identifier]')) {
       const uuid = cb.dataset.uuid;
@@ -1245,7 +1261,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       };
     }
     for (const [classId, classSpellData] of Object.entries(spellDataByClass)) {
-      // Inject wizard spellbook ritual spells when ritualCasting: always
       const ritualMode = RuleSet.getClassRule(this.actor, classId, 'ritualCasting', 'none');
       if (ritualMode === 'always') {
         const wizardClasses = ClassManager.getWizardEnabledClasses(this.actor);
@@ -1264,7 +1279,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       }
       await SpellManager.saveClassSpecificPreparedSpells(this.actor, classId, classSpellData);
-      // Clean up ritual spells that shouldn't exist under current mode
       if (ritualMode !== 'always') {
         const ritualSpells = this.actor.itemTypes.spell.filter(
           (s) => s.system?.method === 'ritual' && ClassManager.getSpellClassIdentifier(s) === classId && s.flags?.[MODULE.ID]?.isModuleRitual === true
@@ -1284,13 +1298,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     }
     this.#pendingChanges.clear();
-    if (game.modules.get('chris-premades')?.active && game.settings.get(MODULE.ID, SETTINGS.CPR_COMPATIBILITY)) {
-      await chrisPremades.utils.actorUtils.updateAll(this.actor);
-    }
+    if (game.modules.get('chris-premades')?.active && game.settings.get(MODULE.ID, SETTINGS.CPR_COMPATIBILITY)) await chrisPremades.utils.actorUtils.updateAll(this.actor);
     ui.notifications.info('SPELLBOOK.UI.ChangesSaved', { localize: true });
-    for (const cb of this.element.querySelectorAll('input[type="checkbox"][data-uuid]')) {
-      cb.dataset.wasPrepared = String(cb.checked);
-    }
+    for (const cb of this.element.querySelectorAll('input[type="checkbox"][data-uuid]')) cb.dataset.wasPrepared = String(cb.checked);
   }
 
   /**

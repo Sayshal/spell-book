@@ -1,31 +1,30 @@
 <aside class="spell-book-sidebar">
-	<div class="sidebar-search">
-		<input type="text" name="filter-name" class="filter-search-input"
-			placeholder="{{localize 'SPELLBOOK.Filters.Search'}}" aria-label="{{localize 'SPELLBOOK.Filters.Search'}}">
-	</div>
-	<div class="sidebar-filter-section"></div>
-	<div class="sidebar-controls">
-		<button type="button" class="sidebar-btn" data-action="openSettings"
-			data-tooltip="{{localize 'SPELLBOOK.UI.Settings'}}">
-			<i class="fas fa-cog" aria-hidden="true"></i>
-		</button>
-		<button type="button" class="sidebar-btn" data-action="openLoadoutDialog"
-			data-tooltip="{{localize 'SPELLBOOK.Loadouts.Title'}}">
-			<i class="fas fa-toolbox" aria-hidden="true"></i>
-		</button>
-		{{#if hasParty}}
-			<button type="button" class="sidebar-btn{{#if partyModeActive}} active{{/if}}" data-action="openPartyManager"
-				data-tooltip="{{localize 'SPELLBOOK.Party.Title'}}">
-				<i class="fas fa-users" aria-hidden="true"></i>
-			</button>
-		{{/if}}
-		<button type="button" class="sidebar-btn" data-action="resetState"
-			data-tooltip="{{localize 'SPELLBOOK.UI.Reset'}}">
-			<i class="fas fa-rotate-left" aria-hidden="true"></i>
-		</button>
-		<button type="button" class="sidebar-btn save-spells-btn" data-action="saveSpells"
-			data-tooltip="{{localize 'SPELLBOOK.UI.Save'}}">
-			<i class="fas fa-save" aria-hidden="true"></i>
-		</button>
-	</div>
+  <div class="sidebar-search">
+    <input type="text" name="filter-name" class="filter-search-input"
+      placeholder="{{localize 'SPELLBOOK.Filters.Search'}}" aria-label="{{localize 'SPELLBOOK.Filters.Search'}}">
+  </div>
+  <div class="sidebar-filter-section"></div>
+  <div class="sidebar-controls">
+    <button type="button" class="sidebar-btn" data-action="openSettings"
+      data-tooltip="{{localize 'SPELLBOOK.UI.Settings'}}">
+      <i class="fas fa-cog" aria-hidden="true"></i>
+    </button>
+    <button type="button" class="sidebar-btn" data-action="openLoadoutDialog"
+      data-tooltip="{{localize 'SPELLBOOK.Loadouts.Title'}}">
+      <i class="fas fa-toolbox" aria-hidden="true"></i>
+    </button>
+    {{#if hasParty}}
+      <button type="button" class="sidebar-btn{{#if partyModeActive}} active{{/if}}" data-action="openPartyManager"
+        data-tooltip="{{localize 'SPELLBOOK.Party.Title'}}">
+        <i class="fas fa-users" aria-hidden="true"></i>
+      </button>
+    {{/if}}
+    <button type="button" class="sidebar-btn" data-action="resetState" data-tooltip="{{localize 'SPELLBOOK.UI.Reset'}}">
+      <i class="fas fa-rotate-left" aria-hidden="true"></i>
+    </button>
+    <button type="button" class="sidebar-btn save-spells-btn" data-action="saveSpells"
+      data-tooltip="{{localize 'SPELLBOOK.UI.Save'}}">
+      <i class="fas fa-save" aria-hidden="true"></i>
+    </button>
+  </div>
 </aside>

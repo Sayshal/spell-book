@@ -101,6 +101,7 @@ export function registerSettings() {
   });
   register(SETTINGS.REGISTRY_ENABLED_LISTS, { scope: 'world', config: false, type: new ArrayField(new StringField()) });
   register(SETTINGS.SPELL_BOOK_POSITION, { scope: 'client', config: false, type: new ObjectField() });
+  register(SETTINGS.SPELL_LIST_MANAGER_POSITION, { scope: 'client', config: false, type: new ObjectField() });
   register(SETTINGS.SIDEBAR_CONTROLS_BOTTOM, { scope: 'client', config: false, type: new BooleanField({ initial: false }) });
   register(SETTINGS.WIZARD_BOOK_ICON_COLOR, { scope: 'client', config: false, type: new ColorField({ required: false, nullable: true, blank: true, initial: null }) });
   register(SETTINGS.SPELL_NOTES_DESC_INJECTION, {

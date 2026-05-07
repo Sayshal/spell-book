@@ -1,60 +1,60 @@
 <div class="manager-footer" role="contentinfo">
-	<div class="footer-content">
-		<div class="footer-left">
-			<button type="button" class="footer-button" data-action="openCustomization"
-				data-tooltip="{{localize 'SPELLBOOK.Settings.DetailsCustomization.MenuLabel'}}">
-				<i class="fas fa-palette" aria-hidden="true"></i>
-			</button>
-			<button type="button" class="footer-button" data-action="showDocs"
-				data-tooltip="{{localize 'SPELLMANAGER.Buttons.Help'}}">
-				<i class="fas fa-question-circle" aria-hidden="true"></i>
-			</button>
-		</div>
-		<div class="footer-center">
-			{{#if selectedList}}
-				<span class="spell-count-stat">
-					<i class="fas fa-magic" aria-hidden="true"></i>
-					{{localize "SPELLMANAGER.Status.SpellCount" count=selectedList.spellCount}}
-				</span>
-			{{else}}
-				{{#if totalSpellCount}}
-					<span class="total-spells-stat">
-						<i class="fas fa-scroll" aria-hidden="true"></i>
-						{{localize "SPELLMANAGER.Footer.TotalSpells" count=totalSpellCount}}
-					</span>
-				{{/if}}
-			{{/if}}
-		</div>
-		<div class="footer-right">
-			{{#if selectedList}}
-				<div class="selection-controls">
-					{{#if selectionMode}}
-						<span class="selection-summary">
-							{{#if (and selectedToAddCount selectedToRemoveCount)}}
-								{{localize "SPELLMANAGER.Selection.AddAndRemoveCount" addCount=selectedToAddCount removeCount=selectedToRemoveCount}}
-							{{else if selectedToAddCount}}
-								{{localize "SPELLMANAGER.Selection.AddCount" count=selectedToAddCount}}
-							{{else if selectedToRemoveCount}}
-								{{localize "SPELLMANAGER.Selection.RemoveCount" count=selectedToRemoveCount}}
-							{{else}}
-								{{localize "SPELLMANAGER.Selection.NoneSelected"}}
-							{{/if}}
-						</span>
-						<button type="button" class="bulk-save-btn" data-action="bulkSave"
-							{{#unless totalSelectedCount}}disabled{{/unless}}>
-							<i class="fas fa-save" aria-hidden="true"></i>
-						</button>
-						<button type="button" class="cancel-selection-btn" data-action="cancelSelection">
-							<i class="fas fa-times" aria-hidden="true"></i>
-						</button>
-					{{else}}
-						<button type="button" class="toggle-selection-mode" data-action="toggleSelectionMode"
-							data-tooltip="{{localize 'SPELLMANAGER.Selection.SelectionMode'}}">
-							<i class="fas fa-check-square" aria-hidden="true"></i>
-						</button>
-					{{/if}}
-				</div>
-			{{/if}}
-		</div>
-	</div>
+  <div class="footer-content">
+    <div class="footer-left">
+      <button type="button" class="footer-button" data-action="openCustomization"
+        data-tooltip="{{localize 'SPELLBOOK.Settings.DetailsCustomization.MenuLabel'}}">
+        <i class="fas fa-palette" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="footer-button" data-action="showDocs"
+        data-tooltip="{{localize 'SPELLMANAGER.Buttons.Help'}}">
+        <i class="fas fa-question-circle" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="footer-center">
+      {{#if selectedList}}
+        <span class="spell-count-stat">
+          <i class="fas fa-magic" aria-hidden="true"></i>
+          {{localize "SPELLMANAGER.Status.SpellCount" count=selectedList.spellCount}}
+        </span>
+      {{else}}
+        {{#if totalSpellCount}}
+          <span class="total-spells-stat">
+            <i class="fas fa-scroll" aria-hidden="true"></i>
+            {{localize "SPELLMANAGER.Footer.TotalSpells" count=totalSpellCount}}
+          </span>
+        {{/if}}
+      {{/if}}
+    </div>
+    <div class="footer-right">
+      {{#if selectedList}}
+        <div class="selection-controls">
+          {{#if selectionMode}}
+            <span class="selection-summary">
+              {{#if (and selectedToAddCount selectedToRemoveCount)}}
+                {{localize "SPELLMANAGER.Selection.AddAndRemoveCount" addCount=selectedToAddCount removeCount=selectedToRemoveCount}}
+              {{else if selectedToAddCount}}
+                {{localize "SPELLMANAGER.Selection.AddCount" count=selectedToAddCount}}
+              {{else if selectedToRemoveCount}}
+                {{localize "SPELLMANAGER.Selection.RemoveCount" count=selectedToRemoveCount}}
+              {{else}}
+                {{localize "SPELLMANAGER.Selection.NoneSelected"}}
+              {{/if}}
+            </span>
+            <button type="button" class="bulk-save-btn" data-action="bulkSave"
+              {{#unless totalSelectedCount}}disabled{{/unless}}>
+              <i class="fas fa-save" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="cancel-selection-btn" data-action="cancelSelection">
+              <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+          {{else}}
+            <button type="button" class="toggle-selection-mode" data-action="toggleSelectionMode"
+              data-tooltip="{{localize 'SPELLMANAGER.Selection.SelectionMode'}}">
+              <i class="fas fa-check-square" aria-hidden="true"></i>
+            </button>
+          {{/if}}
+        </div>
+      {{/if}}
+    </div>
+  </div>
 </div>

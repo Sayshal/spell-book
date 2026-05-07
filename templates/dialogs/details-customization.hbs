@@ -2,7 +2,8 @@
   <div class="scroll-body">
     <fieldset data-group="player-ui">
       <legend>
-        <span>{{localize "SPELLBOOK.Settings.DetailsCustomization.SpellBook"}} &mdash; {{localize "SPELLBOOK.Settings.DetailsCustomization.UIElements"}}</span>
+        <span>{{localize "SPELLBOOK.Settings.DetailsCustomization.SpellBook"}} &mdash;
+          {{localize "SPELLBOOK.Settings.DetailsCustomization.UIElements"}}</span>
         <label class="select-all-label">
           <input type="checkbox" class="select-all">
           {{localize "SPELLBOOK.Settings.DetailsCustomization.SelectAll"}}
@@ -14,7 +15,8 @@
     </fieldset>
     <fieldset data-group="player-metadata">
       <legend>
-        <span>{{localize "SPELLBOOK.Settings.DetailsCustomization.SpellBook"}} &mdash; {{localize "SPELLBOOK.Settings.DetailsCustomization.MetadataElements"}}</span>
+        <span>{{localize "SPELLBOOK.Settings.DetailsCustomization.SpellBook"}} &mdash;
+          {{localize "SPELLBOOK.Settings.DetailsCustomization.MetadataElements"}}</span>
         <label class="select-all-label">
           <input type="checkbox" class="select-all">
           {{localize "SPELLBOOK.Settings.DetailsCustomization.SelectAll"}}
@@ -27,7 +29,8 @@
     {{#if isGM}}
       <fieldset data-group="gm-ui">
         <legend>
-          <span>{{localize "SPELLBOOK.Settings.DetailsCustomization.SpellListManager"}} &mdash; {{localize "SPELLBOOK.Settings.DetailsCustomization.UIElements"}}</span>
+          <span>{{localize "SPELLBOOK.Settings.DetailsCustomization.SpellListManager"}} &mdash;
+            {{localize "SPELLBOOK.Settings.DetailsCustomization.UIElements"}}</span>
           <label class="select-all-label">
             <input type="checkbox" class="select-all">
             {{localize "SPELLBOOK.Settings.DetailsCustomization.SelectAll"}}
@@ -39,7 +42,8 @@
       </fieldset>
       <fieldset data-group="gm-metadata">
         <legend>
-          <span>{{localize "SPELLBOOK.Settings.DetailsCustomization.SpellListManager"}} &mdash; {{localize "SPELLBOOK.Settings.DetailsCustomization.MetadataElements"}}</span>
+          <span>{{localize "SPELLBOOK.Settings.DetailsCustomization.SpellListManager"}} &mdash;
+            {{localize "SPELLBOOK.Settings.DetailsCustomization.MetadataElements"}}</span>
           <label class="select-all-label">
             <input type="checkbox" class="select-all">
             {{localize "SPELLBOOK.Settings.DetailsCustomization.SelectAll"}}
@@ -53,10 +57,11 @@
     <fieldset>
       <legend>{{localize "SPELLBOOK.Settings.DetailsCustomization.WizardBookIconColor"}}</legend>
       <div class="form-group">
-        <label for="wizard-book-icon-color">{{localize "SPELLBOOK.Settings.DetailsCustomization.WizardBookIconColor"}}</label>
+        <label
+          for="wizard-book-icon-color">{{localize "SPELLBOOK.Settings.DetailsCustomization.WizardBookIconColor"}}</label>
         <div class="form-fields">
-          <color-picker id="wizard-book-icon-color" name="wizardBookIconColor"
-            value="{{wizardBookIconColor}}" placeholder="{{userColor}}"></color-picker>
+          <color-picker id="wizard-book-icon-color" name="wizardBookIconColor" value="{{wizardBookIconColor}}"
+            placeholder="{{userColor}}"></color-picker>
           <button type="button" data-action="useUserColor" data-user-color="{{userColor}}"
             data-tooltip="{{localize 'SPELLBOOK.Settings.DetailsCustomization.WizardBookUseUserColor'}}">
             <i class="fas fa-user" aria-hidden="true"></i>

@@ -263,27 +263,12 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
       stats.skipped++;
       return;
     }
-    if (!Troubleshooter._isValidDeferredValue(key, value)) {
-      stats.skipped++;
-      return;
-    }
     try {
       await game.settings.set(MODULE.ID, key, value);
       stats.imported++;
     } catch (error) {
       stats.errors.push(`${key}: ${error.message}`);
     }
-  }
-
-  /**
-   * Validate shape-sensitive deferred settings before writing.
-   * @param {string} key - Setting key
-   * @param {*} value - Candidate value
-   * @returns {boolean} Whether the value is structurally valid
-   * @private
-   */
-  static _isValidDeferredValue(_key, _value) {
-    return true;
   }
 
   /**

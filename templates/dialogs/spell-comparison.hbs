@@ -7,10 +7,11 @@
     <button type="button" class="comparison-detach" data-action="toggleDetach"
       data-tooltip="{{#if detached}}{{localize 'APPLICATION.ACTIONS.Attach'}}{{else}}{{localize 'APPLICATION.ACTIONS.Detach'}}{{/if}}"
       aria-label="{{#if detached}}{{localize 'APPLICATION.ACTIONS.Attach'}}{{else}}{{localize 'APPLICATION.ACTIONS.Detach'}}{{/if}}">
-      <i class="fas {{#if detached}}fa-arrow-down-to-square{{else}}fa-arrow-up-right-from-square{{/if}}" aria-hidden="true"></i>
+      <i class="fas {{#if detached}}fa-arrow-down-to-square{{else}}fa-arrow-up-right-from-square{{/if}}"
+        aria-hidden="true"></i>
     </button>
-    <button type="button" class="comparison-close" data-action="close"
-      data-tooltip="{{localize 'Close'}}" aria-label="{{localize 'Close'}}">
+    <button type="button" class="comparison-close" data-action="close" data-tooltip="{{localize 'Close'}}"
+      aria-label="{{localize 'Close'}}">
       <i class="fas fa-xmark" aria-hidden="true"></i>
     </button>
   </header>

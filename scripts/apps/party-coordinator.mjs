@@ -18,7 +18,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
       openSynergy: PartyCoordinator.#onOpenSynergy,
       refreshData: PartyCoordinator.#onRefreshData,
       toggleSpellHeader: PartyCoordinator.#onToggleSpellHeader,
-      filterMemberSpells: PartyCoordinator.#onFilterMemberSpells,
+      filterMemberSpells: PartyCoordinator.#onFilterMemberSpells
     }
   };
 
@@ -214,7 +214,6 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
     if (this._filteredActorId === actorId) this._clearSpellFilter();
     else this._applySpellFilter(actorId);
   }
-
 
   /**
    * Highlight a member's prepared spells on card hover.

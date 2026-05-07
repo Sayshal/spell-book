@@ -13,7 +13,7 @@ import { fetchAllSpells } from '../data/spell-fetcher.mjs';
 import { ensureListRegistered, isListEnabledForRegistry, toggleListForRegistry } from '../data/spell-list-registry.mjs';
 import { findSpellListsByType } from '../data/spell-list-resolver.mjs';
 import { DetailsCustomization, SpellComparison } from '../dialogs/_module.mjs';
-import { buildGMMetadata, getEnabledGMElements, isGMElementEnabled } from '../ui/custom-ui.mjs';
+import { buildGMMetadata, getEnabledGMElements } from '../ui/custom-ui.mjs';
 import { confirmDialog, detachedRenderOptions } from '../ui/dialogs.mjs';
 import { createSpellIconLink, extractSpellFilterData, processSpellListForDisplay } from '../ui/formatting.mjs';
 import { log } from '../utils/logger.mjs';
@@ -237,17 +237,36 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     this.element.addEventListener('mousedown', () => this.bringToFront(), { capture: false });
   }
 
-  /** Enable drag-to-move via the header strip. Re-wires on every render since PART DOM is replaced. */
+  /** Enable drag-to-move via the header strip and resize via a corner handle. Re-wires on every render since PART DOM is replaced. */
   #enableDragging() {
     const handle = this.element?.querySelector('.spell-book-header');
     if (!handle || handle.dataset.dragWired === '1') return;
     handle.dataset.dragWired = '1';
-    const drag = new foundry.applications.ux.Draggable.implementation(this, this.element, handle, false);
+    this.#ensureResizeHandle();
+    const drag = new foundry.applications.ux.Draggable.implementation(this, this.element, handle, { selector: '.spell-book-resize-handle' });
     const originalMouseDown = drag._onDragMouseDown.bind(drag);
     drag._onDragMouseDown = (event) => {
-      if (event.target.closest('button, a, input, select, [data-action]')) return;
+      if (event.target.closest('button, a, input, select, [data-action], .spell-book-resize-handle')) return;
       originalMouseDown(event);
     };
+    const originalResizeUp = drag._onResizeMouseUp.bind(drag);
+    drag._onResizeMouseUp = (event) => {
+      originalResizeUp(event);
+      const { left, top, width, height } = this.position;
+      game.settings.set(MODULE.ID, SETTINGS.SPELL_LIST_MANAGER_POSITION, { left, top, width, height });
+    };
+  }
+
+  /** No-op shim for Foundry Draggable, which calls `app._onResize` after a resize drag ends. */
+  _onResize() {}
+
+  /** Inject the resize handle into the app root once. Idempotent across re-renders. */
+  #ensureResizeHandle() {
+    if (!this.element || this.element.querySelector(':scope > .spell-book-resize-handle')) return;
+    const handle = document.createElement('div');
+    handle.className = 'spell-book-resize-handle';
+    handle.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.Resize'));
+    this.element.appendChild(handle);
   }
 
   /** @override */
@@ -305,9 +324,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     }
     const selectable = this.selectionMode;
     const btnClass = selectable ? 'add-spell select-toggle' : 'add-spell';
-    const iconHtml = selectable
-      ? `<i class="fas fa-${spell.isSelectedForAdd ? 'check-square' : 'square'}" aria-hidden="true"></i>`
-      : `<i class="fas fa-plus" aria-hidden="true"></i>`;
+    const iconHtml = selectable ? `<i class="fas fa-${spell.isSelectedForAdd ? 'check-square' : 'square'}" aria-hidden="true"></i>` : `<i class="fas fa-plus" aria-hidden="true"></i>`;
     return `<li class="${classes.join(' ')}" data-uuid="${spell.uuid}" draggable="true">
       <div class="spell-name">${spell.enrichedIcon ?? ''}<div class="name-stacked"><span class="title">${nameEscaped}</span><span class="subtitle">${spell.formattedDetails ?? ''}</span></div></div>
       ${compareIcon}
@@ -322,6 +339,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       this.comparisonDialog = null;
     }
     this.comparisonSet.clear();
+    const { top, left, width, height } = this.position;
+    game.settings.set(MODULE.ID, SETTINGS.SPELL_LIST_MANAGER_POSITION, { top, left, width, height });
     return super._onClose(options);
   }
 
@@ -1442,7 +1461,7 @@ class EditingController {
   /**
    * Add a single spell to the editing list (from the [data-action=addSpell] row).
    * @param {SpellListManager} app - The parent spell-list-manager app
-   * @param {Event} _event - The triggering event
+   * @param {Event|string} eventOrUuid - Triggering event when invoked from the row, or a direct UUID string
    * @param {HTMLElement} target - The capturing element
    */
   static addSpell(app, eventOrUuid, target) {
@@ -1471,7 +1490,7 @@ class EditingController {
   /**
    * Remove a single spell from the editing list.
    * @param {SpellListManager} app - The parent spell-list-manager app
-   * @param {Event} _event - The triggering event
+   * @param {Event|string} eventOrUuid - Triggering event when invoked from the row, or a direct UUID string
    * @param {HTMLElement} target - The capturing element
    */
   static removeSpell(app, eventOrUuid, target) {

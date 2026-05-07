@@ -1,4 +1,4 @@
-import { SpellBook } from './apps/_module.mjs';
+import { SpellBook, SpellListManager } from './apps/_module.mjs';
 import { MODULE, PACK, SETTINGS } from './constants.mjs';
 import { SpellDataManager } from './managers/_module.mjs';
 import { DescriptionInjector } from './ui/description-injector.mjs';
@@ -33,6 +33,9 @@ export function registerAllHooks() {
     let position = game.settings.get(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION);
     if (!position || (typeof position === 'object' && Object.keys(position).length === 0)) position = { height: 850, width: 700, left: 300, top: 100 };
     SpellBook.DEFAULT_OPTIONS.position = position;
+    let managerPosition = game.settings.get(MODULE.ID, SETTINGS.SPELL_LIST_MANAGER_POSITION);
+    if (!managerPosition || (typeof managerPosition === 'object' && Object.keys(managerPosition).length === 0)) managerPosition = { height: 800, width: 1100, left: 200, top: 80 };
+    SpellListManager.DEFAULT_OPTIONS.position = managerPosition;
   });
   log(3, 'Hooks registered.');
 }

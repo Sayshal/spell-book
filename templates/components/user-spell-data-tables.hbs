@@ -2,7 +2,7 @@
 <p><em>{{localize 'SPELLBOOK.UserData.PageDescription'}}</em></p>
 
 {{#if isGM}}
-  <h1>{{notesTitle}}</h1>
+  <h2>{{notesTitle}}</h2>
   <p><em>{{localize 'SPELLBOOK.UserData.NotesDescription'}}</em></p>
   <table class="spell-book-data" data-table-type="spell-notes" data-user-id="{{userId}}">
     <thead>
@@ -26,8 +26,8 @@
   {{#each userActors as |actor|}}
     <hr>
     <div class="actor-spell-data" data-actor-id="{{actor.id}}">
-      <h1>{{actor.name}}</h1>
-      <h2>{{../favoritesTitle}}</h2>
+      <h2>{{actor.name}}</h2>
+      <h3>{{../favoritesTitle}}</h3>
       <table class="spell-book-data" data-table-type="spell-favorites" data-actor-id="{{actor.id}}">
         <thead>
           <tr>
@@ -47,7 +47,7 @@
     </div>
   {{/each}}
   <hr>
-  <h1>{{notesTitle}}</h1>
+  <h2>{{notesTitle}}</h2>
   <p><em>{{localize 'SPELLBOOK.UserData.NotesDescription'}}</em></p>
   <table class="spell-book-data" data-table-type="spell-notes" data-user-id="{{userId}}">
     <thead>

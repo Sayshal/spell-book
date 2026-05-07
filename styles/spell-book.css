@@ -1,171 +1,135 @@
 :root {
-  /* Backgrounds */
-  --sb-bg-primary: rgb(27 29 36 / 90%);
-  --sb-bg-secondary: rgb(42 44 51 / 95%);
-  --sb-bg-surface: rgb(58 60 67 / 90%);
-  --sb-bg-disabled: rgb(0 0 0 / 3%);
-  --sb-bg-hover: rgb(0 0 0 / 10%);
   --sb-bg-active: rgb(0 0 0 / 15%);
-  --sb-bg-selected: rgb(85 170 255 / 10%);
-  --sb-bg-sidebar: rgb(27 29 36);
-  --sb-bg-sidebar-gradient: linear-gradient(180deg, rgb(18 14 28) 0%, rgb(28 22 40) 100%);
   --sb-bg-app: rgb(27 29 36);
+  --sb-bg-disabled: rgb(0 0 0 / 3%);
   --sb-bg-header-strip: rgb(0 0 0 / 20%);
-  --sb-bg-tab: rgb(11 10 19 / 90%);
+  --sb-bg-hover: rgb(0 0 0 / 10%);
   --sb-bg-input: rgb(58 60 67 / 30%);
   --sb-bg-overlay: rgb(0 0 0 / 40%);
   --sb-bg-prepared: rgb(0 128 0 / 10%);
   --sb-bg-prepared-full: rgb(0 128 0 / 20%);
-
-  /* Text */
-  --sb-text-primary: rgb(241 241 241);
-  --sb-text-secondary: rgb(186 186 186);
-  --sb-text-muted: rgb(119 119 119);
-  --sb-text-accent: rgb(159 146 117);
-  --sb-text-disabled: rgb(102 102 102);
-  --sb-text-hyperlink: rgb(85 170 255);
-  --sb-text-on-color: rgb(255 255 255);
-  --sb-text-heading: rgb(241 241 241);
-
-  /* Borders */
-  --sb-border-light: rgb(201 199 184 / 16.5%);
-  --sb-border-medium: rgb(153 153 153 / 25%);
+  --sb-bg-primary: rgb(27 29 36 / 90%);
+  --sb-bg-secondary: rgb(42 44 51 / 95%);
+  --sb-bg-selected: rgb(85 170 255 / 10%);
+  --sb-bg-sidebar: rgb(27 29 36);
+  --sb-bg-sidebar-gradient: linear-gradient(180deg, rgb(18 14 28) 0%, rgb(28 22 40) 100%);
+  --sb-bg-surface: rgb(58 60 67 / 90%);
+  --sb-bg-tab: rgb(11 10 19 / 90%);
   --sb-border-dark: rgb(85 85 85 / 50%);
   --sb-border-focus: rgb(85 170 255);
   --sb-border-highlight: rgb(159 146 117);
-
-  /* Semantic */
-  --sb-success: rgb(76 175 80);
+  --sb-border-light: rgb(201 199 184 / 16.5%);
+  --sb-border-medium: rgb(153 153 153 / 25%);
   --sb-error: rgb(244 67 54);
-  --sb-warning: rgb(255 193 7);
-  --sb-info: rgb(33 150 243);
-
-  /* Tag colors */
-  --sb-tag-always: rgb(63 198 193);
-  --sb-tag-atwill: rgb(230 126 34);
-  --sb-tag-granted: rgb(245 159 112);
-  --sb-tag-innate: rgb(52 152 219);
-  --sb-tag-pact: rgb(155 89 182);
-  --sb-tag-ritual: rgb(241 196 15);
-  --sb-tag-prepared: rgb(76 175 80);
-  --sb-tag-learned: rgb(119 34 61);
-  --sb-tag-learned-free: rgb(48 105 49);
-  --sb-tag-learned-purchased: rgb(8 93 162);
-  --sb-tag-learned-scroll: rgb(143 87 3);
-  --sb-tag-cross-class: rgb(206 164 229);
-  --sb-tag-actor: rgb(107 209 77);
-  --sb-tag-custom: rgb(121 215 212);
-  --sb-tag-custom-list: rgb(255 201 25);
-  --sb-tag-merged: rgb(147 51 234);
-
-  /* Shadows */
-  --sb-shadow-light: 0 0 0.25rem rgb(0 0 0 / 25%);
-  --sb-shadow-normal: 0 0 0.375rem rgb(0 0 0 / 50%);
-  --sb-shadow-heavy: 0 0 0.5rem rgb(0 0 0 / 75%);
-  --sb-shadow-highlight: 0 0 0.5rem rgb(255 201 25 / 50%);
-  --sb-shadow-top: 0 -0.125rem 0.375rem rgb(0 0 0 / 10%);
-
-  /* Glows */
+  --sb-font-2xl: 0.938rem;
+  --sb-font-lg: 0.813rem;
+  --sb-font-md: 0.75rem;
+  --sb-font-sm: 0.688rem;
+  --sb-font-title: 1.2rem;
+  --sb-font-xl: 0.875rem;
+  --sb-font-xs: 0.625rem;
+  --sb-footer-height: 3.75rem;
   --sb-glow-blue: 0 0 0.375rem rgb(85 170 255);
   --sb-glow-gold: 0 0 0.375rem rgb(255 201 25);
   --sb-glow-green: 0 0 0.375rem rgb(76 175 80);
   --sb-glow-red: 0 0 0.375rem rgb(244 67 54);
-
-  /* Spacing */
-  --sb-space-xs: 0.125rem;
-  --sb-space-sm: 0.25rem;
-  --sb-space-md: 0.5rem;
-  --sb-space-lg: 0.75rem;
-  --sb-space-xl: 1rem;
+  --sb-icon: 2rem;
+  --sb-icon-sm: 1.5rem;
+  --sb-icon-xs: 1rem;
+  --sb-info: rgb(33 150 243);
+  --sb-manager-footer-height: 3.75rem;
+  --sb-manager-sidebar-width: 15rem;
+  --sb-radius-lg: 0.25rem;
+  --sb-radius-md: 0.188rem;
+  --sb-radius-round: 50%;
+  --sb-radius-sm: 0.125rem;
+  --sb-radius-xl: 0.5rem;
+  --sb-shadow-heavy: 0 0 0.5rem rgb(0 0 0 / 75%);
+  --sb-shadow-highlight: 0 0 0.5rem rgb(255 201 25 / 50%);
+  --sb-shadow-light: 0 0 0.25rem rgb(0 0 0 / 25%);
+  --sb-shadow-normal: 0 0 0.375rem rgb(0 0 0 / 50%);
+  --sb-shadow-top: 0 -0.125rem 0.375rem rgb(0 0 0 / 10%);
+  --sb-sidebar-width: 12.5rem;
   --sb-space-2xl: 1.5rem;
   --sb-space-3xl: 2rem;
-
-  /* Border radius */
-  --sb-radius-sm: 0.125rem;
-  --sb-radius-md: 0.188rem;
-  --sb-radius-lg: 0.25rem;
-  --sb-radius-xl: 0.5rem;
-  --sb-radius-round: 50%;
-
-  /* Typography */
-  --sb-font-xs: 0.625rem;
-  --sb-font-sm: 0.688rem;
-  --sb-font-md: 0.75rem;
-  --sb-font-lg: 0.813rem;
-  --sb-font-xl: 0.875rem;
-  --sb-font-2xl: 0.938rem;
-  --sb-font-title: 1.2rem;
-  --sb-icon-xs: 1rem;
-  --sb-icon-sm: 1.5rem;
-  --sb-icon: 2rem;
-
-  /* Transitions */
+  --sb-space-lg: 0.75rem;
+  --sb-space-md: 0.5rem;
+  --sb-space-sm: 0.25rem;
+  --sb-space-xl: 1rem;
+  --sb-space-xs: 0.125rem;
+  --sb-success: rgb(76 175 80);
+  --sb-tab-height: 2.5rem;
+  --sb-tag-actor: rgb(107 209 77);
+  --sb-tag-always: rgb(63 198 193);
+  --sb-tag-atwill: rgb(230 126 34);
+  --sb-tag-cross-class: rgb(206 164 229);
+  --sb-tag-custom: rgb(121 215 212);
+  --sb-tag-custom-list: rgb(255 201 25);
+  --sb-tag-granted: rgb(245 159 112);
+  --sb-tag-innate: rgb(52 152 219);
+  --sb-tag-learned: rgb(119 34 61);
+  --sb-tag-learned-free: rgb(48 105 49);
+  --sb-tag-learned-purchased: rgb(8 93 162);
+  --sb-tag-learned-scroll: rgb(143 87 3);
+  --sb-tag-merged: rgb(147 51 234);
+  --sb-tag-pact: rgb(155 89 182);
+  --sb-tag-prepared: rgb(76 175 80);
+  --sb-tag-ritual: rgb(241 196 15);
+  --sb-text-accent: rgb(159 146 117);
+  --sb-text-disabled: rgb(102 102 102);
+  --sb-text-heading: rgb(241 241 241);
+  --sb-text-hyperlink: rgb(85 170 255);
+  --sb-text-muted: rgb(119 119 119);
+  --sb-text-on-color: rgb(255 255 255);
+  --sb-text-primary: rgb(241 241 241);
+  --sb-text-secondary: rgb(186 186 186);
+  --sb-transition-collapse: max-height 400ms ease;
   --sb-transition-fast: all 150ms ease;
   --sb-transition-normal: all 250ms ease;
   --sb-transition-slow: all 450ms ease;
-  --sb-transition-collapse: max-height 400ms ease;
-
-  /* Z-index layers */
+  --sb-warning: rgb(255 193 7);
   --sb-z-dropdown: 10000;
-  --sb-z-tooltip: 9999;
   --sb-z-modal: 9998;
   --sb-z-overlay: 9997;
-
-  /* Layout */
-  --sb-sidebar-width: 12.5rem;
-  --sb-tab-height: 2.5rem;
-  --sb-footer-height: 3.75rem;
-  --sb-manager-sidebar-width: 15rem;
-  --sb-manager-footer-height: 3.75rem;
+  --sb-z-tooltip: 9999;
 }
 
 .theme-light {
-  /* Backgrounds */
-  --sb-bg-primary: rgb(244 244 244 / 90%);
-  --sb-bg-secondary: rgb(250 250 250 / 95%);
-  --sb-bg-surface: rgb(255 255 255 / 90%);
-  --sb-bg-disabled: rgb(0 0 0 / 2%);
-  --sb-bg-hover: rgb(0 0 0 / 5%);
   --sb-bg-active: rgb(0 0 0 / 8%);
-  --sb-bg-sidebar: rgb(244 244 244);
-  --sb-bg-sidebar-gradient: linear-gradient(180deg, rgb(240 237 229) 0%, rgb(228 222 208) 100%);
   --sb-bg-app: url('../../../systems/dnd5e/ui/parchment.jpg') repeat;
+  --sb-bg-disabled: rgb(0 0 0 / 2%);
   --sb-bg-header-strip: rgb(250 250 250);
-  --sb-bg-tab: url('../../../systems/dnd5e/ui/parchment.jpg') repeat;
+  --sb-bg-hover: rgb(0 0 0 / 5%);
   --sb-bg-input: rgb(255 251 242 / 80%);
   --sb-bg-prepared: rgb(107 142 35 / 15%);
-  --sb-tag-ritual: rgb(176 137 19);
-
-  /* Text */
-  --sb-text-primary: rgb(17 17 17);
-  --sb-text-secondary: rgb(68 68 68);
-  --sb-text-muted: rgb(136 136 136);
-  --sb-text-accent: rgb(120 68 24);
-  --sb-text-disabled: rgb(153 153 153);
-  --sb-text-hyperlink: rgb(0 102 204);
-
-  /* Borders */
-  --sb-border-light: rgb(176 150 110 / 40%);
-  --sb-border-medium: rgb(170 170 170 / 50%);
+  --sb-bg-primary: rgb(244 244 244 / 90%);
+  --sb-bg-secondary: rgb(250 250 250 / 95%);
+  --sb-bg-sidebar: rgb(244 244 244);
+  --sb-bg-sidebar-gradient: linear-gradient(180deg, rgb(240 237 229) 0%, rgb(228 222 208) 100%);
+  --sb-bg-surface: rgb(255 255 255 / 90%);
+  --sb-bg-tab: url('../../../systems/dnd5e/ui/parchment.jpg') repeat;
   --sb-border-dark: rgb(136 136 136 / 75%);
   --sb-border-focus: rgb(0 102 204);
   --sb-border-highlight: rgb(120 68 24);
-
-  /* Semantic */
-  --sb-success: rgb(56 118 42);
+  --sb-border-light: rgb(176 150 110 / 40%);
+  --sb-border-medium: rgb(170 170 170 / 50%);
   --sb-error: rgb(155 35 20);
-  --sb-warning: rgb(177 137 5);
   --sb-info: rgb(4 44 78);
-
-  /* Shadows */
-  --sb-shadow-light: 0 0 0.25rem rgb(0 0 0 / 10%);
-  --sb-shadow-normal: 0 0 0.375rem rgb(0 0 0 / 20%);
   --sb-shadow-heavy: 0 0 0.5rem rgb(0 0 0 / 30%);
   --sb-shadow-highlight: 0 0 0.5rem rgb(120 68 24 / 30%);
+  --sb-shadow-light: 0 0 0.25rem rgb(0 0 0 / 10%);
+  --sb-shadow-normal: 0 0 0.375rem rgb(0 0 0 / 20%);
   --sb-shadow-top: 0 -0.125rem 0.375rem rgb(0 0 0 / 5%);
+  --sb-success: rgb(56 118 42);
+  --sb-tag-ritual: rgb(176 137 19);
+  --sb-text-accent: rgb(120 68 24);
+  --sb-text-disabled: rgb(153 153 153);
+  --sb-text-hyperlink: rgb(0 102 204);
+  --sb-text-muted: rgb(136 136 136);
+  --sb-text-primary: rgb(17 17 17);
+  --sb-text-secondary: rgb(68 68 68);
+  --sb-warning: rgb(177 137 5);
 }
-
-/* Global/shared components */
 
 .spell-book {
   .loading-spinner {
@@ -204,10 +168,10 @@
   }
 
   .spell-list-notice {
+    gap: var(--sb-space-sm);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--sb-space-sm);
     padding: var(--sb-space-xl);
     list-style: none;
     text-align: center;
@@ -273,9 +237,9 @@
     border: 0.0625rem solid var(--sb-border-medium);
     border-radius: var(--sb-radius-lg);
     color: var(--sb-text-secondary);
-    background: transparent;
     font-size: var(--sb-font-sm);
     cursor: pointer;
+    background: transparent;
     transition: var(--sb-transition-fast);
 
     &:hover {
@@ -292,9 +256,9 @@
   }
 
   .spell-tag {
-    --tag-color: var(--sb-text-muted);
     --icon-fill: var(--tag-color);
     --icon-size: 0.75rem;
+    --tag-color: var(--sb-text-muted);
 
     all: unset;
     display: inline-flex;
@@ -358,8 +322,6 @@
       font-size: var(--sb-font-sm);
     }
   }
-
-  /* Spell display components */
 
   .spell-level {
     align-items: center;
@@ -471,12 +433,12 @@
   }
 
   .spell-icon {
+    object-fit: cover;
+    object-position: top;
     width: var(--sb-icon);
     height: var(--sb-icon);
     border: 0.125rem solid var(--sb-border-highlight);
     border-radius: var(--sb-radius-lg);
-    object-fit: cover;
-    object-position: top;
     background: var(--sb-bg-secondary);
     box-shadow: var(--sb-shadow-light);
   }
@@ -576,8 +538,8 @@
   }
 
   .spell-compare-icon {
-    flex: 0 0 auto;
     display: inline-flex;
+    flex: 0 0 auto;
     justify-content: center;
     align-items: center;
     width: 1.25rem;
@@ -636,8 +598,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    min-width: 5.45rem;
     width: 5.45rem;
+    min-width: 5.45rem;
     padding: 0.2rem 0.4rem;
     border: none;
     border-radius: var(--sb-radius-md);
@@ -656,8 +618,8 @@
     cursor: pointer;
 
     .unlearn-spell-tag {
-      display: none;
       gap: 0.3rem;
+      display: none;
       justify-content: center;
       align-items: center;
       padding: 0.2rem 0.4rem;
@@ -684,8 +646,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    min-width: 5.45rem;
     width: 5.45rem;
+    min-width: 5.45rem;
     padding: 0.2rem 0.4rem;
     border-radius: var(--sb-radius-md);
     color: var(--sb-text-on-color);
@@ -715,11 +677,11 @@
   }
 
   .party-member-icon {
+    object-fit: cover;
     width: 1.25rem;
     height: 1.25rem;
     border-radius: var(--sb-radius-round);
     cursor: default;
-    object-fit: cover;
     transition: var(--sb-transition-fast);
   }
 
@@ -727,20 +689,18 @@
     border-left: 0.125rem solid var(--sb-tag-cross-class);
   }
 
-  /* Player spell book app — frameless, arcane theme */
-
   &.closing {
     opacity: 0;
     transition: opacity 0.25s ease-out;
   }
 
   &:is(#player-spell-book) {
-    display: grid;
-    position: fixed;
     grid-template-columns: var(--sb-sidebar-width) 1fr;
     grid-template-rows: auto 1fr;
-    width: 700px;
-    height: 850px;
+    display: grid;
+    position: fixed;
+    min-width: 32rem;
+    min-height: 28rem;
     max-height: calc(100vh - 4rem);
     border-radius: 0.75rem;
     overflow: hidden;
@@ -752,10 +712,26 @@
       0 0 2rem rgb(159 146 117 / 10%);
   }
 
+  .spell-book-resize-handle {
+    inset: auto 1px 1px auto;
+    mask: url('/ui/resize-handle.webp') no-repeat center / contain;
+    z-index: 10;
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    cursor: nwse-resize;
+    background: var(--sb-text-muted, rgb(255 255 255 / 50%));
+    transition: background 0.15s ease-out;
+
+    &:hover {
+      background: var(--sb-text-primary);
+    }
+  }
+
   .spell-book-header {
     gap: var(--sb-space-md);
-    display: flex;
     grid-column: 1 / -1;
+    display: flex;
     align-items: center;
     padding: var(--sb-space-md) var(--sb-space-lg);
     border-bottom: 0.0625rem solid var(--sb-border-light);
@@ -785,8 +761,8 @@
 
     .detach-btn,
     .close-btn {
-      display: grid;
       place-content: center;
+      display: grid;
       width: 1.5rem;
       height: 1.5rem;
       padding: 0;
@@ -807,9 +783,9 @@
   }
 
   .spell-book-sidebar {
-    display: flex;
-    grid-row: 2;
     grid-column: 1;
+    grid-row: 2;
+    display: flex;
     flex-direction: column;
     min-height: 0;
     padding: 0;
@@ -824,13 +800,13 @@
 
   .sidebar-filter-section {
     gap: var(--sb-space-xs);
+    scrollbar-width: thin;
     display: flex;
     flex: 1;
     flex-direction: column;
     min-height: 0;
     padding: var(--sb-space-sm) var(--sb-space-md);
     overflow-y: auto;
-    scrollbar-width: thin;
 
     .filter-item {
       margin: 0 0 var(--sb-space-sm);
@@ -891,8 +867,8 @@
 
     .filter-properties {
       gap: var(--sb-space-xs);
-      display: grid;
       grid-template-columns: repeat(2, 1fr);
+      display: grid;
       margin: 0;
       padding: var(--sb-space-sm);
       border: 0.0625rem solid rgb(255 255 255 / 8%);
@@ -909,8 +885,8 @@
 
       .prop-toggle {
         gap: var(--sb-space-sm);
-        display: inline-flex;
         justify-self: start;
+        display: inline-flex;
         justify-content: flex-start;
         align-items: center;
         padding: 0;
@@ -919,8 +895,8 @@
         font-size: var(--sb-font-sm);
         text-align: left;
         cursor: pointer;
-        background: none;
         user-select: none;
+        background: none;
 
         .prop-indicator {
           position: relative;
@@ -933,17 +909,17 @@
         }
 
         .prop-indicator::before {
-          position: absolute;
           inset: 0;
           display: flex;
+          position: absolute;
           justify-content: center;
           align-items: center;
           color: var(--sb-text-on-color);
           font-weight: bold;
           font-size: 0.65rem;
           line-height: 1;
-          text-align: center;
           font-family: sans-serif;
+          text-align: center;
           content: '';
         }
 
@@ -1003,8 +979,8 @@
   }
 
   .sidebar-btn {
-    display: grid;
     place-content: center;
+    display: grid;
     width: 1.75rem;
     height: 1.75rem;
     border: 0.0625rem solid var(--sb-border-medium);
@@ -1061,9 +1037,9 @@
   }
 
   .spell-tab-panel {
-    display: flex;
-    grid-row: 2;
     grid-column: 2;
+    grid-row: 2;
+    display: flex;
     flex-direction: column;
     min-width: 0;
     min-height: 0;
@@ -1089,11 +1065,11 @@
   }
 
   .spell-list-items {
+    scrollbar-gutter: stable;
     flex: 1;
     margin: 0;
     padding: 0;
     overflow-y: auto;
-    scrollbar-gutter: stable;
     list-style: none;
   }
 
@@ -1149,8 +1125,8 @@
     }
 
     .class-tab-icon-btn {
-      display: grid;
       place-content: center;
+      display: grid;
       width: 1.5rem;
       height: 1.5rem;
       padding: 0;
@@ -1161,10 +1137,10 @@
       transition: var(--sb-transition-fast);
 
       img {
+        object-fit: cover;
         width: 1.25rem;
         height: 1.25rem;
         border-radius: var(--sb-radius-round);
-        object-fit: cover;
       }
 
       &:hover {
@@ -1201,8 +1177,8 @@
       }
 
       .value {
-        font-weight: bold;
         color: var(--sb-text-primary);
+        font-weight: bold;
       }
     }
 
@@ -1211,11 +1187,10 @@
     }
   }
 
-  /* Custom preparation checkbox */
   .sb-checkbox {
-    position: relative;
-    display: grid;
     place-content: center;
+    display: grid;
+    position: relative;
     width: 1.25rem;
     height: 1.25rem;
     cursor: pointer;
@@ -1224,8 +1199,8 @@
       position: absolute;
       width: 1px;
       height: 1px;
-      overflow: hidden;
       clip: rect(0 0 0 0);
+      overflow: hidden;
     }
 
     .sb-check-mark {
@@ -1244,9 +1219,9 @@
 
       &::after {
         display: block;
+        opacity: 0;
         width: 0.5rem;
         height: 0.5rem;
-        opacity: 0;
         border-radius: 0.0625rem;
         content: '';
         background: var(--sb-tag-prepared);
@@ -1301,15 +1276,13 @@
   }
 }
 
-/* Spell list manager app */
-
 .spell-list-manager {
-  display: grid;
-  position: fixed;
   grid-template-columns: var(--sb-manager-sidebar-width) 1fr;
   grid-template-rows: auto 1fr auto;
-  width: 1100px;
-  height: 800px;
+  display: grid;
+  position: fixed;
+  min-width: 48rem;
+  min-height: 30rem;
   max-height: calc(100vh - 4rem);
   border-radius: 0.75rem;
   overflow: hidden;
@@ -1355,9 +1328,9 @@
   }
 
   .spell-lists-sidebar {
-    display: flex;
     grid-column: 1;
     grid-row: 2;
+    display: flex;
     flex-direction: column;
     min-height: 0;
     border-right: 0.0625rem solid var(--sb-border-light);
@@ -1422,11 +1395,11 @@
   }
 
   .lists-container {
+    scrollbar-gutter: auto;
     flex: 1;
     min-height: 0;
     padding: 0 var(--sb-space-md);
     overflow-y: auto;
-    scrollbar-gutter: auto;
   }
 
   .sidebar-filter-header {
@@ -1445,15 +1418,14 @@
 
   .sidebar-filter-section {
     gap: var(--sb-space-sm);
+    scrollbar-width: thin;
     display: flex;
     flex: 1;
     flex-direction: column;
     min-height: 0;
     padding: var(--sb-space-md);
     overflow-y: auto;
-    scrollbar-width: thin;
 
-    /* Global filter-item styling — applies at any nesting depth */
     .filter-item {
       margin: 0;
 
@@ -1509,8 +1481,8 @@
         display: block;
         margin-bottom: var(--sb-space-xs);
         color: var(--sb-text-muted);
-        font-size: var(--sb-font-xs);
         font-weight: bold;
+        font-size: var(--sb-font-xs);
         text-transform: uppercase;
       }
 
@@ -1541,9 +1513,9 @@
     .reset-filters {
       gap: var(--sb-space-sm);
       display: inline-flex;
-      align-self: center;
-      align-items: center;
       flex-shrink: 0;
+      align-items: center;
+      align-self: center;
       margin-top: var(--sb-space-sm);
       padding: var(--sb-space-xs) var(--sb-space-md);
       border: 0.0625rem solid var(--sb-border-medium);
@@ -1562,8 +1534,8 @@
   }
 
   .sidebar-collapser {
-    display: grid;
     place-content: center;
+    display: grid;
     z-index: 1;
     position: absolute;
     top: var(--sb-space-lg);
@@ -1782,11 +1754,11 @@
       width: 1rem;
       height: 1rem;
       margin-left: var(--sb-space-sm);
-      font-size: var(--sb-font-sm);
       padding: 0;
       border: none;
       border-radius: var(--sb-radius-md);
       color: var(--sb-text-muted);
+      font-size: var(--sb-font-sm);
       cursor: pointer;
       background: none;
       transition: var(--sb-transition-normal);
@@ -1803,9 +1775,9 @@
   }
 
   .selected-list-content {
-    display: flex;
     grid-column: 2;
     grid-row: 2;
+    display: flex;
     flex-direction: column;
     min-width: 0;
     min-height: 0;
@@ -1822,9 +1794,9 @@
     border-bottom: 0.0625rem solid var(--sb-border-light);
 
     h2 {
+      min-width: 0;
       margin: 0;
       padding: 0;
-      min-width: 0;
       overflow: hidden;
       color: var(--sb-text-accent);
       font-weight: 600;
@@ -1872,9 +1844,9 @@
       dnd5e-checkbox {
         --button-size: 0.875rem;
 
+        flex-shrink: 0;
         width: 0.875rem;
         height: 0.875rem;
-        flex-shrink: 0;
       }
 
       span {
@@ -1942,9 +1914,9 @@
   }
 
   .split-view {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
     gap: var(--sb-space-md);
+    grid-template-columns: 1fr 1fr;
+    display: grid;
     flex: 1;
     min-height: 0;
   }
@@ -1958,8 +1930,8 @@
   }
 
   .available-spells-panel {
-    border-right: 0.0625rem solid var(--sb-border-light);
     padding-right: var(--sb-space-md);
+    border-right: 0.0625rem solid var(--sb-border-light);
   }
 
   .panel-header {
@@ -1973,10 +1945,10 @@
   }
 
   .panel-scroll {
+    scrollbar-gutter: stable;
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    scrollbar-gutter: stable;
   }
 
   .spell-item[draggable='true'] {
@@ -2009,8 +1981,8 @@
 
   .add-spell,
   .remove-spell {
-    flex: 0 0 auto;
     display: inline-flex;
+    flex: 0 0 auto;
     justify-content: center;
     align-items: center;
     width: 1.5rem;
@@ -2028,8 +2000,8 @@
     &:hover,
     &:focus {
       outline: none;
-      box-shadow: none;
       background: none;
+      box-shadow: none;
     }
 
     &:focus-visible {
@@ -2115,9 +2087,9 @@
   }
 
   .manager-footer {
-    display: flex;
     grid-column: 1 / -1;
     grid-row: 3;
+    display: flex;
     align-items: center;
     padding: var(--sb-space-sm) var(--sb-space-lg);
     border-top: 0.0625rem solid var(--sb-border-light);
@@ -2131,8 +2103,8 @@
 
     .footer-left,
     .footer-right {
-      display: flex;
       gap: var(--sb-space-md);
+      display: flex;
       align-items: center;
     }
 
@@ -2200,9 +2172,9 @@
     }
 
     .bulk-save-btn {
+      border-color: var(--sb-success);
       color: var(--sb-text-on-color);
       background: var(--sb-success);
-      border-color: var(--sb-success);
 
       &:hover:not(:disabled) {
         background: color-mix(in srgb, var(--sb-success) 85%, rgb(0 0 0));
@@ -2210,8 +2182,6 @@
     }
   }
 }
-
-/* Party coordinator */
 
 .party-spell-manager {
   overflow: hidden;
@@ -2265,8 +2235,8 @@
   }
 
   .party-action-btn {
-    display: grid;
     place-content: center;
+    display: grid;
     width: 1.75rem;
     height: 1.75rem;
     padding: 0;
@@ -2321,12 +2291,12 @@
   }
 
   .member-avatar {
+    object-fit: cover;
     flex-shrink: 0;
     width: 2rem;
     height: 2rem;
     border: 0.0625rem solid var(--sb-border-highlight);
     border-radius: var(--sb-radius-round);
-    object-fit: cover;
   }
 
   .member-details {
@@ -2360,8 +2330,8 @@
   }
 
   .count-badge {
-    display: grid;
     place-content: center;
+    display: grid;
     min-width: 1.25rem;
     height: 1.25rem;
     padding: 0 var(--sb-space-xs);
@@ -2378,11 +2348,11 @@
   }
 
   .spell-comparison {
+    scrollbar-gutter: stable;
     flex: 1;
     min-height: 0;
     padding: var(--sb-space-md);
     overflow-y: auto;
-    scrollbar-gutter: stable;
   }
 
   .spell-level-group {
@@ -2456,9 +2426,9 @@
       display: flex;
       align-items: center;
       padding: var(--sb-space-xs) var(--sb-space-sm);
-      background: var(--sb-bg-surface);
-      font-size: var(--sb-font-sm);
       font-weight: 500;
+      font-size: var(--sb-font-sm);
+      background: var(--sb-bg-surface);
     }
 
     .spell-actors {
@@ -2488,18 +2458,16 @@
   }
 }
 
-/* Synergy analysis */
-
 .synergy-analysis-dialog {
   .party-spell-analysis {
     height: 100%;
     overflow: hidden;
 
     .analysis-content {
+      scrollbar-gutter: stable;
       height: 100%;
       max-height: calc(100vh - 8rem);
       overflow-y: auto;
-      scrollbar-gutter: stable;
     }
 
     h4 {
@@ -2549,14 +2517,14 @@
 
   .stats-grid {
     gap: var(--sb-space-sm);
-    display: grid;
     grid-template-columns: repeat(2, 1fr);
+    display: grid;
   }
 
   .component-grid {
     gap: var(--sb-space-sm);
-    display: grid;
     grid-template-columns: repeat(4, 1fr);
+    display: grid;
   }
 
   .stat-item,
@@ -2606,11 +2574,11 @@
 
   .duplicate-list {
     gap: var(--sb-space-xs);
+    scrollbar-gutter: stable;
     display: flex;
     flex-direction: column;
     max-height: 33rem;
     overflow-y: auto;
-    scrollbar-gutter: stable;
   }
 
   .duplicate-item {
@@ -2635,8 +2603,6 @@
   }
 }
 
-/* Dialogs — scoped via compound selectors (.spell-book.dialog-class) */
-
 .spell-book.class-rules,
 .spell-book.custom-spell-list,
 .spell-book.details-customization,
@@ -2648,7 +2614,6 @@
 .spell-book.create-spell-list-dialog,
 .spell-book.merge-spell-lists-dialog,
 .spell-book.rename-spell-list-dialog {
-  /* Shared dialog fieldset */
   .settings-fieldset {
     margin-bottom: var(--sb-space-lg);
     padding: var(--sb-space-md);
@@ -2667,12 +2632,10 @@
     font-size: var(--sb-font-lg);
   }
 
-  /* Global settings */
   &.global-settings .global-settings-content {
     padding: var(--sb-space-md);
   }
 
-  /* Class rules */
   &.class-rules {
     .class-rules-wrapper {
       display: flex;
@@ -2700,11 +2663,11 @@
     }
 
     .class-icon {
+      object-fit: cover;
       width: 1.5rem;
       height: 1.5rem;
       border: 0.0625rem solid var(--sb-text-accent);
       border-radius: var(--sb-radius-round);
-      object-fit: cover;
     }
 
     .form-fields input[type='number'] {
@@ -2713,7 +2676,6 @@
     }
   }
 
-  /* Custom spell list */
   &.custom-spell-list .custom-spell-list-content {
     padding: var(--sb-space-md);
 
@@ -2765,27 +2727,26 @@
     }
   }
 
-  /* Documentation dialog */
   &.spell-manager-documentation {
     .window-content {
       display: flex;
       flex-direction: column;
-      overflow: hidden;
       padding: 0;
+      overflow: hidden;
     }
 
     .dialog-form {
-      flex: 1;
-      min-height: 0;
       display: flex;
+      flex: 1;
       flex-direction: column;
+      min-height: 0;
     }
 
     .dialog-content {
       flex: 1;
       min-height: 0;
-      overflow-y: auto;
       padding: var(--sb-space-md) var(--sb-space-lg);
+      overflow-y: auto;
     }
 
     .form-footer {
@@ -2794,17 +2755,17 @@
     }
 
     .documentation {
-      font-family: var(--dnd5e-font-roboto, sans-serif);
       font-size: var(--sb-font-lg);
+      font-family: var(--dnd5e-font-roboto, sans-serif);
 
       h4 {
         margin: var(--sb-space-md) 0 var(--sb-space-xs);
         padding-bottom: 0.125rem;
         border-bottom: 0.0625rem solid var(--sb-border-light);
         color: var(--sb-text-primary);
-        font-family: var(--dnd5e-font-roboto, sans-serif);
         font-weight: 700;
         font-size: 1rem;
+        font-family: var(--dnd5e-font-roboto, sans-serif);
         text-transform: none;
       }
 
@@ -2828,9 +2789,9 @@
     }
 
     .documentation-links {
+      gap: var(--sb-space-lg);
       display: flex;
       justify-content: center;
-      gap: var(--sb-space-lg);
       margin-top: var(--sb-space-lg);
       padding-top: var(--sb-space-sm);
       border-top: 0.0625rem solid var(--sb-border-light);
@@ -2847,7 +2808,6 @@
     }
   }
 
-  /* Details customization */
   &.details-customization {
     .details-customization-content {
       display: flex;
@@ -2859,8 +2819,8 @@
     .scroll-body {
       flex: 1;
       min-height: 0;
-      overflow-y: auto;
       padding: var(--sb-space-md);
+      overflow-y: auto;
     }
 
     fieldset {
@@ -2868,15 +2828,15 @@
     }
 
     legend {
+      gap: var(--sb-space-sm);
       display: inline-flex;
       align-items: center;
-      gap: var(--sb-space-sm);
     }
 
     .select-all-label {
+      gap: var(--sb-space-xs);
       display: inline-flex;
       align-items: center;
-      gap: var(--sb-space-xs);
       margin-left: var(--sb-space-sm);
       font-weight: normal;
       font-size: var(--sb-font-sm);
@@ -2884,7 +2844,6 @@
     }
   }
 
-  /* Troubleshooter */
   &.spell-book-troubleshooter {
     .window-content {
       display: flex;
@@ -2892,11 +2851,11 @@
     }
 
     [data-application-part='main'] {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      min-height: 0;
       gap: var(--sb-space-md);
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      min-height: 0;
     }
 
     [data-application-part='footer'] {
@@ -2917,14 +2876,13 @@
       border: 0.0625rem solid var(--sb-border-light);
       border-radius: var(--sb-radius-sm);
       color: var(--sb-text-primary);
-      font-family: var(--font-monospace, monospace);
       font-size: var(--sb-font-sm);
-      background: var(--sb-bg-input);
+      font-family: var(--font-monospace, monospace);
       resize: none;
+      background: var(--sb-bg-input);
     }
   }
 
-  /* Focus settings */
   &.focus-settings-dialog {
     .focus-settings-content {
       flex: 1;
@@ -2953,8 +2911,8 @@
 
         .member-info {
           display: flex;
-          flex-direction: column;
           flex: 1;
+          flex-direction: column;
           min-width: 0;
         }
 
@@ -2983,13 +2941,13 @@
 
       .focus-grid {
         gap: var(--sb-space-xl);
-        display: grid;
         grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
+        display: grid;
         margin-bottom: var(--sb-space-xl);
 
         &.read-only {
-          pointer-events: none;
           opacity: 0.7;
+          pointer-events: none;
         }
       }
 
@@ -3014,12 +2972,12 @@
         }
 
         .focus-card-icon {
+          object-fit: cover;
           width: 3.75rem;
           height: 3.75rem;
           margin-bottom: var(--sb-space-lg);
           border: 0.125rem solid var(--sb-border-medium);
           border-radius: var(--sb-radius-round);
-          object-fit: cover;
           transition: var(--sb-transition-fast);
         }
 
@@ -3046,7 +3004,6 @@
     }
   }
 
-  /* Loadout selector */
   &.spell-loadout-dialog {
     .loadout-list {
       gap: var(--sb-space-sm);
@@ -3098,8 +3055,8 @@
       align-self: center;
 
       button {
-        display: grid;
         place-content: center;
+        display: grid;
         width: 1.75rem;
         height: 1.75rem;
         padding: 0;
@@ -3131,10 +3088,9 @@
     }
   }
 
-  /* Spell comparison */
   &.spell-comparison-dialog {
-    position: fixed;
     z-index: var(--z-index-window, 100);
+    position: fixed;
     border-radius: 0.75rem;
     overflow: hidden;
     color: var(--sb-text-primary);
@@ -3161,8 +3117,8 @@
       padding: var(--sb-space-md) var(--sb-space-lg);
       border-bottom: 0.0625rem solid var(--sb-border-light);
       cursor: grab;
-      background: var(--sb-bg-header-strip);
       user-select: none;
+      background: var(--sb-bg-header-strip);
 
       &:active {
         cursor: grabbing;
@@ -3186,9 +3142,9 @@
 
     .comparison-detach,
     .comparison-close {
-      flex: 0 0 auto;
-      display: grid;
       place-content: center;
+      display: grid;
+      flex: 0 0 auto;
       width: 1.5rem;
       height: 1.5rem;
       padding: 0;
@@ -3222,8 +3178,8 @@
       padding: 0 var(--sb-space-md) var(--sb-space-md);
       overflow: auto;
       table-layout: auto;
-      border-collapse: separate;
       border-spacing: 0;
+      border-collapse: separate;
       background: transparent;
 
       thead {
@@ -3261,13 +3217,13 @@
 
       th,
       td {
+        overflow-wrap: anywhere;
         padding: var(--sb-space-sm) var(--sb-space-md);
         border-bottom: 0.0625rem solid var(--sb-border-light);
         color: var(--sb-text-primary);
         font-size: var(--sb-font-lg);
         text-align: center;
         vertical-align: middle;
-        overflow-wrap: anywhere;
       }
 
       th.corner {
@@ -3303,25 +3259,25 @@
           min-height: 4.5rem;
 
           .spell-icon {
+            object-fit: cover;
             display: block;
             width: 3rem;
             height: 3rem;
             margin: 0 auto;
             border: 0.125rem solid var(--sb-border-medium);
             border-radius: var(--sb-radius-round);
-            object-fit: cover;
             background: var(--sb-bg-primary);
             box-shadow: 0 0.125rem 0.375rem rgb(0 0 0 / 25%);
           }
 
           .spell-name {
+            overflow-wrap: anywhere;
             max-width: 100%;
             margin: 0;
             font-weight: 700;
             font-size: var(--sb-font-2xl);
             line-height: 1.25;
             text-align: center;
-            overflow-wrap: anywhere;
           }
         }
       }
@@ -3337,8 +3293,8 @@
 
         &:empty::before {
           color: var(--sb-text-muted);
-          font-weight: 400;
           font-style: italic;
+          font-weight: 400;
           content: '—';
         }
       }
@@ -3367,7 +3323,6 @@
     }
   }
 
-  /* Spell notes */
   &.spell-notes-dialog {
     .spell-notes-dialog-content {
       display: flex;
@@ -3396,7 +3351,6 @@
     }
   }
 
-  /* Learn from scroll */
   &.wizard-copy-form,
   .wizard-copy-form {
     .copy-details {
@@ -3421,7 +3375,6 @@
     }
   }
 
-  /* Long rest swap */
   .long-rest-swap-dialog {
     padding: var(--sb-space-md);
 
@@ -3445,7 +3398,6 @@
     }
   }
 
-  /* Merge/create/rename dialogs */
   .merge-spell-lists,
   .create-spell-list {
     padding: var(--sb-space-md);
@@ -3456,8 +3408,6 @@
   }
 }
 
-/* Miscellaneous */
-
 .spell-book-module-icon {
   display: inline-block;
   position: relative;
@@ -3466,8 +3416,8 @@
   padding-right: 0.15rem;
 
   &::before {
-    position: absolute;
     inset: 0;
+    position: absolute;
     content: '';
     background: url('../assets/icon_colored.png') no-repeat center / contain;
   }
@@ -3679,8 +3629,6 @@
   }
 }
 
-/* Character sheet integration buttons — scoped to avoid leaking */
-
 .spell-book-icon {
   width: 1.25em;
   height: 1.25em;
@@ -3707,8 +3655,6 @@
   width: fit-content;
   min-width: unset;
 }
-
-/* Responsive breakpoints */
 
 @media (width <= 64rem) {
   .spell-book.spell-comparison-dialog .comparison-table {

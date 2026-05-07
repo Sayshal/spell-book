@@ -59,11 +59,13 @@
     <div class="lists-container" role="list">
       {{#if hasActorOwnedLists}}
         {{#> "modules/spell-book/templates/components/folder-section.hbs"
-          folderType="actor-lists" folderId="actor-lists" icon="fas fa-user"
-          folderHeader=(localize "SPELLMANAGER.Folders.PlayerSpellbooks")
-          folderTooltip=(localize "SPELLMANAGER.Tooltips.PlayerSpellbooksFolder")}}
+    folderType="actor-lists" folderId="actor-lists" icon="fas fa-user"
+    folderHeader=(localize "SPELLMANAGER.Folders.PlayerSpellbooks")
+    folderTooltip=(localize "SPELLMANAGER.Tooltips.PlayerSpellbooksFolder")}}
           {{#each actorOwnedLists as |list|}}
-            <li class="spell-list-item actor-owned-list" data-uuid="{{list.uuid}}" role="listitem" data-tooltip-direction="RIGHT" data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
+            <li class="spell-list-item actor-owned-list" data-uuid="{{list.uuid}}" role="listitem"
+              data-tooltip-direction="RIGHT"
+              data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
               <div class="list-item-header">
                 <div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
                   <div class="list-name">
@@ -74,15 +76,17 @@
               </div>
             </li>
           {{/each}}
-        {{/"modules/spell-book/templates/components/folder-section.hbs"}}
+          {{/"modules/spell-book/templates/components/folder-section.hbs"}}
       {{/if}}
       {{#if hasCustomLists}}
         {{#> "modules/spell-book/templates/components/folder-section.hbs"
-          folderType="custom-lists" folderId="custom-lists" icon="fas fa-magic"
-          folderHeader=(localize "SPELLMANAGER.Folders.CustomLists")
-          folderTooltip=(localize "SPELLMANAGER.Tooltips.CustomListsFolder")}}
+    folderType="custom-lists" folderId="custom-lists" icon="fas fa-magic"
+    folderHeader=(localize "SPELLMANAGER.Folders.CustomLists")
+    folderTooltip=(localize "SPELLMANAGER.Tooltips.CustomListsFolder")}}
           {{#each customLists as |list|}}
-            <li class="spell-list-item custom-list" data-uuid="{{list.uuid}}" role="listitem" data-tooltip-direction="RIGHT" data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
+            <li class="spell-list-item custom-list" data-uuid="{{list.uuid}}" role="listitem"
+              data-tooltip-direction="RIGHT"
+              data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
               <div class="list-item-header">
                 <div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
                   <div class="list-name">
@@ -97,15 +101,17 @@
               </div>
             </li>
           {{/each}}
-        {{/"modules/spell-book/templates/components/folder-section.hbs"}}
+          {{/"modules/spell-book/templates/components/folder-section.hbs"}}
       {{/if}}
       {{#if hasMergedLists}}
         {{#> "modules/spell-book/templates/components/folder-section.hbs"
-          folderType="merged-lists" folderId="merged-lists" icon="fas fa-code-merge"
-          folderHeader=(localize "SPELLMANAGER.Folders.MergedLists")
-          folderTooltip=(localize "SPELLMANAGER.Tooltips.MergedListsFolder")}}
+    folderType="merged-lists" folderId="merged-lists" icon="fas fa-code-merge"
+    folderHeader=(localize "SPELLMANAGER.Folders.MergedLists")
+    folderTooltip=(localize "SPELLMANAGER.Tooltips.MergedListsFolder")}}
           {{#each mergedLists as |list|}}
-            <li class="spell-list-item merged-list" data-uuid="{{list.uuid}}" role="listitem" data-tooltip-direction="RIGHT" data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
+            <li class="spell-list-item merged-list" data-uuid="{{list.uuid}}" role="listitem"
+              data-tooltip-direction="RIGHT"
+              data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
               <div class="list-item-header">
                 <div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
                   <div class="list-name">
@@ -120,15 +126,17 @@
               </div>
             </li>
           {{/each}}
-        {{/"modules/spell-book/templates/components/folder-section.hbs"}}
+          {{/"modules/spell-book/templates/components/folder-section.hbs"}}
       {{/if}}
       {{#if hasModifiedLists}}
         {{#> "modules/spell-book/templates/components/folder-section.hbs"
-          folderType="modified-lists" folderId="modified-lists" icon="fas fa-pen"
-          folderHeader=(localize "SPELLMANAGER.Folders.ModifiedLists")
-          folderTooltip=(localize "SPELLMANAGER.Tooltips.ModifiedListsFolder")}}
+    folderType="modified-lists" folderId="modified-lists" icon="fas fa-pen"
+    folderHeader=(localize "SPELLMANAGER.Folders.ModifiedLists")
+    folderTooltip=(localize "SPELLMANAGER.Tooltips.ModifiedListsFolder")}}
           {{#each modifiedLists as |list|}}
-            <li class="spell-list-item modified-list" data-uuid="{{list.uuid}}" role="listitem" data-tooltip-direction="RIGHT" data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
+            <li class="spell-list-item modified-list" data-uuid="{{list.uuid}}" role="listitem"
+              data-tooltip-direction="RIGHT"
+              data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
               <div class="list-item-header">
                 <div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
                   <div class="list-name">
@@ -143,15 +151,16 @@
               </div>
             </li>
           {{/each}}
-        {{/"modules/spell-book/templates/components/folder-section.hbs"}}
+          {{/"modules/spell-book/templates/components/folder-section.hbs"}}
       {{/if}}
       {{#if hasStandardLists}}
         {{#> "modules/spell-book/templates/components/folder-section.hbs"
-          folderType="standard-lists" folderId="standard-lists" icon="fas fa-scroll"
-          folderHeader=(localize "SPELLMANAGER.Folders.SpellLists")
-          folderTooltip=(localize "SPELLMANAGER.Tooltips.StandardListsFolder")}}
+    folderType="standard-lists" folderId="standard-lists" icon="fas fa-scroll"
+    folderHeader=(localize "SPELLMANAGER.Folders.SpellLists")
+    folderTooltip=(localize "SPELLMANAGER.Tooltips.StandardListsFolder")}}
           {{#each standardLists as |list|}}
-            <li class="spell-list-item" data-uuid="{{list.uuid}}" role="listitem" data-tooltip-direction="RIGHT" data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
+            <li class="spell-list-item" data-uuid="{{list.uuid}}" role="listitem" data-tooltip-direction="RIGHT"
+              data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
               <div class="list-item-header">
                 <div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
                   <div class="list-name">
@@ -166,15 +175,17 @@
               </div>
             </li>
           {{/each}}
-        {{/"modules/spell-book/templates/components/folder-section.hbs"}}
+          {{/"modules/spell-book/templates/components/folder-section.hbs"}}
       {{/if}}
       {{#if hasHiddenLists}}
         {{#> "modules/spell-book/templates/components/folder-section.hbs"
-          folderType="hidden-lists" folderId="hidden-lists" icon="fas fa-eye-slash"
-          folderHeader=(localize "SPELLMANAGER.Folders.HiddenLists")
-          folderTooltip=(localize "SPELLMANAGER.Tooltips.HiddenListsFolder")}}
+    folderType="hidden-lists" folderId="hidden-lists" icon="fas fa-eye-slash"
+    folderHeader=(localize "SPELLMANAGER.Folders.HiddenLists")
+    folderTooltip=(localize "SPELLMANAGER.Tooltips.HiddenListsFolder")}}
           {{#each hiddenSpellLists as |list|}}
-            <li class="spell-list-item hidden-list" data-uuid="{{list.uuid}}" role="listitem" data-tooltip-direction="RIGHT" data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
+            <li class="spell-list-item hidden-list" data-uuid="{{list.uuid}}" role="listitem"
+              data-tooltip-direction="RIGHT"
+              data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
               <div class="list-item-header">
                 <div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
                   <div class="list-name">
@@ -189,7 +200,7 @@
               </div>
             </li>
           {{/each}}
-        {{/"modules/spell-book/templates/components/folder-section.hbs"}}
+          {{/"modules/spell-book/templates/components/folder-section.hbs"}}
       {{/if}}
       {{#unless availableSpellLists.length}}
         {{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize "SPELLMANAGER.Columns.NoLists")}}

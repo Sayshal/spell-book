@@ -174,7 +174,10 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
     this.scrollToClass = null;
   }
 
-  /** Build rule set override select options. */
+  /**
+   * Build rule set override select options.
+   * @returns {Array<{value: string, label: string}>} Options for the rule-set override select
+   */
   _buildRuleSetOptions() {
     const globalValue = game.settings.get(MODULE.ID, SETTINGS.SPELLCASTING_RULE_SET);
     const globalLabel = _loc(`SPELLBOOK.Settings.SpellcastingRuleSet.${globalValue.charAt(0).toUpperCase() + globalValue.slice(1)}`);
@@ -214,6 +217,11 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
     new DetailsCustomization().render({ force: true, ...detachedRenderOptions(this) });
   }
 
+  /**
+   * Action handler: step the named numeric input down by its data-step (clamped to data-min).
+   * @param {Event} _event - Triggering event (unused)
+   * @param {HTMLElement} target - The button element (carries data-field and data-step)
+   */
   static #onDecrease(_event, target) {
     const input = this.element.querySelector(`input[name="${target.dataset.field}"]`);
     if (!input) return;

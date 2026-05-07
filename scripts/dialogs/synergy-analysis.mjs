@@ -30,9 +30,9 @@ export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
     const context = await super._prepareContext(options);
     foundry.utils.mergeObject(context, this.synergyData);
     context.componentTooltips = this.#buildComponentTooltips(this.synergyData);
-    for (const item of (context.spellSchoolDistribution || [])) item.tooltipHtml = SynergyAnalysis.#groupMembersTooltip(item.localizedSchool, item.members);
-    for (const item of (context.damageDistribution || [])) item.tooltipHtml = SynergyAnalysis.#groupMembersTooltip(item.localizedType, item.members);
-    for (const item of (context.duplicateSpells || [])) item.tooltipHtml = SynergyAnalysis.#groupMembersTooltip(item.name, item.actors);
+    for (const item of context.spellSchoolDistribution || []) item.tooltipHtml = SynergyAnalysis.#groupMembersTooltip(item.localizedSchool, item.members);
+    for (const item of context.damageDistribution || []) item.tooltipHtml = SynergyAnalysis.#groupMembersTooltip(item.localizedType, item.members);
+    for (const item of context.duplicateSpells || []) item.tooltipHtml = SynergyAnalysis.#groupMembersTooltip(item.name, item.actors);
     return context;
   }
 
@@ -52,7 +52,7 @@ export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
       if (!grouped.has(name)) grouped.set(name, []);
       if (spell) grouped.get(name).push(spell);
     }
-    const lines = [...grouped.entries()].map(([name, spells]) => spells.length ? `<div><strong>${name}:</strong> ${spells.join(', ')}</div>` : `<div>${name}</div>`).join('');
+    const lines = [...grouped.entries()].map(([name, spells]) => (spells.length ? `<div><strong>${name}:</strong> ${spells.join(', ')}</div>` : `<div>${name}</div>`)).join('');
     return `<strong>${title}</strong><hr>${lines}`;
   }
 

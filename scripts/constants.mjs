@@ -72,6 +72,7 @@ export const SETTINGS = {
   REGISTRY_ENABLED_LISTS: 'registryEnabledLists',
   SIDEBAR_CONTROLS_BOTTOM: 'sidebarControlsBottom',
   SPELL_BOOK_POSITION: 'spellBookPositionn',
+  SPELL_LIST_MANAGER_POSITION: 'spellListManagerPosition',
   SPELL_NOTES_DESC_INJECTION: 'injectNotesIntoDescriptions',
   SPELL_NOTES_LENGTH: 'spellNotesMaxLength',
   SPELLCASTING_RULE_SET: 'spellcastingRuleSet',

@@ -129,13 +129,11 @@ export class SpellManager {
    * @param {object} actor - The actor document
    * @param {object} spell - The cantrip spell
    * @param {boolean} isChecked - Whether preparing (true) or unpreparing (false)
-   * @param {boolean} isLevelUp - During level-up
-   * @param {boolean} isLongRest - During long rest
    * @param {number|null} uiCantripCount - Current UI count for optimization
    * @param {string} classIdentifier - The class identifier
    * @returns {object} { allowed, message }
    */
-  static canChangeCantripStatus(actor, spell, isChecked, _isLevelUp, _isLongRest, uiCantripCount, classIdentifier) {
+  static canChangeCantripStatus(actor, spell, isChecked, uiCantripCount, classIdentifier) {
     if (spell.system.level !== 0) return { allowed: true };
     if (!classIdentifier) classIdentifier = ClassManager.getSpellClassIdentifier(spell);
     if (!classIdentifier) return { allowed: true };
@@ -313,9 +311,9 @@ export class SpellManager {
    * @param {object} actor - The actor document
    * @param {object} spell - The spell being modified
    * @param {boolean} isChecked - Preparing (true) or unpreparing (false)
-   * @param {boolean} wasPrepared - Whether the spell was previously prepared
-   * @param {boolean} isLevelUp - During level-up
-   * @param {boolean} isLongRest - During long rest
+   * @param {boolean} _wasPrepared - Whether the spell was previously prepared (unused)
+   * @param {boolean} _isLevelUp - During level-up (unused)
+   * @param {boolean} _isLongRest - During long rest (unused)
    * @param {string} classIdentifier - The class identifier
    * @param {number} currentPrepared - Current prepared spell count
    * @param {number} maxPrepared - Maximum allowed prepared spells

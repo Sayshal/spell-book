@@ -2,7 +2,8 @@
   <p class="hint">{{localize "SPELLBOOK.Settings.Troubleshooter.Notes"}}</p>
   {{#if ownedActorCount}}
     <div class="form-group">
-      <label for="troubleshooter-include-actors">{{localize "SPELLBOOK.Settings.Troubleshooter.IncludeActorData"}}</label>
+      <label
+        for="troubleshooter-include-actors">{{localize "SPELLBOOK.Settings.Troubleshooter.IncludeActorData"}}</label>
       <input type="checkbox" id="troubleshooter-include-actors" data-action="includeActors"
         {{#if includeActors}}checked{{/if}}>
       <p class="hint">
@@ -10,6 +11,7 @@
       </p>
     </div>
   {{/if}}
-  <label for="troubleshooter-output" class="output-label">{{localize "SPELLBOOK.Settings.Troubleshooter.OutputLabel"}}</label>
+  <label for="troubleshooter-output"
+    class="output-label">{{localize "SPELLBOOK.Settings.Troubleshooter.OutputLabel"}}</label>
   <textarea id="troubleshooter-output" name="output" readonly>{{output}}</textarea>
 </section>

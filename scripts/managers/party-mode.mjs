@@ -37,7 +37,7 @@ export class PartyMode {
       if (!actor.testUserPermission(game.user, 'OBSERVER')) continue;
       this._analyzeActorSpells(actor, analysis, collectors);
     }
-    this._processCollectedData(analysis, collectors, partyActors.length);
+    this._processCollectedData(analysis, collectors);
     this._generateRecommendations(analysis);
     return analysis;
   }
@@ -279,7 +279,7 @@ export class PartyMode {
         duplicateSpells: new Map(),
         highConcentration: [],
         lowRitual: [],
-        limitedDamageTypes: [],
+        limitedDamageTypes: []
       },
       concentrationMembers: [],
       ritualMembers: []
@@ -443,10 +443,9 @@ export class PartyMode {
    * Aggregate raw collector data into the final analysis structure.
    * @param {object} analysis - Analysis structure
    * @param {object} collectors - Data collectors
-   * @param {number} partySize - Number of party members
    * @private
    */
-  static _processCollectedData(analysis, collectors, partySize) {
+  static _processCollectedData(analysis, collectors) {
     analysis.totalSpells = collectors.allSpells.size;
     analysis.totalPreparedSpells = collectors.allPreparedSpells.size;
     analysis.concentrationSpells = collectors.concentrationCount;

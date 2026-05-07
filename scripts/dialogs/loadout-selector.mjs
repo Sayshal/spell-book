@@ -44,7 +44,10 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
     this.parentApp = options.parent || null;
   }
 
-  /** Pull UUIDs from the parent SpellBook's live checkboxes, or the actor flag as fallback. */
+  /**
+   * Pull UUIDs from the parent SpellBook's live checkboxes, or the actor flag as fallback.
+   * @returns {string[]} The UUIDs currently marked prepared for this class
+   */
   #captureCurrentSpellUuids() {
     if (this.parentApp?.getCurrentPreparedUuids) return this.parentApp.getCurrentPreparedUuids(this.classIdentifier);
     const flag = this.actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};

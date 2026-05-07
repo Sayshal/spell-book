@@ -49,12 +49,14 @@
     <div class="split-view">
       <div class="available-spells-panel">
         <h3 class="panel-header">{{localize "SPELLMANAGER.Sidebar.AvailableSpells"}}
-          {{#if filteredSpells}}({{filteredSpells.totalFiltered}}){{/if}}</h3>
+          {{#if filteredSpells}}({{filteredSpells.totalFiltered}}){{/if}}
+        </h3>
         <div class="panel-scroll">
           {{#if filteredSpells.spells.length}}
             <ul class="spell-list-items" role="list">
               {{#each filteredSpells.spells as |spell|}}
-                <li class="spell-item available{{#if ../selectionMode}} selectable{{/if}}{{#if spell.isSelectedForAdd}} selected{{/if}}"
+                <li
+                  class="spell-item available{{#if ../selectionMode}} selectable{{/if}}{{#if spell.isSelectedForAdd}} selected{{/if}}"
                   data-uuid="{{spell.uuid}}" draggable="true">
                   <div class="spell-name">
                     {{{spell.enrichedIcon}}}
@@ -69,10 +71,12 @@
                       data-tooltip="{{localize 'SPELLBOOK.Comparison.CompareSpell' name=spell.name}}"
                       aria-label="{{localize 'SPELLBOOK.Comparison.CompareSpell' name=spell.name}}"></i>
                   {{/if}}
-                  <button type="button" class="add-spell{{#if ../selectionMode}} select-toggle{{/if}}" data-action="addSpell" data-uuid="{{spell.uuid}}"
+                  <button type="button" class="add-spell{{#if ../selectionMode}} select-toggle{{/if}}"
+                    data-action="addSpell" data-uuid="{{spell.uuid}}"
                     data-tooltip="{{localize 'SPELLMANAGER.Buttons.AddSpell' name=spell.name}}">
                     {{#if ../selectionMode}}
-                      <i class="fas fa-{{#if spell.isSelectedForAdd}}check-square{{else}}square{{/if}}" aria-hidden="true"></i>
+                      <i class="fas fa-{{#if spell.isSelectedForAdd}}check-square{{else}}square{{/if}}"
+                        aria-hidden="true"></i>
                     {{else}}
                       <i class="fas fa-plus" aria-hidden="true"></i>
                     {{/if}}
@@ -98,7 +102,8 @@
                 </h4>
                 <ul class="spell-list" role="list">
                   {{#each levelData.spells as |spell|}}
-                    <li class="spell-item{{#if @root.selectionMode}} selectable{{/if}}{{#if spell.isSelectedForRemoval}} selected{{/if}}"
+                    <li
+                      class="spell-item{{#if @root.selectionMode}} selectable{{/if}}{{#if spell.isSelectedForRemoval}} selected{{/if}}"
                       data-uuid="{{spell.uuid}}" draggable="true">
                       <div class="spell-name">
                         {{{spell.enrichedIcon}}}
@@ -113,10 +118,12 @@
                           data-tooltip="{{localize 'SPELLBOOK.Comparison.CompareSpell' name=spell.name}}"
                           aria-label="{{localize 'SPELLBOOK.Comparison.CompareSpell' name=spell.name}}"></i>
                       {{/if}}
-                      <button type="button" class="remove-spell{{#if @root.selectionMode}} select-toggle{{/if}}" data-action="removeSpell" data-uuid="{{spell.uuid}}"
+                      <button type="button" class="remove-spell{{#if @root.selectionMode}} select-toggle{{/if}}"
+                        data-action="removeSpell" data-uuid="{{spell.uuid}}"
                         data-tooltip="{{localize 'SPELLMANAGER.Buttons.RemoveSpell' name=spell.name}}">
                         {{#if @root.selectionMode}}
-                          <i class="fas fa-{{#if spell.isSelectedForRemoval}}check-square{{else}}square{{/if}}" aria-hidden="true"></i>
+                          <i class="fas fa-{{#if spell.isSelectedForRemoval}}check-square{{else}}square{{/if}}"
+                            aria-hidden="true"></i>
                         {{else}}
                           <i class="fas fa-trash" aria-hidden="true"></i>
                         {{/if}}
