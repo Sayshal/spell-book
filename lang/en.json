@@ -335,7 +335,7 @@
   "SPELLBOOK.Settings.StartingSpells.Label": "Starting Spells (Level 1)",
   "SPELLBOOK.Settings.SubclassSpellLists.Hint": "Optional subclass spell list(s) to merge on top of the class list. Leave empty if the subclass doesn't add spells.",
   "SPELLBOOK.Settings.SubclassSpellLists.Label": "Subclass Spell List",
-  "SPELLBOOK.Settings.Troubleshooter.ActorDataHint": "This will export {count} actor(s) you own: {names}",
+  "SPELLBOOK.Settings.Troubleshooter.ActorDataHint": "This will export {count} spellcasting actor(s) you own: {names}",
   "SPELLBOOK.Settings.Troubleshooter.CopySuccess": "Report copied to clipboard.",
   "SPELLBOOK.Settings.Troubleshooter.CopyToClipboard": "Copy to Clipboard",
   "SPELLBOOK.Settings.Troubleshooter.Discord": "Join Discord",

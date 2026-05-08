@@ -2856,6 +2856,23 @@
       flex: 1;
       flex-direction: column;
       min-height: 0;
+
+      > section {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: var(--sb-space-md);
+        min-height: 0;
+      }
+
+      .form-group {
+        flex: 0 0 auto;
+
+        .hint {
+          max-height: 4.5rem;
+          overflow-y: auto;
+        }
+      }
     }
 
     [data-application-part='footer'] {
@@ -2871,8 +2888,9 @@
     #troubleshooter-output {
       flex: 1;
       width: 100%;
-      min-height: 0;
+      min-height: 8rem;
       padding: var(--sb-space-md);
+      overflow: auto;
       border: 0.0625rem solid var(--sb-border-light);
       border-radius: var(--sb-radius-sm);
       color: var(--sb-text-primary);

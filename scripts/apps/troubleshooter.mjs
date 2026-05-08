@@ -11,7 +11,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
     id: 'spell-book-troubleshooter',
     classes: ['spell-book', 'spell-book-troubleshooter'],
     position: { width: 700, height: 700 },
-    window: { icon: 'fa-solid fa-bug', resizable: false, contentClasses: ['standard-form'] },
+    window: { icon: 'fa-solid fa-bug', resizable: true, contentClasses: ['standard-form'] },
     tag: 'div',
     actions: {
       copy: Troubleshooter.#onCopy,
@@ -37,7 +37,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @override */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    const ownedActors = game.actors.filter((actor) => actor.isOwner);
+    const ownedActors = Troubleshooter._getRelevantActors();
     context.includeActors = game.settings.get(MODULE.ID, SETTINGS.TROUBLESHOOTER_INCLUDE_ACTORS);
     context.output = Troubleshooter.generateTextReport();
     context.ownedActorCount = ownedActors.length;
@@ -50,6 +50,18 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
       { type: 'button', action: 'openGithub', icon: 'fa-brands fa-github-alt', label: 'SPELLBOOK.Settings.Troubleshooter.Github' }
     ];
     return context;
+  }
+
+  /**
+   * Filter game.actors to those relevant for Spell Book troubleshooting:
+   * owned actors that have at least one spellcasting class. Drops commoners,
+   * beasts, vehicles, and other non-caster owned actors that add noise.
+   * @returns {Actor[]} Sorted list of relevant actors
+   */
+  static _getRelevantActors() {
+    return game.actors
+      .filter((actor) => actor.type === 'character' && actor.isOwner && Object.keys(actor.spellcastingClasses || {}).length > 0)
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   /**
@@ -66,6 +78,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
     };
     this._addGameInformation(addLine, addHeader);
     this._addModuleInformation(addLine, addHeader);
+    this._addCompendiumBrowserSources(addLine, addHeader);
     this._addSpellBookSettings(addLine, addHeader);
     return lines.join('\n');
   }
@@ -78,14 +91,14 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
   static async #onExport(_event, _target) {
     const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
     const includeActors = game.settings.get(MODULE.ID, SETTINGS.TROUBLESHOOTER_INCLUDE_ACTORS);
-    const output = this.generateTextReport();
+    const output = Troubleshooter.generateTextReport();
     const reportFilename = `spellbook-troubleshooter-${timestamp}.txt`;
     foundry.utils.saveDataToFile(output, 'text/plain', reportFilename);
     if (!includeActors) {
       ui.notifications.info(_loc('SPELLBOOK.Settings.Troubleshooter.ExportReportOnly', { filename: reportFilename }));
       return;
     }
-    const ownedActors = game.actors.filter((actor) => actor.isOwner);
+    const ownedActors = Troubleshooter._getRelevantActors();
     const failed = [];
     let exportedCount = 0;
     for (const actor of ownedActors) {
@@ -120,7 +133,7 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static async #onCopy(event, _target) {
     event.preventDefault();
-    await navigator.clipboard.writeText(this.generateTextReport());
+    await navigator.clipboard.writeText(Troubleshooter.generateTextReport());
     ui.notifications.info('SPELLBOOK.Settings.Troubleshooter.CopySuccess', { localize: true });
   }
 
@@ -297,12 +310,52 @@ export class Troubleshooter extends HandlebarsApplicationMixin(ApplicationV2) {
     addHeader('Module Information');
     const spellBookModule = game.modules.get(MODULE.ID);
     if (spellBookModule) addLine(`${MODULE.NAME}: ${spellBookModule.version} (${spellBookModule.active ? 'Active' : 'Inactive'})`);
+    const all = Array.from(game.modules.values()).sort((a, b) => a.title.localeCompare(b.title));
+    const active = all.filter((m) => m.active);
+    const disabled = all.filter((m) => !m.active);
     addLine('');
-    addLine('Active Modules:');
-    const active = Array.from(game.modules.values())
-      .filter((m) => m.active)
-      .sort((a, b) => a.title.localeCompare(b.title));
+    addLine(`Active Modules (${active.length}):`);
     for (const module of active) addLine(`  ${module.title}: ${module.version}`);
+    addLine('');
+    addLine(`Disabled Modules (${disabled.length}):`);
+    for (const module of disabled) addLine(`  ${module.title}: ${module.version}`);
+  }
+
+  /**
+   * Append a dnd5e Compendium Browser source-configuration dump.
+   * Spell Book pulls from the same browser sources, so disabled packs explain
+   * "missing spell" reports.
+   * @param {function(string): void} addLine - Line-appending callback
+   * @param {function(string): void} addHeader - Header-appending callback
+   * @private
+   */
+  static _addCompendiumBrowserSources(addLine, addHeader) {
+    addHeader('Compendium Browser Sources (dnd5e)');
+    let config;
+    try {
+      config = game.settings.get('dnd5e', 'packSourceConfiguration') || {};
+    } catch (error) {
+      addLine('packSourceConfiguration setting unavailable.');
+      return;
+    }
+    const itemPacks = game.packs.filter((p) => p.documentName === 'Item' || p.documentName === 'Actor');
+    const disabled = [];
+    const enabled = [];
+    for (const pack of itemPacks) {
+      const id = pack.collection;
+      if (config[id] === false) disabled.push({ id, title: pack.title });
+      else enabled.push({ id, title: pack.title });
+    }
+    disabled.sort((a, b) => a.title.localeCompare(b.title));
+    enabled.sort((a, b) => a.title.localeCompare(b.title));
+    addLine(`Total Item/Actor packs: ${itemPacks.length} (${enabled.length} enabled, ${disabled.length} disabled)`);
+    addLine('');
+    addLine(`Disabled packs (${disabled.length}):`);
+    if (disabled.length === 0) addLine('  (none)');
+    else for (const pack of disabled) addLine(`  ${pack.title} [${pack.id}]`);
+    addLine('');
+    addLine(`Enabled packs (${enabled.length}):`);
+    for (const pack of enabled) addLine(`  ${pack.title} [${pack.id}]`);
   }
 
   /**
