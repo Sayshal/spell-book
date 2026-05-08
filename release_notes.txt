@@ -1,8 +1,9 @@
 ## Bug Fixes
 
-- Player Spell Book and Spell List Manager windows are resizable again. A native-style resize handle in the bottom-right corner lets you drag to any size, and the new size persists across reopens. Previously the windows opened at fixed dimensions and could not be resized after the V2 rewrite removed the framed window chrome.
+- Fixed Troubleshooter Download and Copy buttons that failed to produce a report.
 
 ## Changes
 
-- Foundry compatibility relaxed from a pinned `14.361` minimum/verified to a plain `14`, so the module installs on any V14 release without manifest gating.
-- Spell List Manager position and size now persist across reopens via a new client setting (the player Spell Book already had this).
+- Actor export now restricted to owned player characters with spellcasting classes.
+- Troubleshooter report now lists disabled modules with counts and dumps dnd5e Compendium Browser source configuration to surface disabled packs.
+- Troubleshooter window is now resizable, with scrollable actor hint and report panes.
