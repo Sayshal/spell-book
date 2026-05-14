@@ -38,7 +38,7 @@ After enabling the module:
 2. Choose your **Default Spellcasting Rules** (Legacy 2014 or Modern 2024).
 3. Decide whether the GM should be notified when players overprepare via **Notify GM on Spell Changes**.
 4. Open **Spell Details Customization** to choose which UI elements and metadata appear in spell rows.
-5. Each player can open their Spell Book and use the **Spell Book Settings** dialog (gear icon in the sidebar) to override world defaults where allowed. See [Class Rules](Class-Rules).
+5. As GM, open an actor's Spell Book and use the gear icon in the sidebar to open the **Spell Book Settings** dialog and override world defaults per actor and per class. The gear is hidden for non-GM users. See [Class Rules](Class-Rules).
 
 ## Settings Reference
 
@@ -130,7 +130,7 @@ Full reference: [Details Customization](Details-Customization).
 
 ## Per-Actor Overrides
 
-The **Spell Book Settings** dialog (gear icon in the Player Spell Book sidebar, or right-click the Spell Book button on the sheet) provides per-actor and per-class overrides:
+The **Spell Book Settings** dialog (gear icon in the Player Spell Book sidebar) provides per-actor and per-class overrides. The gear is rendered for GMs only; non-GM users do not see it.
 
 ![Spell Book button injected into the D&D 5e character sheet](https://raw.githubusercontent.com/Sayshal/spell-book/main/docs/images/sheet-button-dnd5e.png)
 

@@ -43,10 +43,10 @@ Each spellcasting class on the actor produces its own tab, identified by class n
 If a class has no spell list assigned in Class Rules (`classRules.customSpellList` is unset), the tab displays a notice instead of a spell list:
 
 > **No spell list assigned**
-> *Open Class Rules and choose a spell list for this class.*
+> _Open Class Rules and choose a spell list for this class._
 > [Open Class Rules]
 
-The button opens the Class Rules dialog and scrolls to the affected class's custom-spell-list field.
+The **Open Class Rules** button is rendered for GMs only. It opens the Class Rules dialog and scrolls to the affected class's custom-spell-list field. Non-GM players see the notice title and hint without the button and must ask the GM to assign a spell list.
 
 ### Wizard Learn Tabs
 
@@ -114,7 +114,7 @@ Five buttons in a two-column grid: **Verbal**, **Somatic**, **Material**, **Conc
 
 - **ignore:** no filtering for this property.
 - **include:** spell must have the property.
-- **exclude:** spell must *not* have the property (indicator turns red with an × icon).
+- **exclude:** spell must _not_ have the property (indicator turns red with an × icon).
 
 Stored internally in `filterState.properties` as `{ vocal: 'include', somatic: 'exclude', material: 'include', concentration: 'ignore', ritual: 'include' }`. Only non-ignore entries are kept.
 
@@ -128,13 +128,13 @@ Stored internally in `filterState.properties` as `{ vocal: 'include', somatic: '
 
 The bottom of the sidebar holds the action row:
 
-| Button | Action |
-| --- | --- |
-| Settings (gear) | Open the [Class-Rules](Class-Rules) dialog for this actor. |
-| Loadouts (toolbox) | Left-click opens the Loadout Selector for the active class. **Right-click** opens a context menu of saved loadouts for the active class; click an entry to apply it immediately. |
-| Party Manager (users) | Open the [Party Spells Interface](PartySpells-Interface-Overview). Right-click toggles party mode for this actor. Hidden when the actor is not in a party. |
-| Reset (undo arrow) | Clear all filters (search, selects, number inputs, property tri-states, checkbox toggles). **Shift-click** additionally unchecks every non-disabled preparation checkbox on every prepare tab; the unchecks are staged via `#pendingChanges`, survive tab switches, and are persisted on Save. Tooltip: *"Reset Filters (Shift-click to also uncheck all preparations)"*. |
-| Save (disk) | Persist all pending preparation changes across every class tab. |
+| Button        | Action                                                                                                                                                                           |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Settings      | Open the [Class-Rules](Class-Rules) dialog for this actor. GM only.                                                                                                              |
+| Loadouts      | Left-click opens the Loadout Selector for the active class. **Right-click** opens a context menu of saved loadouts for the active class; click an entry to apply it immediately. |
+| Party Manager | Open the [Party Spells Interface](PartySpells-Interface-Overview). Right-click toggles party mode for this actor. Hidden when the actor is not in a party.                       |
+| Reset         | Clear all filters. **Shift-click** additionally unchecks every preparation checkbox on every tab.                                                                                |
+| Save          | Persist all pending preparation changes across every class tab.                                                                                                                  |
 
 ---
 
@@ -251,16 +251,16 @@ The same dialog has a parallel set of toggles for the GM-facing interface; favor
 
 Settings keys frequently relevant to this interface:
 
-| Key | Scope | Purpose |
-| --- | --- | --- |
-| `NOTIFY_GM_ON_SPELL_CHANGES` | world | Notify GM when a player exceeds preparation limits. Can be overridden per-class via Class Rules. |
-| `SPELL_NOTES_DESC_INJECTION` | client | Inject spell notes into descriptions (`off` / `before` / `after`). |
-| `SPELL_NOTES_LENGTH` | world | Max characters per spell note. |
-| `DISABLE_LONG_REST_SWAP_PROMPT` | client | Suppress the post-long-rest prompt. |
-| `CONSUME_SCROLLS_WHEN_LEARNING` | world | Decrement scroll items after wizard scroll-learning. |
-| `DEDUCT_SPELL_LEARNING_COST` | world | Deduct currency when copying spells. |
-| `PARTY_MODE_TOKEN_LIMIT` | client | Maximum party-member icons per spell row. |
-| `SPELL_BOOK_POSITION` | client | Persisted window position. |
+| Key                             | Scope  | Purpose                                                            |
+| ------------------------------- | ------ | ------------------------------------------------------------------ |
+| `NOTIFY_GM_ON_SPELL_CHANGES`    | world  | Notify GM when a player exceeds preparation limits.                |
+| `SPELL_NOTES_DESC_INJECTION`    | client | Inject spell notes into descriptions (`off` / `before` / `after`). |
+| `SPELL_NOTES_LENGTH`            | world  | Max characters per spell note.                                     |
+| `DISABLE_LONG_REST_SWAP_PROMPT` | client | Suppress the post-long-rest prompt.                                |
+| `CONSUME_SCROLLS_WHEN_LEARNING` | world  | Decrement scroll items after wizard scroll-learning.               |
+| `DEDUCT_SPELL_LEARNING_COST`    | world  | Deduct currency when copying spells.                               |
+| `PARTY_MODE_TOKEN_LIMIT`        | client | Maximum party-member icons per spell row.                          |
+| `SPELL_BOOK_POSITION`           | client | Persisted window position.                                         |
 
 ---
 

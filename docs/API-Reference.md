@@ -14,31 +14,21 @@ const api = game.modules.get('spell-book').api;
 SPELLBOOK.api.spellBookQuickAccess();
 ```
 
-Both references point at the same object. All methods are asynchronous and return a `Promise`.
-
----
-
-## Compatibility
-
-| Surface | Minimum | Verified |
-|---|---|---|
-| Foundry VTT | 13.351 | 13.351 |
-| dnd5e system | 5.3.0 | 5.3.0 |
-
-See [`module.json`](https://github.com/Sayshal/spell-book/blob/main/module.json) for the authoritative compatibility block.
-
 ---
 
 ## Method Summary
 
-| Method | Audience | Purpose |
-|---|---|---|
-| [`spellBookQuickAccess()`](#spellbookquickaccess) | All | Open Spell Book for the selected token. |
-| [`spellSlotTracker()`](#spellslottracker) | All | Post slot usage summary to chat. |
-| [`scrollScanner()`](#scrollscanner) | All | List all spell scrolls in item compendiums. |
-| [`spellsNotInLists()`](#spellsnotinlists) | GM | Find spells not referenced by any spell list. |
-| [`debugSpell(name)`](#debugspellname) | All | Dump index entries for spells matching a name. |
-| [`flagPurge()`](#flagpurge) | GM | Remove all Spell Book flags from actor(s). |
+| Method                                                                           | Audience | Purpose                                                                            |
+| -------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------- |
+| [`spellBookQuickAccess()`](#spellbookquickaccess)                                | All      | Open Spell Book for the selected token.                                            |
+| [`openSpellBookForActor(actor)`](#openspellbookforactoractor)                    | All      | Render the Spell Book directly for a given actor without a selected token.         |
+| [`openClassRulesForActor(actor, options)`](#openclassrulesforactoractor-options) | All      | Open the Class Rules dialog for a given actor with optional save/cancel callbacks. |
+| [`spellSlotTracker()`](#spellslottracker)                                        | All      | Post slot usage summary to chat.                                                   |
+| [`hasConfiguredCompendiums()`](#hasconfiguredcompendiums)                        | All      | Check whether any spell-bearing compendium is visible to the player.               |
+| [`scrollScanner()`](#scrollscanner)                                              | All      | List all spell scrolls in item compendiums.                                        |
+| [`spellsNotInLists()`](#spellsnotinlists)                                        | GM       | Find spells not referenced by any spell list.                                      |
+| [`debugSpell(name)`](#debugspellname)                                            | All      | Dump index entries for spells matching a name.                                     |
+| [`flagPurge()`](#flagpurge)                                                      | GM       | Remove all Spell Book flags from actor(s).                                         |
 
 ---
 
@@ -77,7 +67,74 @@ game.modules.get('spell-book').api.spellSlotTracker();
 
 ---
 
+### `openSpellBookForActor(actor)`
+
+Renders the Player Spell Book for the supplied actor. Calls `SpellManager.handleSpellbookOpen` before rendering so any actor-level setup runs first. Useful for external integrations that already have an actor reference and do not want to depend on a selected token.
+
+**Parameters:**
+
+| Name    | Type    | Description                                  |
+| ------- | ------- | -------------------------------------------- |
+| `actor` | `Actor` | The actor whose Spell Book should be opened. |
+
+**Returns:** `Promise<?SpellBook>`, the rendered Spell Book instance, or `null` if the actor cannot open one.
+
+**Example:**
+
+```js
+const actor = game.actors.getName('Mira');
+await game.modules.get('spell-book').api.openSpellBookForActor(actor);
+```
+
+---
+
+### `openClassRulesForActor(actor, options)`
+
+Opens the Class Rules (Spell Book Settings) dialog for the supplied actor. Optional callbacks fire on save and cancel so callers can chain follow-up logic such as refreshing an external UI after the GM updates per-class settings.
+
+**Parameters:**
+
+| Name               | Type       | Description                                          |
+| ------------------ | ---------- | ---------------------------------------------------- |
+| `actor`            | `Actor`    | The actor whose Class Rules dialog should be opened. |
+| `options`          | `object`   | Optional.                                            |
+| `options.onSave`   | `Function` | Invoked after a successful save.                     |
+| `options.onCancel` | `Function` | Invoked when the dialog closes without saving.       |
+
+**Returns:** `?ClassRules`, the dialog instance, or `null` if it cannot be opened.
+
+**Example:**
+
+```js
+const actor = game.actors.getName('Mira');
+game.modules.get('spell-book').api.openClassRulesForActor(actor, {
+  onSave: () => console.log('Class rules saved'),
+  onCancel: () => console.log('Edit cancelled')
+});
+```
+
+---
+
 ## Compendium Scanning
+
+### `hasConfiguredCompendiums()`
+
+Synchronous check for whether any spell-bearing item compendium is visible to the current user. Reads `dnd5e`'s `packSourceConfiguration` and filters Item packs that are visible and either untyped or include `spell` in `flags.dnd5e.types`. Intended for callers that want to short-circuit when nothing is available to render.
+
+**Parameters:** none
+
+**Returns:** `boolean`
+
+**Example:**
+
+```js
+if (!game.modules.get('spell-book').api.hasConfiguredCompendiums()) {
+  ui.notifications.warn('No spell compendiums configured.');
+  return;
+}
+```
+
+---
 
 ### `scrollScanner()`
 
@@ -132,8 +189,8 @@ Each result entry contains:
 
 **Parameters:**
 
-| Name | Type | Description |
-|---|---|---|
+| Name   | Type     | Description                                                |
+| ------ | -------- | ---------------------------------------------------------- |
 | `name` | `string` | Substring to match against spell names (case-insensitive). |
 
 **Returns:** `Promise<object[]>` — the same array of summary objects that is logged.
@@ -174,10 +231,10 @@ await game.modules.get('spell-book').api.flagPurge();
 
 Spell Book emits the following hooks. Register handlers with `Hooks.on` / `Hooks.once`.
 
-| Hook | Payload | When |
-|---|---|---|
+| Hook              | Payload          | When                                                     |
+| ----------------- | ---------------- | -------------------------------------------------------- |
 | `spellBookOpened` | `{ actor, app }` | First render of the Player Spell Book for a given actor. |
-| `spellBookClosed` | `{ actor }` | Close of the Player Spell Book. |
+| `spellBookClosed` | `{ actor }`      | Close of the Player Spell Book.                          |
 
 **Example:**
 
@@ -195,14 +252,14 @@ Spell Book also listens to `dnd5e.restCompleted` from the dnd5e system to drive 
 
 Earlier versions of Spell Book installed helper macros into a `spell-book.spell-book-macros` compendium. Those macros have been removed; the equivalent functionality is now invoked through the API.
 
-| Old Macro | API Replacement |
-|---|---|
-| Quick Access | `api.spellBookQuickAccess()` |
-| Slot Tracker | `api.spellSlotTracker()` |
-| Scroll Scanner | `api.scrollScanner()` |
-| Spells Not In Lists | `api.spellsNotInLists()` |
-| Flag Purge | `api.flagPurge()` |
-| UUID Cleanup | No direct replacement. |
+| Old Macro           | API Replacement              |
+| ------------------- | ---------------------------- |
+| Quick Access        | `api.spellBookQuickAccess()` |
+| Slot Tracker        | `api.spellSlotTracker()`     |
+| Scroll Scanner      | `api.scrollScanner()`        |
+| Spells Not In Lists | `api.spellsNotInLists()`     |
+| Flag Purge          | `api.flagPurge()`            |
+| UUID Cleanup        | No direct replacement.       |
 
 To recreate a former macro, create a new script macro with a single line such as:
 

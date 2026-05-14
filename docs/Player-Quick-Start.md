@@ -12,14 +12,9 @@ If you want it out of the way, click the **detach** button (arrow pointing up-ri
 
 ## Nothing in a Class Tab?
 
-If a class tab shows **"No spell list assigned"** with a button:
+If a class tab shows **"No spell list assigned"**, the class has no spell list configured in [Class Rules](Class-Rules). The notice text is visible to everyone, but the **Open Class Rules** button is GM only.
 
-1. Click the button. This opens [Class Rules](Class-Rules) scrolled to that class.
-2. Find the **Custom Spell List** dropdown for the class.
-3. Pick a spell list (for example, *Wizard* for a wizard).
-4. Save.
-
-The tab will populate the next time you view it.
+Ask your GM to assign a spell list for the class via the actor's Spell Book Settings (gear icon on the Player Spell Book sidebar). The tab will populate the next time you view it.
 
 ## Preparing Spells
 
@@ -69,13 +64,13 @@ Save and reload prepared-spell sets per class. Click the **Loadouts** sidebar bu
 
 ## Wizard Learn Tab
 
-Wizards (and classes with **Force Wizard Mode** enabled in [Class Rules](Class-Rules)) get an extra **Spellbook** tab per wizard class. Use it to learn spells into your spellbook. See [Wizard Spellbook Management](Wizard-Spellbook-Management) for copying costs, free-at-levelup spells, and learning from scrolls.
+Wizards (and classes the GM has configured with **Force Wizard Mode** in Class Rules) get an extra **Spellbook** tab per wizard class. Use it to learn spells into your spellbook. See [Wizard Spellbook Management](Wizard-Spellbook-Management) for copying costs, free-at-levelup spells, and learning from scrolls.
 
 ![Wizard Learn tab with learnable, scroll-learnable, and in-spellbook rows](https://raw.githubusercontent.com/Sayshal/spell-book/main/docs/images/psb-wizard-learn.png)
 
 ## Long Rest Swap Prompt
 
-If your class has a swap mode configured in [Class Rules](Class-Rules), completing a long rest can prompt you to swap cantrips or spells. Disable globally with the `DISABLE_LONG_REST_SWAP_PROMPT` setting.
+If your GM has configured a swap mode for your class in Class Rules, completing a long rest can prompt you to swap cantrips or spells. Disable the prompt for your own client with the `DISABLE_LONG_REST_SWAP_PROMPT` setting; the swap window itself remains available.
 
 ## Party Mode
 
