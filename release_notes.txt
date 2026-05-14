@@ -1,9 +1,24 @@
+## New Features
+
+- Added `SPELLBOOK.api.hasConfiguredCompendiums()` so integrators can check whether any spell-bearing compendium is visible before handing off to the Spell Book.
+- Added `SPELLBOOK.api.openClassRulesForActor(actor, { onSave, onCancel })` so external modules can open the Class Rules dialog and react to save or cancel.
+- Added `SPELLBOOK.api.openSpellBookForActor(actor)` to render the Spell Book for any actor without requiring a controlled token.
+
 ## Bug Fixes
 
-- Fixed Troubleshooter Download and Copy buttons that failed to produce a report.
+- Fixed leveled spells not appearing in the Spell Book for pact casters (warlocks), which previously showed only cantrips. The max spell level detection now handles the pact slot table being an object rather than an array.
 
 ## Changes
 
-- Actor export now restricted to owned player characters with spellcasting classes.
-- Troubleshooter report now lists disabled modules with counts and dumps dnd5e Compendium Browser source configuration to surface disabled packs.
-- Troubleshooter window is now resizable, with scrollable actor hint and report panes.
+- Blocked the `openSettings` action from opening Class Rules when triggered by a non-GM.
+- Hid the Spell Book sidebar Settings cog from non-GM players so only GMs can reach the Class Rules dialog from the sidebar.
+- Removed the "Open Class Rules" button from the no-list-assigned notice for non-GM users.
+
+## Documentation
+
+- Documented the new `openSpellBookForActor`, `openClassRulesForActor`, and `hasConfiguredCompendiums` API methods in the API Reference, including parameters, return values, and usage examples.
+- Light prose pass across Home, API Reference, Spell Book Interface Overview, Spell Preparation System, and Modifying Existing Spell Lists (phrasing tweaks, no factual changes).
+- Reformatted the folder, action-button, footer, and spell-list-type tables in the SpellListManager Interface Overview as aligned Markdown tables for readability.
+- Removed the ASCII Layout diagram from the SpellListManager Interface Overview; the Sidebar, Content, and Footer sections now stand on their own.
+- Removed the standalone Compatibility table from the API Reference and pointed readers at `module.json` for the authoritative compatibility block.
+- Updated Installation, Player Quick Start, and Interface Overview pages to reflect that the Spell Book Settings gear and the "Open Class Rules" notice button are GM only, with players directed to ask the GM for spell list assignment.
