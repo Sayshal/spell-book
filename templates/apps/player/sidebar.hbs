@@ -5,10 +5,12 @@
   </div>
   <div class="sidebar-filter-section"></div>
   <div class="sidebar-controls">
-    <button type="button" class="sidebar-btn" data-action="openSettings"
-      data-tooltip="{{localize 'SPELLBOOK.UI.Settings'}}">
-      <i class="fas fa-cog" aria-hidden="true"></i>
-    </button>
+    {{#if isGM}}
+      <button type="button" class="sidebar-btn" data-action="openSettings"
+        data-tooltip="{{localize 'SPELLBOOK.UI.Settings'}}">
+        <i class="fas fa-cog" aria-hidden="true"></i>
+      </button>
+    {{/if}}
     <button type="button" class="sidebar-btn" data-action="openLoadoutDialog"
       data-tooltip="{{localize 'SPELLBOOK.Loadouts.Title'}}">
       <i class="fas fa-toolbox" aria-hidden="true"></i>
