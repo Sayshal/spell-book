@@ -2,6 +2,7 @@ import { SpellBook } from './apps/_module.mjs';
 import { MODULE } from './constants.mjs';
 import { findAllSpellLists } from './data/custom-lists.mjs';
 import { fetchAllSpells } from './data/spell-fetcher.mjs';
+import { ClassRules } from './dialogs/class-rules.mjs';
 import { SpellManager } from './managers/spell-manager.mjs';
 import { extractSpellFilterData } from './ui/formatting.mjs';
 import { log } from './utils/logger.mjs';
@@ -47,6 +48,47 @@ export async function flagPurge() {
     }
   }
   ui.notifications.info(_loc('SPELLBOOK.API.FlagPurge.Success', { count: purged }));
+}
+
+/**
+ * Whether at least one visible Item compendium that can carry spells is enabled via
+ * dnd5e's `packSourceConfiguration`. Used by external integrations to short-circuit
+ * a handoff when there is nothing for Spell Book to render.
+ * @returns {boolean} `true` when at least one eligible spell pack is visible to the player.
+ */
+export function hasConfiguredCompendiums() {
+  const packSourceConfig = game.settings.get('dnd5e', 'packSourceConfiguration') ?? {};
+  return game.packs.some(
+    (p) => p.metadata.type === 'Item' && p.visible && packSourceConfig[p.collection] !== false && (!p.metadata.flags.dnd5e?.types || new Set(p.metadata.flags.dnd5e.types).has('spell'))
+  );
+}
+
+/**
+ * Open the per-actor Class Rules configuration dialog.
+ * @param {Actor} actor Target actor whose class rules will be configured.
+ * @param {object} [options] Callback configuration.
+ * @param {Function} [options.onSave] Invoked after the dialog's save submit completes.
+ * @param {Function} [options.onCancel] Invoked when the dialog closes without saving.
+ * @returns {?ClassRules} The rendered ClassRules app, or null when the actor is invalid.
+ */
+export function openClassRulesForActor(actor, { onSave, onCancel } = {}) {
+  if (!actor) return null;
+  const app = new ClassRules({ actor, onSave, onCancel });
+  app.render({ force: true });
+  return app;
+}
+
+/**
+ * Open the Spell Book directly for the given actor.
+ * @param {Actor} actor Target spellcasting actor.
+ * @returns {Promise<?SpellBook>} Rendered Spell Book app, or null when the actor is invalid.
+ */
+export async function openSpellBookForActor(actor) {
+  if (!actor) return null;
+  await SpellManager.handleSpellbookOpen(actor);
+  const app = new SpellBook({ actor });
+  app.render({ force: true });
+  return app;
 }
 
 /**
@@ -255,7 +297,7 @@ export async function debugSpell(name) {
 
 /** Wire up the public API surface and expose it on the SPELLBOOK global. */
 export function createAPI() {
-  const api = { flagPurge, spellBookQuickAccess, spellSlotTracker, scrollScanner, spellsNotInLists, debugSpell };
+  const api = { flagPurge, hasConfiguredCompendiums, openClassRulesForActor, openSpellBookForActor, spellBookQuickAccess, spellSlotTracker, scrollScanner, spellsNotInLists, debugSpell };
   globalThis.SPELLBOOK = { api };
   game.modules.get(MODULE.ID).api = api;
   log(3, 'Module API registered.');

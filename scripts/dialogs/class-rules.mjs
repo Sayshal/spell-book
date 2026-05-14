@@ -140,10 +140,21 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * @param {object} [options] - Application options
    * @param {object} options.actor - The actor to configure
+   * @param {Function} [options.onSave] - Callback invoked after a successful save submit.
+   * @param {Function} [options.onCancel] - Callback invoked when the dialog closes without saving.
    */
-  constructor({ actor, ...options } = {}) {
+  constructor({ actor, onSave, onCancel, ...options } = {}) {
     super(options);
     this.actor = actor;
+    this._onSave = onSave;
+    this._onCancel = onCancel;
+    this._saved = false;
+  }
+
+  /** @override */
+  async _preClose(options) {
+    await super._preClose?.(options);
+    if (!this._saved) await this._onCancel?.();
   }
 
   /** @override */
@@ -286,6 +297,8 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
     for (const app of foundry.applications.instances.values()) {
       if (app.constructor.name === 'SpellBook' && app.actor === actor) app.reloadAllClasses?.();
     }
+    this._saved = true;
+    await this._onSave?.();
     log(3, 'Class rules saved.', { actorName: actor.name });
   }
 
