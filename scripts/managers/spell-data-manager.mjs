@@ -152,7 +152,6 @@ export class SpellDataManager {
     const spellcastingModel = CONFIG.DND5E.spellcasting[spellcastingType];
     if (!spellcastingModel?.table) return 0;
     const spellSlotTable = spellcastingModel.table;
-    if (!spellSlotTable?.length) return 0;
     const classLevels = ClassManager.getSpellcastingLevels(actor, classIdentifier);
     const spellcastingSource = ClassManager.getSpellcastingSourceItem(actor, classIdentifier);
     const classKey = spellcastingSource?.identifier || spellcastingSource?.name?.slugify() || 'class';
@@ -163,6 +162,7 @@ export class SpellDataManager {
       actor.constructor.prepareSpellcastingSlots(spells, spellcastingType, progression, { actor });
       return spells[spellcastingType]?.level || 0;
     }
+    if (!spellSlotTable?.length) return 0;
     const maxPossibleLevel = spellSlotTable[spellSlotTable.length - 1].length;
     const spells = {};
     for (let i = 1; i <= maxPossibleLevel; i++) spells[`${spellcastingType}${i}`] = { level: i };
