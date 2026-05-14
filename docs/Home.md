@@ -1,6 +1,6 @@
 # Spell Book
 
-Welcome to the **Spell Book** wiki. Spell Book is a FoundryVTT module for the dnd5e system that adds a dedicated player-facing spell book opened from a button on the dnd5e character sheet, and provides GMs with a full Spell List Manager for editing, creating, and merging class spell lists.
+Welcome to the **Spell Book** wiki. Spell Book is a FoundryVTT module for the dnd5e system that adds a dedicated player-facing spell book opened from a button on the dnd5e character sheet, and provides GMs with a full Spell List Manager for editing and merging class spell lists.
 
 ![Player Spell Book hero view](https://raw.githubusercontent.com/Sayshal/spell-book/main/docs/images/psb-hero.png)
 
@@ -10,7 +10,7 @@ Welcome to the **Spell Book** wiki. Spell Book is a FoundryVTT module for the dn
 
 - **Unified Player Spell Book** with per-class tabs, preparation management, wizard spellbook, spell loadouts, side-by-side comparisons, personal spell notes, and party-mode indicators
 - **GM Spell List Manager** for creating custom lists, merging multiple lists, modifying stock lists (auto-duplicates and hides originals), bulk-edit mode, and drag-and-drop spell management
-- **Per-Actor Per-Class Configuration** (Spell Book Settings): rule-set override, class and subclass spell list selection, ritual casting modes, swap timing, wizard learning rates, and preparation bonuses
+- **Per-Actor Per-Class Configuration** (Spell Book Settings): rule-set override, class and subclass spell list selection, ritual casting modes, swap timing, wizard learning rates plus preparation bonuses
 - **Party Spell Coordination** with Synergy Analysis for groups of spellcasters
 - **Light and Dark Themes**
 - **Troubleshooter + Module API** for diagnostics and third-party integration

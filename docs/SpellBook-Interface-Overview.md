@@ -1,6 +1,6 @@
 # Spell Book Interface Overview
 
-The Spell Book is the player-facing application for viewing, preparing, and managing spells on a character. It supports multiclass casters, per-class spell lists, wizard spellbook learning, loadouts, spell notes, favorites, and a side-by-side comparison dialog.
+The Spell Book is the player-facing application for preparing and managing spells on a character. It supports multiclass casters, per-class spell lists, wizard spellbook learning, loadouts, spell notes, favorites plus a side-by-side comparison dialog.
 
 ![Player Spell Book - dark theme](https://raw.githubusercontent.com/Sayshal/spell-book/main/docs/images/psb-hero.png)
 
@@ -277,7 +277,7 @@ The Spell Book emits the following hooks:
 
 - [SpellList-Manager](SpellList-Manager): GM-side spell list authoring.
 - [Class-Rules](Class-Rules): per-actor, per-class configuration.
-- [Spell-Preparation-System](Spell-Preparation-System): preparation, limits, and notifications.
+- [Spell-Preparation-System](Spell-Preparation-System): preparation limits plus notifications.
 - [Spell-Loadouts](Spell-Loadouts): saved preparation sets.
 - [PartySpells-Interface-Overview](PartySpells-Interface-Overview): party-mode coordination.
 - [Details-Customization](Details-Customization): per-element UI toggles.

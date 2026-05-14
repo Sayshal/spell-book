@@ -1,6 +1,6 @@
 # Spell Book API Reference
 
-Spell Book exposes its public functionality through a programmatic API so that macros, scripts, and other modules can invoke the same operations the UI does. No helper macros are bundled with the module.
+Spell Book exposes its public functionality through an API, allowing macros and external modules to invoke the same operations the UI does.
 
 ---
 

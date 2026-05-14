@@ -172,5 +172,5 @@ Maintain several lists representing each condition (faction access, story gates,
 
 1. Assign the modified list to a test character via **Spell Book Settings**.
 2. Open the Spell Book on that character.
-3. Verify visible, learnable, and prepared spells match expectations.
+3. Verify that visible/learnable/prepared spells match expectations.
 4. If a spell was added and the class label isn't showing on its item sheet yet, confirm the list appears in the Modified Spell Lists folder and is registry-enabled (the save path registers it automatically).

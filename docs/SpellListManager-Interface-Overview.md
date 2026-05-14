@@ -1,6 +1,6 @@
 # SpellListManager Interface Overview
 
-GM-only tool for browsing, creating, merging, and editing spell lists. The Spell List Manager is the source of truth for which spells exist on which list. Per-actor assignment happens in the per-character [Class Rules](Class-Rules) dialog (titled "Spell Book Settings").
+GM-only tool for browsing and editing spell lists. The Spell List Manager is the source of truth for which spells exist on which list. Per-actor assignment happens in the per-character [Class Rules](Class-Rules) dialog (titled "Spell Book Settings").
 
 ![Spell List Manager - dark theme](https://raw.githubusercontent.com/Sayshal/spell-book/main/docs/images/slm-hero.png)
 
@@ -27,25 +27,6 @@ The window is draggable by the header strip itself. Clicking a button, link, inp
 
 ---
 
-## Layout
-
-```
-+------------------------------------------------+
-|  header (drag handle + detach + close)         |
-+--------+---------------------------------------+
-|        |  content area                         |
-|  side  |  (split into Available / Current      |
-|  bar   |   when a list is selected)            |
-|        |                                       |
-+--------+---------------------------------------+
-|                   footer                       |
-+------------------------------------------------+
-```
-
-The sidebar swaps between **list browser** and **filter panel** depending on whether a list is selected. The content area shows a placeholder when no list is selected, and a two-panel split view (Available + Current) when one is. The window remembers the last view; closing and reopening the manager drops you back on the same list-browser state.
-
----
-
 ## Sidebar
 
 ### List Browser (default)
@@ -57,14 +38,14 @@ The header contains two actions:
 
 Below the header, lists are grouped into collapsible folder sections:
 
-| Folder | Icon | Contents |
-|---|---|---|
-| **Player Spellbooks** | user | Actor-owned spellbook journals (wizard spellbooks and other actor-scoped lists). |
-| **Custom Lists** | magic | Lists created via the **Create** action or marked `isNewList`. |
-| **Merged Lists** | code-merge | Lists produced by **Merge Lists**. |
-| **Modified Spell Lists** | pen | Auto-created duplicates of stock lists (any list flagged `isDuplicate`). |
-| **Spell Lists** | scroll | Registered class / subclass lists shipped by dnd5e or another module. |
-| **Hidden Lists** | eye-slash | Any list whose UUID is in the `HIDDEN_SPELL_LISTS` setting. |
+| Folder                   | Icon       | Contents                                                                         |
+| ------------------------ | ---------- | -------------------------------------------------------------------------------- |
+| **Player Spellbooks**    | user       | Actor-owned spellbook journals (wizard spellbooks and other actor-scoped lists). |
+| **Custom Lists**         | magic      | Lists created via the **Create** action or marked `isNewList`.                   |
+| **Merged Lists**         | code-merge | Lists produced by **Merge Lists**.                                               |
+| **Modified Spell Lists** | pen        | Auto-created duplicates of stock lists (any list flagged `isDuplicate`).         |
+| **Spell Lists**          | scroll     | Registered class / subclass lists shipped by dnd5e or another module.            |
+| **Hidden Lists**         | eye-slash  | Any list whose UUID is in the `HIDDEN_SPELL_LISTS` setting.                      |
 
 Each list row has an eye icon (except actor-owned) to hide or unhide the list. Clicking the list body selects it and swaps the sidebar into filter mode.
 
@@ -105,15 +86,15 @@ A **Select a spell list** placeholder is shown.
 
 A header bar shows the list name and a row of action buttons. Buttons appear conditionally:
 
-| Button | Shown when |
-|---|---|
-| **Add to Spell Registry** (checkbox) | Always |
-| **Rename** (pen) | List has `isDuplicate`, `isCustom`, `isNewList`, or is merged |
-| **Open Actor** (user) | List is actor-owned |
-| **Open Class** (scroll) | List's class / subclass item is findable in a pack |
-| **Restore** (sync) | List is a modified duplicate and the source has drifted |
-| **Delete** (trash) | Always |
-| **Save** (floppy) | Always |
+| Button                               | Shown when                                                    |
+| ------------------------------------ | ------------------------------------------------------------- |
+| **Add to Spell Registry** (checkbox) | Always                                                        |
+| **Rename** (pen)                     | List has `isDuplicate`, `isCustom`, `isNewList`, or is merged |
+| **Open Actor** (user)                | List is actor-owned                                           |
+| **Open Class** (scroll)              | List's class / subclass item is findable in a pack            |
+| **Restore** (sync)                   | List is a modified duplicate and the source has drifted       |
+| **Delete** (trash)                   | Always                                                        |
+| **Save** (floppy)                    | Always                                                        |
 
 There is **no** separate "Edit" button. Editing is always implicit: add or remove a spell and click **Save**. Saving a stock list auto-creates a modified duplicate (see below).
 
@@ -173,24 +154,24 @@ The top-right checkmark toggle in the footer enables bulk-selection mode. While 
 
 ## Footer
 
-| Region | Contents |
-|---|---|
-| Left | **Details Customization** (palette), **Documentation** (question-circle). |
+| Region | Contents                                                                                                           |
+| ------ | ------------------------------------------------------------------------------------------------------------------ |
+| Left   | **Details Customization** (palette), **Documentation** (question-circle).                                          |
 | Center | When a list is selected: the selected list's spell count. When no list is selected: the total indexed spell count. |
-| Right | Selection-mode toggle. In selection mode: the selection summary plus **Bulk Save** and **Cancel Selection**. |
+| Right  | Selection-mode toggle. In selection mode: the selection summary plus **Bulk Save** and **Cancel Selection**.       |
 
 ---
 
 ## Spell List Types
 
-| Type | Folder | Source | Editable |
-|---|---|---|---|
-| **Standard** | Spell Lists | dnd5e system / other modules | Save auto-forks into a Modified duplicate |
-| **Custom** | Custom Lists | Created via **Create** (`isCustom` / `isNewList`) | Yes, direct |
-| **Merged** | Merged Lists | Built via **Merge Lists** | Yes, independent of sources |
-| **Modified** | Modified Spell Lists | Auto-created on first save against a standard list (`isDuplicate`) | Yes, direct |
-| **Actor-Owned** | Player Spellbooks | Wizard-style spellbook journals tied to a specific actor | Yes |
-| **Hidden** | Hidden Lists | Any list whose UUID is in `HIDDEN_SPELL_LISTS` | Same rules as its underlying type |
+| Type            | Folder               | Source                                                             | Editable                                  |
+| --------------- | -------------------- | ------------------------------------------------------------------ | ----------------------------------------- |
+| **Standard**    | Spell Lists          | dnd5e system / other modules                                       | Save auto-forks into a Modified duplicate |
+| **Custom**      | Custom Lists         | Created via **Create** (`isCustom` / `isNewList`)                  | Yes, direct                               |
+| **Merged**      | Merged Lists         | Built via **Merge Lists**                                          | Yes, independent of sources               |
+| **Modified**    | Modified Spell Lists | Auto-created on first save against a standard list (`isDuplicate`) | Yes, direct                               |
+| **Actor-Owned** | Player Spellbooks    | Wizard-style spellbook journals tied to a specific actor           | Yes                                       |
+| **Hidden**      | Hidden Lists         | Any list whose UUID is in `HIDDEN_SPELL_LISTS`                     | Same rules as its underlying type         |
 
 ---
 

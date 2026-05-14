@@ -128,6 +128,6 @@ The preparation system never blocks a player. Over-limit situations are surfaced
 Each actor can override this per-class via the Spell Book Settings in [Class Rules](Class-Rules) (`notifyGm` flag). The per-class flag is a boolean and defaults to the world setting value when unset.
 
 - **During editing**: When `notifyGm` is effectively true, checking a cantrip or spell beyond the class's max triggers a `ui.notifications.info` to the current user with the over-limit counts.
-- **On save**: A whispered `ChatMessage` is sent to all GMs summarizing per-class additions, removals, and any over-limit state. Classes with no changes are omitted.
+- **On save**: A whispered `ChatMessage` is sent to all GMs summarizing per-class additions plus removals (and any over-limit state). Classes with no changes are omitted.
 
 Both layers are controlled by the same `notifyGm` resolution. Disabling it silences both.
