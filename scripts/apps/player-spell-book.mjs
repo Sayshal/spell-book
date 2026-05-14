@@ -564,6 +564,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {HTMLElement} [target] - The button that was clicked
    */
   static #onOpenSettings(_event, target) {
+    if (!game.user.isGM) return;
     const scrollClass = target?.dataset?.scrollClass;
     const dialog = new ClassRules({ actor: this.actor });
     if (scrollClass) dialog.scrollToClass = scrollClass;
@@ -794,13 +795,16 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const classId = this._resolveClassId(tabId) ?? '';
     const li = document.createElement('li');
     li.className = 'spell-list-notice no-list-notice';
+    const button = game.user.isGM
+      ? `<button type="button" data-action="openSettings" data-scroll-class="${classId}">
+        <i class="fas fa-gear" aria-hidden="true"></i>
+        <span>${_loc('SPELLBOOK.NoListAssigned.OpenSettings')}</span>
+      </button>`
+      : '';
     li.innerHTML = `
       <p><strong>${_loc('SPELLBOOK.NoListAssigned.Title')}</strong></p>
       <p>${_loc('SPELLBOOK.NoListAssigned.Hint')}</p>
-      <button type="button" data-action="openSettings" data-scroll-class="${classId}">
-        <i class="fas fa-gear" aria-hidden="true"></i>
-        <span>${_loc('SPELLBOOK.NoListAssigned.OpenSettings')}</span>
-      </button>`;
+      ${button}`;
     return li;
   }
 
