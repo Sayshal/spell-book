@@ -10,26 +10,15 @@
   "changelog": "https://github.com/Sayshal/spell-book/releases",
   "compatibility": {
     "minimum": "14",
-    "verified": "14"
+    "verified": "14.363"
   },
   "description": "Enhanced spell management for DnD5e. Easily view, prepare, and customize spell lists.",
   "download": "",
-  "esmodules": [
-    "spell-book.mjs"
-  ],
+  "esmodules": ["spell-book.mjs"],
   "flags": {
     "hotReload": {
-      "extensions": [
-        "css",
-        "html",
-        "hbs",
-        "json"
-      ],
-      "paths": [
-        "styles",
-        "lang",
-        "templates"
-      ]
+      "extensions": ["css", "html", "hbs", "json"],
+      "paths": ["styles", "lang", "templates"]
     }
   },
   "id": "spell-book",
@@ -53,11 +42,7 @@
   "packFolders": [
     {
       "name": "Spell Book",
-      "packs": [
-        "custom-spell-lists",
-        "spell-book-macros",
-        "user-spell-data"
-      ],
+      "packs": ["custom-spell-lists", "spell-book-macros", "user-spell-data"],
       "sorting": "m"
     }
   ],
@@ -130,9 +115,7 @@
     ]
   },
   "socket": true,
-  "styles": [
-    "styles/spell-book.css"
-  ],
+  "styles": ["styles/spell-book.css"],
   "title": "Spell Book",
   "url": "https://github.com/Sayshal/spell-book",
   "version": ""
