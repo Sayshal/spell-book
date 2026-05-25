@@ -67,7 +67,7 @@
         "ASSISTANT": "OWNER",
         "PLAYER": "OWNER"
       },
-      "path": "/storage/user-spell-data",
+      "path": "storage/user-spell-data",
       "sort": 20000,
       "type": "JournalEntry"
     },

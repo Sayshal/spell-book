@@ -5,6 +5,7 @@
  */
 
 import { FLAGS, MODULE, PACK, TEMPLATES } from '../constants.mjs';
+import { log } from '../utils/logger.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
 
@@ -40,7 +41,12 @@ function decodeUuidKey(key) {
  * @returns {Promise<object|null>} The journal document or null
  */
 async function getJournal() {
-  const docs = await game.packs.get(PACK.USERDATA).getDocuments();
+  const pack = game.packs.get(PACK.USERDATA);
+  if (!pack) {
+    log(2, `User spell data pack "${PACK.USERDATA}" not found. Reinstall the module or restart the world to restore it.`);
+    return null;
+  }
+  const docs = await pack.getDocuments();
   return docs.find((doc) => doc.name === JOURNAL_NAME && doc.flags?.[MODULE.ID]?.isUserSpellDataJournal) ?? null;
 }
 
