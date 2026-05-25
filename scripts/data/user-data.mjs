@@ -156,7 +156,12 @@ export class UserData {
    */
   async _getJournal() {
     log(3, 'Getting journal for user spell data.');
-    const documents = await game.packs.get(MODULE.PACK.USERDATA).getDocuments();
+    const pack = game.packs.get(MODULE.PACK.USERDATA);
+    if (!pack) {
+      log(2, `User spell data pack "${MODULE.PACK.USERDATA}" not found. Reinstall the module or restart the world to restore it.`);
+      return null;
+    }
+    const documents = await pack.getDocuments();
     return documents.find((doc) => doc.name === this.journalName && doc.flags?.[MODULE.ID]?.isUserSpellDataJournal);
   }
 

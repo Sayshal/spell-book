@@ -57,6 +57,10 @@ export class UserDataSetup {
     this.folderName = game.i18n.localize('SPELLBOOK.UserData.FolderName');
     this.journalName = game.i18n.localize('SPELLBOOK.UserData.FolderName');
     const pack = game.packs.get(MODULE.PACK.USERDATA);
+    if (!pack) {
+      log(2, `User spell data pack "${MODULE.PACK.USERDATA}" not found. Skipping initial setup; reinstall the module or restart the world to restore it.`);
+      return;
+    }
     await this._ensureFolder(pack);
     await this._ensureJournal(pack);
   }

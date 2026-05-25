@@ -10,7 +10,8 @@
   "changelog": "https://github.com/Sayshal/spell-book/releases",
   "compatibility": {
     "minimum": "13.351",
-    "verified": "13.351"
+    "verified": "13.351",
+    "maximum": "13.351"
   },
   "description": "Enhanced spell management for DnD5e. Easily view, prepare, and customize spell lists.",
   "download": "",
@@ -68,7 +69,7 @@
         "ASSISTANT": "OWNER",
         "PLAYER": "OWNER"
       },
-      "path": "/storage/user-spell-data",
+      "path": "storage/user-spell-data",
       "sort": 20000,
       "type": "JournalEntry"
     },
