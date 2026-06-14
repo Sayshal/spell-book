@@ -12,7 +12,7 @@
     "minimum": "14",
     "verified": "14.363"
   },
-  "description": "Enhanced spell management for DnD5e. Easily view, prepare, and customize spell lists.",
+  "description": "Because preparing spells shouldn't feel like an IRS audit. Spell Book replaces the cramped dnd5e prepare list with a dedicated window: one tab per casting class, filters, favorites, and loadouts you swap in with a click. GMs get a spell-list editor, wizards get a gold-and-time spellbook to copy into, and a party screen catches prep overlap.",
   "download": "",
   "esmodules": ["spell-book.mjs"],
   "flags": {
