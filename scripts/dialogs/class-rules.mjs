@@ -294,6 +294,7 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
     await actor.update(flagUpdates);
     RuleSet._classRules?.delete?.(actor);
     SpellDataManager.invalidateCache(actor);
+    SpellManager.invalidateCache(actor);
     for (const app of foundry.applications.instances.values()) {
       if (app.constructor.name === 'SpellBook' && app.actor === actor) app.reloadAllClasses?.();
     }
