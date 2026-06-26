@@ -117,10 +117,30 @@ export async function removeCustomSpellList(duplicateUuid) {
  * @returns {Promise<Object<string, string>>} Mapping of original UUIDs to custom UUIDs
  */
 export async function getValidCustomListMappings() {
-  const mappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS);
+  const mappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
+  const customPack = game.packs.get(PACK.SPELLS);
+  if (!customPack) return mappings;
+  let journals;
+  try {
+    journals = await customPack.getDocuments();
+  } catch (err) {
+    log(2, `Skipping mapping prune; custom pack unavailable: ${err.message}`);
+    return mappings;
+  }
+  const livePageUuids = new Set();
+  for (const journal of journals) for (const page of journal.pages) livePageUuids.add(page.uuid);
   const valid = {};
-  for (const [originalUuid, customUuid] of Object.entries(mappings)) if (await fromUuid(customUuid)) valid[originalUuid] = customUuid;
-  if (Object.keys(valid).length !== Object.keys(mappings).length) await game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, valid);
+  const removedOriginals = [];
+  for (const [originalUuid, customUuid] of Object.entries(mappings)) {
+    if (livePageUuids.has(customUuid)) valid[originalUuid] = customUuid;
+    else removedOriginals.push(originalUuid);
+  }
+  if (removedOriginals.length) {
+    await game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, valid);
+    const hidden = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
+    const next = hidden.filter((u) => !removedOriginals.includes(u));
+    if (next.length !== hidden.length) await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, next);
+  }
   return valid;
 }
 
