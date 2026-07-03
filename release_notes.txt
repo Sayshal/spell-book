@@ -1,3 +1,3 @@
-## Bug Fixes
+## Changes
 
-- Fixed custom and merged spell lists disappearing from actors. A transient compendium load could wipe the saved original-to-custom list mappings and leave the originals hidden. Mappings are now pruned only against the fully loaded pack, and an original is unhidden when its mapping is genuinely removed.
+- Removed the leftover Tidy5e Sheet and Chris's Premades entries from the module manifest's optional relationships block. Foundry does not read this key, so the entries were inert data; manifest cleanup with no behavior change.
