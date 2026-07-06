@@ -1,5 +1,5 @@
 import { FLAGS, MODULE, RITUAL_CASTING_MODES, RULE_SETS, SETTINGS, SWAP_MODES, TEMPLATES, WIZARD_DEFAULTS } from '../constants.mjs';
-import { getJournalDocumentsFromPack } from '../data/custom-lists.mjs';
+import { getJournalDocumentsFromPack, isSourceHiddenSpellList } from '../data/custom-lists.mjs';
 import { ClassManager } from '../managers/class-manager.mjs';
 import { RuleSet } from '../managers/rule-set.mjs';
 import { SpellDataManager } from '../managers/spell-data-manager.mjs';
@@ -33,10 +33,12 @@ const RITUAL_OPTIONS = [
 
 /**
  * Load available spell list options for the custom spell list multi-select.
+ * @param {Set<string>} [assignedUuids] - UUIDs already assigned to a class; kept in the list even if source-hidden so a save can't drop them
  * @returns {Promise<object[]>} Array of { value, label, group } option objects
  */
-async function loadSpellListOptions() {
+async function loadSpellListOptions(assignedUuids = new Set()) {
   const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
+  const sourceConfig = game.settings.get('dnd5e', 'packSourceConfiguration') ?? {};
   const allPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
   const options = [];
   for (const pack of allPacks) {
@@ -50,6 +52,9 @@ async function loadSpellListOptions() {
           if (hiddenLists.includes(page.uuid)) continue;
           const flags = page.flags?.[MODULE.ID] || {};
           const isActorOwned = !!flags.actorId;
+          const exempt = isActorOwned || !!flags.isCustom || !!flags.isMerged;
+          const sourceHidden = isSourceHiddenSpellList(page.system?.spells, exempt, sourceConfig);
+          if (sourceHidden && !assignedUuids.has(page.uuid)) continue;
           let label = page.name;
           if (isActorOwned && flags.actorId) {
             const owner = game.actors.get(flags.actorId);
@@ -57,6 +62,7 @@ async function loadSpellListOptions() {
           } else if (!isActorOwned && !flags.isCustom && !flags.isMerged) {
             label = `${page.name} (${folderName})`;
           }
+          if (sourceHidden) label = `${label} (${_loc('SPELLBOOK.Settings.SourceDisabledSuffix')})`;
           const type = page.system?.type || 'other';
           const groupKey =
             type === 'class' ? 'SPELLBOOK.Settings.SpellListGroups.Class' : type === 'subclass' ? 'SPELLBOOK.Settings.SpellListGroups.Subclass' : 'SPELLBOOK.Settings.SpellListGroups.Other';
@@ -170,7 +176,16 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     await RuleSet.initializeNewClasses(this.actor);
-    const spellListOptions = await loadSpellListOptions();
+    const assignedUuids = new Set();
+    for (const classId of Object.keys(ClassManager.detectSpellcastingClasses(this.actor))) {
+      const rules = RuleSet.getClassRules(this.actor, classId);
+      for (const key of ['customSpellList', 'customSubclassSpellList']) {
+        const value = rules[key];
+        if (Array.isArray(value)) value.forEach((uuid) => uuid && assignedUuids.add(uuid));
+        else if (value) assignedUuids.add(value);
+      }
+    }
+    const spellListOptions = await loadSpellListOptions(assignedUuids);
     context.classes = buildClassContexts(this.actor, spellListOptions);
     context.swapOptions = SWAP_OPTIONS;
     context.spellSwapOptions = SPELL_SWAP_OPTIONS;

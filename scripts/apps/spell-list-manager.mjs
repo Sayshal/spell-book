@@ -7,6 +7,7 @@ import {
   findAllSpellLists,
   findDuplicateSpellList,
   getValidCustomListMappings,
+  isSourceHiddenSpellList,
   removeCustomSpellList
 } from '../data/custom-lists.mjs';
 import { fetchAllSpells } from '../data/spell-fetcher.mjs';
@@ -459,7 +460,10 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const modified = this.availableLists.filter((l) => !l.isActorOwned && l.isModified && !hiddenLists.includes(l.uuid));
     const merged = this.availableLists.filter((l) => !l.isActorOwned && l.isMerged && !hiddenLists.includes(l.uuid));
     const custom = this.availableLists.filter((l) => !l.isActorOwned && !l.isMerged && !l.isModified && (l.isCustom || l.document?.flags?.[MODULE.ID]?.isNewList) && !hiddenLists.includes(l.uuid));
-    const standard = this.availableLists.filter((l) => !l.isActorOwned && !l.isCustom && !l.isMerged && !l.isModified && !l.document?.flags?.[MODULE.ID]?.isNewList && !hiddenLists.includes(l.uuid));
+    const sourceConfig = game.settings.get('dnd5e', 'packSourceConfiguration') ?? {};
+    const allStandard = this.availableLists.filter((l) => !l.isActorOwned && !l.isCustom && !l.isMerged && !l.isModified && !l.document?.flags?.[MODULE.ID]?.isNewList && !hiddenLists.includes(l.uuid));
+    const standard = allStandard.filter((l) => !isSourceHiddenSpellList(l.system?.spells, false, sourceConfig));
+    const sourceHiddenCount = allStandard.length - standard.length;
     const byActor = (a, b) => (a.actorName && b.actorName ? a.actorName.localeCompare(b.actorName) : a.actorName ? -1 : b.actorName ? 1 : a.name.localeCompare(b.name));
     const byName = (a, b) => a.name.localeCompare(b.name);
     actorOwned.sort(byActor);
@@ -476,8 +480,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     context.hasModifiedLists = modified.length > 0;
     context.hasStandardLists = standard.length > 0;
     context.hasHiddenLists = hidden.length > 0;
-    context.visibleSpellListsCount = this.availableLists.length - hiddenLists.length;
+    context.visibleSpellListsCount = this.availableLists.length - hiddenLists.length - sourceHiddenCount;
     context.hiddenSpellListsCount = hidden.length;
+    context.sourceHiddenCount = sourceHiddenCount;
     context.hiddenListUuids = hiddenLists;
     context.availableSpellLists = this.availableLists;
   }

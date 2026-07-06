@@ -2109,10 +2109,25 @@
     }
 
     .footer-center {
+      gap: var(--sb-space-lg);
       display: flex;
       flex: 1;
       justify-content: center;
       align-items: center;
+    }
+
+    .source-hidden-stat {
+      gap: var(--sb-space-xs);
+      display: inline-flex;
+      align-items: center;
+      color: var(--sb-text-accent);
+      font-size: var(--sb-font-md);
+      white-space: nowrap;
+      cursor: help;
+
+      i {
+        font-size: 0.85em;
+      }
     }
 
     .edit-mode-stats,
@@ -2858,10 +2873,10 @@
       min-height: 0;
 
       > section {
+        gap: var(--sb-space-md);
         display: flex;
         flex: 1;
         flex-direction: column;
-        gap: var(--sb-space-md);
         min-height: 0;
       }
 
@@ -2890,9 +2905,9 @@
       width: 100%;
       min-height: 8rem;
       padding: var(--sb-space-md);
-      overflow: auto;
       border: 0.0625rem solid var(--sb-border-light);
       border-radius: var(--sb-radius-sm);
+      overflow: auto;
       color: var(--sb-text-primary);
       font-size: var(--sb-font-sm);
       font-family: var(--font-monospace, monospace);
@@ -3445,18 +3460,17 @@
   line-height: 1.4;
 }
 
-/* Arcane spell-preparation chat card: owns the full message so light/dark chat themes stay consistent. */
 li.chat-message:has(.spell-book-update-report) {
-  --sb-card-gold: rgb(216 186 124);
-  --sb-card-text: rgb(230 226 242);
-  --sb-card-muted: rgb(191 184 212);
   --sb-card-divider: rgb(216 186 124 / 28%);
+  --sb-card-gold: rgb(216 186 124);
+  --sb-card-muted: rgb(191 184 212);
+  --sb-card-text: rgb(230 226 242);
 
   position: relative;
   padding: 0;
-  color: var(--sb-card-text);
   border: 0.0625rem solid rgb(216 186 124 / 45%);
   border-radius: var(--sb-radius-xl);
+  color: var(--sb-card-text);
   background:
     radial-gradient(120% 70% at 50% 0%, rgb(132 94 214 / 32%), transparent 58%),
     linear-gradient(165deg, rgb(38 27 58) 0%, rgb(22 17 36) 100%);
@@ -3467,9 +3481,9 @@ li.chat-message:has(.spell-book-update-report) {
 
   .message-header {
     padding: 0.5rem 0.75rem 0.45rem;
+    border: none;
     color: var(--sb-card-muted);
     font-size: 0.75rem;
-    border: none;
   }
 
   .message-sender {
@@ -3487,12 +3501,10 @@ li.chat-message:has(.spell-book-update-report) {
   }
 }
 
-/* dnd5e's gray smoke texture (.message::before, texture-gray1.webp) renders top-right and is larger than the card, so repositioning the anchor barely moves it. Mirror the pseudo-element vertically to move it top-right -> bottom-right. */
 :is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report)::before {
   transform: translateY(0.75rem) scaleY(-1);
 }
 
-/* dnd5e themes every chat <table> (row striping at (0,2,2), gold borders, header fills). Match its #chat-log ancestor to outspecify it without !important; th border is left alone to keep our section divider. */
 :is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .sb-change-table,
 :is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .sb-change-table :is(tr, td, th) {
   background: none;
@@ -3503,7 +3515,6 @@ li.chat-message:has(.spell-book-update-report) {
   border: none;
 }
 
-/* dnd5e pins the timestamp/controls via #chat-log (ID). Match that ancestor and blanket the header subtree so our light colors win without !important, regardless of v14's exact node names. */
 :is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .message-header,
 :is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .message-header * {
   color: var(--sb-card-muted);
@@ -3523,8 +3534,8 @@ li.chat-message:has(.spell-book-update-report) {
   padding: 0.5rem 0.85rem 0.85rem;
 
   .sb-report-header {
-    display: flex;
     gap: 0.6rem;
+    display: flex;
     align-items: center;
     margin-bottom: 0.65rem;
     padding-bottom: 0.55rem;
@@ -3532,10 +3543,10 @@ li.chat-message:has(.spell-book-update-report) {
   }
 
   .sb-report-icon {
+    object-fit: contain;
     flex: 0 0 auto;
     width: 2.5rem;
     height: 2.5rem;
-    object-fit: contain;
     border: none;
     filter: drop-shadow(0 0 0.35rem rgb(216 186 124 / 45%));
   }
@@ -3548,16 +3559,16 @@ li.chat-message:has(.spell-book-update-report) {
 
   .sb-report-eyebrow {
     color: var(--sb-card-muted);
-    font-size: 0.7rem;
     font-weight: 600;
-    letter-spacing: 0.08em;
+    font-size: 0.7rem;
     text-transform: uppercase;
+    letter-spacing: 0.08em;
   }
 
   .sb-report-title {
     color: var(--sb-card-gold);
-    font-size: 1.1rem;
     font-weight: 700;
+    font-size: 1.1rem;
     line-height: 1.2;
     text-shadow: 0 0 0.5rem rgb(216 186 124 / 40%);
   }
@@ -3570,10 +3581,10 @@ li.chat-message:has(.spell-book-update-report) {
 
   h3 {
     margin: 0.35rem 0;
-    color: var(--sb-card-text);
-    font-size: 1rem;
-    font-weight: 600;
     border: none;
+    color: var(--sb-card-text);
+    font-weight: 600;
+    font-size: 1rem;
   }
 
   .sb-change-table {
@@ -3585,12 +3596,12 @@ li.chat-message:has(.spell-book-update-report) {
 
   .sb-change-head th {
     padding: 0.4rem 0 0.15rem;
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    text-align: left;
     border-bottom: 0.0625rem solid var(--sb-card-divider);
+    font-weight: 700;
+    font-size: 0.65rem;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
   }
 
   .sb-change-head th::before {
@@ -3626,26 +3637,26 @@ li.chat-message:has(.spell-book-update-report) {
   }
 
   .sb-change-lvl {
-    width: 2.5rem;
-    text-align: center;
-    color: var(--sb-card-muted);
     font-variant-numeric: tabular-nums;
+    width: 2.5rem;
+    color: var(--sb-card-muted);
+    text-align: center;
   }
 
   .sb-report-warning {
     margin: 0.45rem 0 0;
     padding: 0.35rem 0.5rem;
-    font-size: 0.82rem;
-    background: rgb(255 198 90 / 10%);
     border-left: 0.15rem solid var(--sb-warning);
     border-radius: var(--sb-radius-sm);
+    font-size: 0.82rem;
+    background: rgb(255 198 90 / 10%);
   }
 
   a.content-link {
     padding: 0 0.1rem;
+    border: none;
     color: var(--sb-card-gold);
     background: none;
-    border: none;
 
     i {
       display: none;

@@ -793,6 +793,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _buildNoListNotice(tabId) {
     const classId = this._resolveClassId(tabId) ?? '';
+    const rules = classId ? RuleSet.getClassRules(this.actor, classId) : {};
+    const listAssigned = [rules.customSpellList, rules.customSubclassSpellList].some((l) => (Array.isArray(l) ? l.length > 0 : !!l));
     const li = document.createElement('li');
     li.className = 'spell-list-notice no-list-notice';
     const button = game.user.isGM
@@ -801,9 +803,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         <span>${_loc('SPELLBOOK.NoListAssigned.OpenSettings')}</span>
       </button>`
       : '';
+    const title = listAssigned ? 'SPELLBOOK.NoListAssigned.SourceHiddenTitle' : 'SPELLBOOK.NoListAssigned.Title';
+    const hint = listAssigned ? 'SPELLBOOK.NoListAssigned.SourceHiddenHint' : 'SPELLBOOK.NoListAssigned.Hint';
     li.innerHTML = `
-      <p><strong>${_loc('SPELLBOOK.NoListAssigned.Title')}</strong></p>
-      <p>${_loc('SPELLBOOK.NoListAssigned.Hint')}</p>
+      <p><strong>${_loc(title)}</strong></p>
+      <p>${_loc(hint)}</p>
       ${button}`;
     return li;
   }
