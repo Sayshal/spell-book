@@ -40,27 +40,31 @@ async function loadSpellListOptions() {
   const allPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
   const options = [];
   for (const pack of allPacks) {
-    let folderName = pack.metadata.label;
-    if (pack.folder) folderName = pack.folder.depth !== 1 ? pack.folder.getParentFolders().at(-1).name : pack.folder.name;
-    const journals = await getJournalDocumentsFromPack(pack);
-    for (const journal of journals) {
-      for (const page of journal.pages) {
-        if (page.type !== 'spells' || page.system?.type === 'other') continue;
-        if (hiddenLists.includes(page.uuid)) continue;
-        const flags = page.flags?.[MODULE.ID] || {};
-        const isActorOwned = !!flags.actorId;
-        let label = page.name;
-        if (isActorOwned && flags.actorId) {
-          const owner = game.actors.get(flags.actorId);
-          label = `${page.name} (${owner?.name ?? _loc('SPELLMANAGER.ListSource.Character')})`;
-        } else if (!isActorOwned && !flags.isCustom && !flags.isMerged) {
-          label = `${page.name} (${folderName})`;
+    try {
+      let folderName = pack.metadata.label;
+      if (pack.folder) folderName = pack.folder.depth !== 1 ? (pack.folder.getParentFolders?.().at(-1)?.name ?? pack.folder.name) : pack.folder.name;
+      const journals = await getJournalDocumentsFromPack(pack);
+      for (const journal of journals) {
+        for (const page of journal.pages) {
+          if (page.type !== 'spells' || page.system?.type === 'other') continue;
+          if (hiddenLists.includes(page.uuid)) continue;
+          const flags = page.flags?.[MODULE.ID] || {};
+          const isActorOwned = !!flags.actorId;
+          let label = page.name;
+          if (isActorOwned && flags.actorId) {
+            const owner = game.actors.get(flags.actorId);
+            label = `${page.name} (${owner?.name ?? _loc('SPELLMANAGER.ListSource.Character')})`;
+          } else if (!isActorOwned && !flags.isCustom && !flags.isMerged) {
+            label = `${page.name} (${folderName})`;
+          }
+          const type = page.system?.type || 'other';
+          const groupKey =
+            type === 'class' ? 'SPELLBOOK.Settings.SpellListGroups.Class' : type === 'subclass' ? 'SPELLBOOK.Settings.SpellListGroups.Subclass' : 'SPELLBOOK.Settings.SpellListGroups.Other';
+          options.push({ value: page.uuid, label, group: _loc(groupKey) });
         }
-        const type = page.system?.type || 'other';
-        const groupKey =
-          type === 'class' ? 'SPELLBOOK.Settings.SpellListGroups.Class' : type === 'subclass' ? 'SPELLBOOK.Settings.SpellListGroups.Subclass' : 'SPELLBOOK.Settings.SpellListGroups.Other';
-        options.push({ value: page.uuid, label, group: _loc(groupKey) });
       }
+    } catch (error) {
+      log(2, `Skipping pack "${pack?.metadata?.label ?? pack?.metadata?.id}" while building spell list options.`, error);
     }
   }
   options.sort((a, b) => a.label.localeCompare(b.label));
