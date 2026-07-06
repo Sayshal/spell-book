@@ -181,6 +181,16 @@ export function extractRange(spell) {
 }
 
 /**
+ * List a spell's activities as an array, handling both Collection (documents) and plain-object (index) shapes.
+ * @param {object} spell - The spell document or index data
+ * @returns {object[]} Activity entries
+ */
+function spellActivities(spell) {
+  const activities = spell?.system?.activities;
+  return activities?.contents ?? (activities ? Object.values(activities) : []);
+}
+
+/**
  * Extract damage types from spell.
  * @param {object} spell - The spell document
  * @returns {Array<string>} Array of damage type identifiers
@@ -188,19 +198,9 @@ export function extractRange(spell) {
 export function extractDamageTypes(spell) {
   const damageTypes = [];
   if (spell.labels?.damages?.length) for (const damage of spell.labels.damages) if (damage.damageType && !damageTypes.includes(damage.damageType)) damageTypes.push(damage.damageType);
-  if (spell.system?.activities) {
-    for (const activity of Object.values(spell.system.activities)) {
-      if (activity.damage?.parts?.length) {
-        for (const part of activity.damage.parts) {
-          const types = part.types;
-          if (types && (types.size || types.length)) for (const type of types) if (!damageTypes.includes(type)) damageTypes.push(type);
-        }
-      }
-      if (activity.healing?.types) {
-        const types = activity.healing.types;
-        if (types.size || types.length) for (const type of types) if (!damageTypes.includes(type)) damageTypes.push(type);
-      }
-    }
+  for (const activity of spellActivities(spell)) {
+    for (const part of activity.damage?.parts ?? []) for (const type of part.types ?? []) if (!damageTypes.includes(type)) damageTypes.push(type);
+    for (const type of activity.healing?.types ?? []) if (!damageTypes.includes(type)) damageTypes.push(type);
   }
   return damageTypes;
 }
@@ -271,25 +271,30 @@ function hasCostlyMaterials(spell, materialsValue, cost) {
 }
 
 /**
+ * Extract saving throw ability ids from a spell's save activities.
+ * @param {object} spell - The spell document
+ * @returns {string[]} Ability ids (e.g. 'dex', 'wis')
+ */
+export function extractSaveAbilities(spell) {
+  const abilities = [];
+  for (const activity of spellActivities(spell)) {
+    for (const ability of activity.save?.ability ?? []) if (!abilities.includes(ability)) abilities.push(ability);
+  }
+  return abilities;
+}
+
+/**
  * Check if a spell requires a saving throw.
  * @param {object} spell - The spell document
  * @returns {boolean} Whether the spell requires a save
  */
 export function checkSpellRequiresSave(spell) {
-  let result = false;
-  if (spell.system?.activities) {
-    for (const activity of Object.values(spell.system.activities)) {
-      if (activity.value?.type === 'save') {
-        result = true;
-        break;
-      }
-    }
-  }
-  if (!result && spell.system?.description?.value) {
+  if (extractSaveAbilities(spell).length) return true;
+  if (spell.system?.description?.value) {
     const saveText = _loc('SPELLBOOK.Filters.SavingThrow').toLowerCase();
-    if (spell.system.description.value.toLowerCase().includes(saveText)) result = true;
+    if (spell.system.description.value.toLowerCase().includes(saveText)) return true;
   }
-  return result;
+  return false;
 }
 
 /**
