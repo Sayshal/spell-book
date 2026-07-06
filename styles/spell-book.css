@@ -3460,6 +3460,7 @@
   line-height: 1.4;
 }
 
+
 li.chat-message:has(.spell-book-update-report) {
   --sb-card-divider: rgb(216 186 124 / 28%);
   --sb-card-gold: rgb(216 186 124);
@@ -3669,6 +3670,55 @@ li.chat-message:has(.spell-book-update-report) {
 
   strong.warning {
     color: var(--sb-warning);
+  }
+
+  .sb-notice-body {
+    margin: 0.35rem 0;
+    font-size: 0.85rem;
+  }
+
+  .sb-notice-classes {
+    margin: 0.25rem 0 0.6rem;
+    padding-left: 1.1rem;
+    list-style: none;
+  }
+
+  .sb-notice-classes li {
+    position: relative;
+    padding-left: 0.85rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+
+  .sb-notice-classes li::before {
+    opacity: 0.8;
+    position: absolute;
+    left: 0;
+    color: var(--sb-card-gold);
+    font-size: 0.7rem;
+    content: '✦';
+  }
+
+  .sb-notice-button {
+    gap: 0.4rem;
+    display: inline-flex;
+    align-items: center;
+    width: auto;
+    margin-top: 0.1rem;
+    padding: 0.3rem 0.7rem;
+    border: 0.0625rem solid rgb(216 186 124 / 45%);
+    border-radius: var(--sb-radius-sm);
+    color: var(--sb-card-gold);
+    background: rgb(216 186 124 / 12%);
+
+    i {
+      color: var(--sb-card-gold);
+    }
+
+    &:hover {
+      text-shadow: 0 0 0.4rem rgb(216 186 124 / 50%);
+      background: rgb(216 186 124 / 20%);
+    }
   }
 }
 
