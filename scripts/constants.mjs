@@ -26,6 +26,7 @@ export const FLAGS = {
   RULE_SET_OVERRIDE: 'ruleSetOverride',
   SIDEBAR_COLLAPSED: 'sidebarCollapsed',
   SPELL_LOADOUTS: 'spellLoadouts',
+  SPELLCASTING_NOTIFIED: 'spellcastingNotified',
   SWAP_TRACKING: 'swapTracking',
   WIZARD_COPIED_SPELLS: 'wizardCopiedSpells',
   WIZARD_RITUAL_CASTING: 'wizardRitualCasting',
@@ -126,6 +127,7 @@ export const TEMPLATES = {
   },
   COMPONENTS: {
     CANTRIP_NOTIFICATION: `${MODULE.TEMPLATES_PATH}/components/cantrip-notification.hbs`,
+    SPELLCASTING_NOTICE: `${MODULE.TEMPLATES_PATH}/components/spellcasting-notice.hbs`,
     CONTEXT_MENU: `${MODULE.TEMPLATES_PATH}/components/context-menu.hbs`,
     EMPTY: `${MODULE.TEMPLATES_PATH}/components/empty-state.hbs`,
     ERROR: `${MODULE.TEMPLATES_PATH}/components/error-message.hbs`,

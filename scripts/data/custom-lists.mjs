@@ -252,6 +252,24 @@ async function updateSpellListMapping(originalUuid, duplicateUuid) {
 }
 
 /**
+ * Whether a stock spell list is fully hidden by disabled dnd5e Compendium Browser sources.
+ * @param {Set<string>|string[]} spells - The list's spell UUIDs
+ * @param {boolean} [exempt] - Skip the check (custom/merged/actor-owned list)
+ * @param {object} [config] - Pre-fetched packSourceConfiguration; fetched if omitted
+ * @returns {boolean} Whether every spell in the list belongs to a disabled source
+ */
+export function isSourceHiddenSpellList(spells, exempt = false, config) {
+  if (exempt) return false;
+  const uuids = spells instanceof Set ? [...spells] : Array.isArray(spells) ? spells : [];
+  if (!uuids.length) return false;
+  config ??= game.settings.get('dnd5e', 'packSourceConfiguration') ?? {};
+  return uuids.every((uuid) => {
+    const collection = foundry.utils.parseUuid(uuid)?.collection?.collection;
+    return collection ? config[collection] === false : false;
+  });
+}
+
+/**
  * Discover all spell-list pages across every JournalEntry.
  * @returns {Promise<object[]>} Metadata for every discoverable spell list
  */
@@ -292,7 +310,7 @@ export async function findAllSpellLists() {
  */
 async function harvestPackLists(pack, lists, isCustomPack) {
   let topLevelFolder = null;
-  if (!isCustomPack && pack.folder) topLevelFolder = pack.folder.depth !== 1 ? pack.folder.getParentFolders().at(-1).name : pack.folder.name;
+  if (!isCustomPack && pack.folder) topLevelFolder = pack.folder.depth !== 1 ? (pack.folder.getParentFolders?.().at(-1)?.name ?? pack.folder.name) : pack.folder.name;
   const journals = isCustomPack ? await pack.getDocuments() : await getJournalDocumentsFromPack(pack);
   for (const journal of journals) {
     for (const page of journal.pages) {

@@ -1,0 +1,19 @@
+<div class="spell-book-chat-message spell-book-update-report">
+  <header class="sb-report-header">
+    <img class="sb-report-icon" src="modules/spell-book/assets/icon_colored.png" alt="" />
+    <div class="sb-report-titles">
+      <span class="sb-report-eyebrow">{{actorName}}</span>
+      <span class="sb-report-title">{{localize 'SPELLBOOK.SpellcastingNotice.Title'}}</span>
+    </div>
+  </header>
+  <p class="sb-notice-body">{{localize 'SPELLBOOK.SpellcastingNotice.Body'}}</p>
+  <ul class="sb-notice-classes">
+    {{#each classes}}
+      <li>{{this.name}}</li>
+    {{/each}}
+  </ul>
+  <button type="button" class="spellbook-configure sb-notice-button" data-actor-uuid="{{actorUuid}}">
+    <i class="fas fa-gear" aria-hidden="true"></i>
+    <span class="label">{{localize 'SPELLBOOK.SpellcastingNotice.AssignButton'}}</span>
+  </button>
+</div>

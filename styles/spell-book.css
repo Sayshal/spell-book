@@ -2109,10 +2109,25 @@
     }
 
     .footer-center {
+      gap: var(--sb-space-lg);
       display: flex;
       flex: 1;
       justify-content: center;
       align-items: center;
+    }
+
+    .source-hidden-stat {
+      gap: var(--sb-space-xs);
+      display: inline-flex;
+      align-items: center;
+      color: var(--sb-text-accent);
+      font-size: var(--sb-font-md);
+      white-space: nowrap;
+      cursor: help;
+
+      i {
+        font-size: 0.85em;
+      }
     }
 
     .edit-mode-stats,
@@ -2858,10 +2873,10 @@
       min-height: 0;
 
       > section {
+        gap: var(--sb-space-md);
         display: flex;
         flex: 1;
         flex-direction: column;
-        gap: var(--sb-space-md);
         min-height: 0;
       }
 
@@ -2890,9 +2905,9 @@
       width: 100%;
       min-height: 8rem;
       padding: var(--sb-space-md);
-      overflow: auto;
       border: 0.0625rem solid var(--sb-border-light);
       border-radius: var(--sb-radius-sm);
+      overflow: auto;
       color: var(--sb-text-primary);
       font-size: var(--sb-font-sm);
       font-family: var(--font-monospace, monospace);
@@ -3443,6 +3458,268 @@
 
 .spell-book-chat-message {
   line-height: 1.4;
+}
+
+
+li.chat-message:has(.spell-book-update-report) {
+  --sb-card-divider: rgb(216 186 124 / 28%);
+  --sb-card-gold: rgb(216 186 124);
+  --sb-card-muted: rgb(191 184 212);
+  --sb-card-text: rgb(230 226 242);
+
+  position: relative;
+  padding: 0;
+  border: 0.0625rem solid rgb(216 186 124 / 45%);
+  border-radius: var(--sb-radius-xl);
+  color: var(--sb-card-text);
+  background:
+    radial-gradient(120% 70% at 50% 0%, rgb(132 94 214 / 32%), transparent 58%),
+    linear-gradient(165deg, rgb(38 27 58) 0%, rgb(22 17 36) 100%);
+  box-shadow:
+    0 0 0 0.0625rem rgb(22 17 36 / 80%),
+    0 0 0.9rem rgb(132 94 214 / 22%),
+    0 0.25rem 0.75rem rgb(0 0 0 / 35%);
+
+  .message-header {
+    padding: 0.5rem 0.75rem 0.45rem;
+    border: none;
+    color: var(--sb-card-muted);
+    font-size: 0.75rem;
+  }
+
+  .message-sender {
+    color: var(--sb-card-text);
+    font-weight: 600;
+  }
+
+  .message-metadata,
+  .whisper-to {
+    color: var(--sb-card-muted);
+  }
+
+  .message-content {
+    border: none;
+  }
+}
+
+:is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report)::before {
+  transform: translateY(0.75rem) scaleY(-1);
+}
+
+:is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .sb-change-table,
+:is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .sb-change-table :is(tr, td, th) {
+  background: none;
+}
+
+:is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .sb-change-table,
+:is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .sb-change-table :is(tr, td) {
+  border: none;
+}
+
+:is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .message-header,
+:is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .message-header * {
+  color: var(--sb-card-muted);
+}
+
+:is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .message-header :is(.message-sender, .name-stacked, .title) {
+  color: var(--sb-card-text);
+}
+
+:is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .message-header :is(a, [data-context-menu]):hover,
+:is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .message-header :is(a, [data-context-menu]):hover * {
+  color: var(--sb-card-text);
+}
+
+.spell-book-update-report {
+  position: relative;
+  padding: 0.5rem 0.85rem 0.85rem;
+
+  .sb-report-header {
+    gap: 0.6rem;
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.65rem;
+    padding-bottom: 0.55rem;
+    border-bottom: 0.0625rem solid var(--sb-card-divider);
+  }
+
+  .sb-report-icon {
+    object-fit: contain;
+    flex: 0 0 auto;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: none;
+    filter: drop-shadow(0 0 0.35rem rgb(216 186 124 / 45%));
+  }
+
+  .sb-report-titles {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .sb-report-eyebrow {
+    color: var(--sb-card-muted);
+    font-weight: 600;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .sb-report-title {
+    color: var(--sb-card-gold);
+    font-weight: 700;
+    font-size: 1.1rem;
+    line-height: 1.2;
+    text-shadow: 0 0 0.5rem rgb(216 186 124 / 40%);
+  }
+
+  .sb-report-class + .sb-report-class {
+    margin-top: 0.65rem;
+    padding-top: 0.55rem;
+    border-top: 0.0625rem solid var(--sb-card-divider);
+  }
+
+  h3 {
+    margin: 0.35rem 0;
+    border: none;
+    color: var(--sb-card-text);
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .sb-change-table {
+    width: 100%;
+    margin: 0.2rem 0 0;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+
+  .sb-change-head th {
+    padding: 0.4rem 0 0.15rem;
+    border-bottom: 0.0625rem solid var(--sb-card-divider);
+    font-weight: 700;
+    font-size: 0.65rem;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .sb-change-head th::before {
+    margin-right: 0.3rem;
+    font-weight: 700;
+  }
+
+  .sb-change-added th {
+    color: rgb(126 214 134);
+  }
+
+  .sb-change-added th:first-child::before {
+    content: '+';
+  }
+
+  .sb-change-removed th {
+    color: rgb(240 138 138);
+  }
+
+  .sb-change-removed th:first-child::before {
+    content: '\2212';
+  }
+
+  .sb-change-row td {
+    padding: 0.12rem 0;
+    line-height: 1.4;
+    vertical-align: baseline;
+  }
+
+  .sb-change-name {
+    padding-left: 0.4rem;
+    color: var(--sb-card-text);
+  }
+
+  .sb-change-lvl {
+    font-variant-numeric: tabular-nums;
+    width: 2.5rem;
+    color: var(--sb-card-muted);
+    text-align: center;
+  }
+
+  .sb-report-warning {
+    margin: 0.45rem 0 0;
+    padding: 0.35rem 0.5rem;
+    border-left: 0.15rem solid var(--sb-warning);
+    border-radius: var(--sb-radius-sm);
+    font-size: 0.82rem;
+    background: rgb(255 198 90 / 10%);
+  }
+
+  a.content-link {
+    padding: 0 0.1rem;
+    border: none;
+    color: var(--sb-card-gold);
+    background: none;
+
+    i {
+      display: none;
+    }
+
+    &:hover {
+      text-shadow: 0 0 0.4rem rgb(216 186 124 / 60%);
+    }
+  }
+
+  strong.warning {
+    color: var(--sb-warning);
+  }
+
+  .sb-notice-body {
+    margin: 0.35rem 0;
+    font-size: 0.85rem;
+  }
+
+  .sb-notice-classes {
+    margin: 0.25rem 0 0.6rem;
+    padding-left: 1.1rem;
+    list-style: none;
+  }
+
+  .sb-notice-classes li {
+    position: relative;
+    padding-left: 0.85rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+
+  .sb-notice-classes li::before {
+    opacity: 0.8;
+    position: absolute;
+    left: 0;
+    color: var(--sb-card-gold);
+    font-size: 0.7rem;
+    content: '✦';
+  }
+
+  .sb-notice-button {
+    gap: 0.4rem;
+    display: inline-flex;
+    align-items: center;
+    width: auto;
+    margin-top: 0.1rem;
+    padding: 0.3rem 0.7rem;
+    border: 0.0625rem solid rgb(216 186 124 / 45%);
+    border-radius: var(--sb-radius-sm);
+    color: var(--sb-card-gold);
+    background: rgb(216 186 124 / 12%);
+
+    i {
+      color: var(--sb-card-gold);
+    }
+
+    &:hover {
+      text-shadow: 0 0 0.4rem rgb(216 186 124 / 50%);
+      background: rgb(216 186 124 / 20%);
+    }
+  }
 }
 
 .spell-book.chat-release {

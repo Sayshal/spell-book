@@ -12,14 +12,27 @@
     {{/if}}
     <div class="analysis-columns">
       <div class="left-column">
-        {{#if spellSchoolDistribution.length}}
-          <div class="school-analysis">
-            <h4>{{localize "DND5E.School"}} {{localize "SPELLBOOK.Party.Analysis.Distribution"}}</h4>
-            <div class="school-types">
-              {{#each spellSchoolDistribution as |school|}}
-                <div class="school-type-item" data-tooltip-html="{{{school.tooltipHtml}}}">
-                  <span class="school-type">{{school.localizedSchool}}</span>
-                  <span class="school-count">{{school.count}} ({{school.percentage}}%)</span>
+        {{#if damageDistribution.length}}
+          <div class="damage-analysis">
+            <h4>{{localize "DND5E.DamageTypes"}}</h4>
+            <div class="damage-types">
+              {{#each damageDistribution as |damageData|}}
+                <div class="damage-type-item" data-tooltip-html="{{{damageData.tooltipHtml}}}">
+                  <span class="damage-type">{{damageData.localizedType}}</span>
+                  <span class="damage-count">{{damageData.count}}</span>
+                </div>
+              {{/each}}
+            </div>
+          </div>
+        {{/if}}
+        {{#if savingThrowDistribution.length}}
+          <div class="damage-analysis">
+            <h4>{{localize "SPELLBOOK.Party.Analysis.SaveSpread"}}</h4>
+            <div class="damage-types">
+              {{#each savingThrowDistribution as |saveData|}}
+                <div class="damage-type-item">
+                  <span class="damage-type">{{saveData.localizedSave}}</span>
+                  <span class="damage-count">{{saveData.count}}</span>
                 </div>
               {{/each}}
             </div>
@@ -34,6 +47,19 @@
                   data-tooltip="{{level.localizedLevel}}: {{level.count}} prepared ({{level.percentage}}%)">
                   <span class="level-type">{{level.localizedLevel}}</span>
                   <span class="level-count">{{level.count}} ({{level.percentage}}%)</span>
+                </div>
+              {{/each}}
+            </div>
+          </div>
+        {{/if}}
+        {{#if spellSchoolDistribution.length}}
+          <div class="school-analysis">
+            <h4>{{localize "DND5E.School"}} {{localize "SPELLBOOK.Party.Analysis.Distribution"}}</h4>
+            <div class="school-types">
+              {{#each spellSchoolDistribution as |school|}}
+                <div class="school-type-item" data-tooltip-html="{{{school.tooltipHtml}}}">
+                  <span class="school-type">{{school.localizedSchool}}</span>
+                  <span class="school-count">{{school.count}} ({{school.percentage}}%)</span>
                 </div>
               {{/each}}
             </div>
@@ -64,19 +90,6 @@
             </div>
           </div>
         </div>
-        {{#if damageDistribution.length}}
-          <div class="damage-analysis">
-            <h4>{{localize "DND5E.DamageTypes"}}</h4>
-            <div class="damage-types">
-              {{#each damageDistribution as |damageData|}}
-                <div class="damage-type-item" data-tooltip-html="{{{damageData.tooltipHtml}}}">
-                  <span class="damage-type">{{damageData.localizedType}}</span>
-                  <span class="damage-count">{{damageData.count}}</span>
-                </div>
-              {{/each}}
-            </div>
-          </div>
-        {{/if}}
         <div class="component-analysis">
           <h4>{{localize "DND5E.Components"}}</h4>
           <div class="component-grid">

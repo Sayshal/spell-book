@@ -336,7 +336,7 @@ export class SpellManager {
    * @param {object} actor - The actor document
    * @param {string} classIdentifier - The class identifier
    * @param {object} classSpellData - Spell data keyed by classSpellKey
-   * @returns {Promise<object>} { cantripChanges, spellChanges }
+   * @returns {Promise<{ added: object[], removed: object[] }>} Prepared-spell changes
    */
   static async saveClassSpecificPreparedSpells(actor, classIdentifier, classSpellData) {
     log(3, 'Saving class-specific prepared spells.', { actorName: actor.name, classIdentifier, spellCount: Object.keys(classSpellData).length });
@@ -401,26 +401,19 @@ export class SpellManager {
    */
   static async sendNotification(notificationData) {
     const { actorName, classChanges } = notificationData;
-    const processedClassChanges = Object.entries(classChanges)
-      .map(([key, data]) => {
-        const cantripChanges = {
-          ...data.cantripChanges,
-          removedNames: data.cantripChanges.removed.length > 0 ? data.cantripChanges.removed.join(', ') : null,
-          addedNames: data.cantripChanges.added.length > 0 ? data.cantripChanges.added.join(', ') : null,
-          hasChanges: data.cantripChanges.added.length > 0 || data.cantripChanges.removed.length > 0
-        };
-        const spellChanges = {
-          ...data.spellChanges,
-          removedNames: data.spellChanges.removed.length > 0 ? data.spellChanges.removed.join(', ') : null,
-          addedNames: data.spellChanges.added.length > 0 ? data.spellChanges.added.join(', ') : null,
-          hasChanges: data.spellChanges.added.length > 0 || data.spellChanges.removed.length > 0
-        };
+    const toRow = (s) => ({ link: s.uuid ? `@UUID[${s.uuid}]{${s.name}}` : s.name, level: s.level ?? 0 });
+    const byName = (a, b) => (a.name || '').localeCompare(b.name || '');
+    const processedClassChanges = Object.values(classChanges)
+      .map((data) => {
+        const removed = [...(data.changes?.removed ?? [])].sort(byName).map(toRow);
+        const added = [...(data.changes?.added ?? [])].sort(byName).map(toRow);
         const overLimits = {
           cantrips: { ...data.overLimits.cantrips, overCount: data.overLimits.cantrips.current - data.overLimits.cantrips.max },
           spells: { ...data.overLimits.spells, overCount: data.overLimits.spells.current - data.overLimits.spells.max }
         };
-        const hasChanges = cantripChanges.hasChanges || spellChanges.hasChanges || data.overLimits.cantrips.isOver || data.overLimits.spells.isOver;
-        return { classIdentifier: key, ...data, cantripChanges, spellChanges, overLimits, hasChanges };
+        const hasRows = removed.length > 0 || added.length > 0;
+        const hasChanges = hasRows || data.overLimits.cantrips.isOver || data.overLimits.spells.isOver;
+        return { className: data.className, removed, added, hasRows, overLimits, hasChanges };
       })
       .filter((c) => c.hasChanges);
     if (processedClassChanges.length === 0) return;
@@ -450,21 +443,19 @@ export class SpellManager {
   }
 
   /**
-   * Compute cantrip/spell change tracking from spell data.
+   * Compute prepared-spell changes from spell data.
    * @param {object} classSpellData - Spell data keyed by classSpellKey
-   * @returns {object} { cantripChanges, spellChanges }
+   * @returns {{added: object[], removed: object[]}} Added/removed spell descriptors ({ uuid, name, level })
    * @private
    */
   static _computeChanges(classSpellData) {
-    const cantripChanges = { added: [], removed: [], hasChanges: false };
-    const spellChanges = { added: [], removed: [], hasChanges: false };
-    for (const { isPrepared, wasPrepared, spellLevel, name } of Object.values(classSpellData)) {
+    const added = [];
+    const removed = [];
+    for (const { isPrepared, wasPrepared, spellLevel, name, uuid } of Object.values(classSpellData)) {
       if (isPrepared === wasPrepared) continue;
-      const target = spellLevel === 0 ? cantripChanges : spellChanges;
-      (isPrepared ? target.added : target.removed).push(name);
-      target.hasChanges = true;
+      (isPrepared ? added : removed).push({ uuid, name, level: spellLevel });
     }
-    return { cantripChanges, spellChanges };
+    return { added, removed };
   }
 
   /**

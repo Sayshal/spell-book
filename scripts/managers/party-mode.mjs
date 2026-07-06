@@ -5,6 +5,7 @@
  */
 
 import { FLAGS, MODULE } from '../constants.mjs';
+import { extractDamageTypes, extractSaveAbilities } from '../ui/formatting.mjs';
 import { log } from '../utils/logger.mjs';
 import { ClassManager } from './class-manager.mjs';
 
@@ -399,7 +400,7 @@ export class PartyMode {
       }
     }
     collectors.spellLevels[props.level]++;
-    if (props.save) collectors.savingThrows[props.save] = (collectors.savingThrows[props.save] || 0) + 1;
+    for (const save of props.saves) collectors.savingThrows[save] = (collectors.savingThrows[save] || 0) + 1;
     const rangeUnits = props.range?.units;
     if (rangeUnits === 'self') collectors.ranges.self++;
     else if (rangeUnits === 'touch') collectors.ranges.touch++;
@@ -418,22 +419,17 @@ export class PartyMode {
   static _extractSpellProperties(doc) {
     const props = doc.system?.properties;
     const has = (p) => props?.has?.(p) || (Array.isArray(props) && props.includes(p));
-    const damageTypes = new Set();
-    for (const activity of Object.values(doc.system?.activities || {})) {
-      for (const part of Object.values(activity.damage?.parts || {})) for (const t of part.types || []) damageTypes.add(t);
-      for (const part of Object.values(activity.healing?.parts || {})) for (const t of part.types || []) damageTypes.add(t);
-    }
     return {
       isConcentration: has('concentration'),
       isRitual: has('ritual'),
-      damageTypes,
+      damageTypes: new Set(extractDamageTypes(doc)),
+      saves: new Set(extractSaveAbilities(doc)),
       hasVerbal: has('vocal'),
       hasSomatic: has('somatic'),
       hasMaterial: has('material'),
       hasConsumedMaterial: !!doc.system?.materials?.consumed,
       school: doc.system?.school || '',
       level: doc.system?.level || 0,
-      save: doc.system?.save?.ability || '',
       range: doc.system?.range || {},
       duration: doc.system?.duration || {}
     };
@@ -478,6 +474,7 @@ export class PartyMode {
       localizedSave: _loc(`DND5E.Ability${save.charAt(0).toUpperCase()}${save.slice(1).toLowerCase()}`) || save,
       count
     }));
+    game.i18n.sortObjects(analysis.savingThrowDistribution, 'localizedSave');
     for (const [name, actors] of collectors.preparedSpellsByName) {
       if (actors.length > 1) {
         analysis.duplicateSpells.push({ name, actors: [...actors] });
@@ -498,25 +495,36 @@ export class PartyMode {
    */
   static _generateRecommendations(analysis) {
     const recs = [];
+    const totalPrepared = analysis.totalPreparedSpells || 0;
     if (analysis.concentrationPercentage > 70) recs.push('SPELLBOOK.Party.Recommendations.HighConcentration');
     if (analysis.ritualSpells < 3 && analysis.totalSpells > 20) recs.push('SPELLBOOK.Party.Recommendations.LowRituals');
-    if (analysis.damageDistribution.length < 4 && analysis.totalSpells > 15) recs.push('SPELLBOOK.Party.Recommendations.LimitedDamageTypes');
     if (analysis.duplicateSpells.length > 0) recs.push('SPELLBOOK.Party.Recommendations.DuplicateSpells');
     const lowLevelCount = analysis.spellLevelDistribution.filter((l) => l.level <= 2).reduce((sum, l) => sum + l.count, 0);
-    if (analysis.totalPreparedSpells > 0 && lowLevelCount / analysis.totalPreparedSpells > 0.7) recs.push('SPELLBOOK.Party.Recommendations.LowLevelHeavy');
+    if (totalPrepared > 0 && lowLevelCount / totalPrepared > 0.7) recs.push('SPELLBOOK.Party.Recommendations.LowLevelHeavy');
+    const damageTypes = analysis.damageDistribution.filter((d) => d.type !== 'healing' && d.type !== 'temphp');
+    const damageTotal = damageTypes.reduce((sum, d) => sum + d.count, 0);
+    if (damageTypes.length < 4 && analysis.totalSpells > 15) recs.push('SPELLBOOK.Party.Recommendations.LimitedDamageTypes');
+    if (damageTotal > 0 && Math.max(...damageTypes.map((d) => d.count)) / damageTotal > 0.5) recs.push('SPELLBOOK.Party.Recommendations.DamageTypeConcentration');
+    if (analysis.totalSpells > 10 && !analysis.damageDistribution.some((d) => d.type === 'healing' || d.type === 'temphp')) recs.push('SPELLBOOK.Party.Recommendations.NoHealing');
     if (analysis.savingThrowDistribution.length < 3) recs.push('SPELLBOOK.Party.Recommendations.LimitedSavingThrows');
+    const saveTotal = analysis.savingThrowDistribution.reduce((sum, s) => sum + s.count, 0);
+    if (saveTotal > 3 && Math.max(...analysis.savingThrowDistribution.map((s) => s.count)) / saveTotal > 0.6) recs.push('SPELLBOOK.Party.Recommendations.SaveConcentration');
+    const ranges = analysis.rangeAnalysis || {};
+    const rangeTotal = (ranges.self || 0) + (ranges.touch || 0) + (ranges.ranged || 0);
+    if (rangeTotal > 10 && ((ranges.self || 0) + (ranges.touch || 0)) / rangeTotal > 0.5) recs.push('SPELLBOOK.Party.Recommendations.ShortRangeHeavy');
+    if ((analysis.componentAnalysis?.materialCost || 0) >= 5) recs.push('SPELLBOOK.Party.Recommendations.HighMaterialCost');
     analysis.recommendations = recs;
   }
 
   /**
-   * Localize a damage type with fallbacks for healing/temphp.
-   * @param {string} type - The damage type identifier
+   * Localize a damage or healing type from CONFIG.DND5E, with a short label for temp HP.
+   * @param {string} type - The damage/healing type identifier
    * @returns {string} Localized name
    * @private
    */
   static _localizeDamageType(type) {
-    if (type === 'healing') return _loc('DND5E.Healing');
     if (type === 'temphp') return _loc('SPELLBOOK.Party.Analysis.HealingTemp');
-    return _loc(`DND5E.Damage${type.charAt(0).toUpperCase()}${type.slice(1).toLowerCase()}`) || type;
+    const config = CONFIG.DND5E.damageTypes?.[type] || CONFIG.DND5E.healingTypes?.[type];
+    return config?.label ? _loc(config.label) : type;
   }
 }
