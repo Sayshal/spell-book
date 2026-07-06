@@ -3445,6 +3445,222 @@
   line-height: 1.4;
 }
 
+/* Arcane spell-preparation chat card: owns the full message so light/dark chat themes stay consistent. */
+li.chat-message:has(.spell-book-update-report) {
+  --sb-card-gold: rgb(216 186 124);
+  --sb-card-text: rgb(230 226 242);
+  --sb-card-muted: rgb(191 184 212);
+  --sb-card-divider: rgb(216 186 124 / 28%);
+
+  position: relative;
+  padding: 0;
+  color: var(--sb-card-text);
+  border: 0.0625rem solid rgb(216 186 124 / 45%);
+  border-radius: var(--sb-radius-xl);
+  background:
+    radial-gradient(120% 70% at 50% 0%, rgb(132 94 214 / 32%), transparent 58%),
+    linear-gradient(165deg, rgb(38 27 58) 0%, rgb(22 17 36) 100%);
+  box-shadow:
+    0 0 0 0.0625rem rgb(22 17 36 / 80%),
+    0 0 0.9rem rgb(132 94 214 / 22%),
+    0 0.25rem 0.75rem rgb(0 0 0 / 35%);
+
+  .message-header {
+    padding: 0.5rem 0.75rem 0.45rem;
+    color: var(--sb-card-muted);
+    font-size: 0.75rem;
+    border: none;
+  }
+
+  .message-sender {
+    color: var(--sb-card-text);
+    font-weight: 600;
+  }
+
+  .message-metadata,
+  .whisper-to {
+    color: var(--sb-card-muted);
+  }
+
+  .message-content {
+    border: none;
+  }
+}
+
+/* dnd5e's gray smoke texture (.message::before, texture-gray1.webp) renders top-right and is larger than the card, so repositioning the anchor barely moves it. Mirror the pseudo-element vertically to move it top-right -> bottom-right. */
+:is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report)::before {
+  transform: translateY(0.75rem) scaleY(-1);
+}
+
+/* dnd5e themes every chat <table> (row striping at (0,2,2), gold borders, header fills). Match its #chat-log ancestor to outspecify it without !important; th border is left alone to keep our section divider. */
+:is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .sb-change-table,
+:is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .sb-change-table :is(tr, td, th) {
+  background: none;
+}
+
+:is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .sb-change-table,
+:is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .sb-change-table :is(tr, td) {
+  border: none;
+}
+
+/* dnd5e pins the timestamp/controls via #chat-log (ID). Match that ancestor and blanket the header subtree so our light colors win without !important, regardless of v14's exact node names. */
+:is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .message-header,
+:is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .message-header * {
+  color: var(--sb-card-muted);
+}
+
+:is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .message-header :is(.message-sender, .name-stacked, .title) {
+  color: var(--sb-card-text);
+}
+
+:is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .message-header :is(a, [data-context-menu]):hover,
+:is(.chat-popout, #chat-log, .chat-log) .message:has(.spell-book-update-report) .message-header :is(a, [data-context-menu]):hover * {
+  color: var(--sb-card-text);
+}
+
+.spell-book-update-report {
+  position: relative;
+  padding: 0.5rem 0.85rem 0.85rem;
+
+  .sb-report-header {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    margin-bottom: 0.65rem;
+    padding-bottom: 0.55rem;
+    border-bottom: 0.0625rem solid var(--sb-card-divider);
+  }
+
+  .sb-report-icon {
+    flex: 0 0 auto;
+    width: 2.5rem;
+    height: 2.5rem;
+    object-fit: contain;
+    border: none;
+    filter: drop-shadow(0 0 0.35rem rgb(216 186 124 / 45%));
+  }
+
+  .sb-report-titles {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .sb-report-eyebrow {
+    color: var(--sb-card-muted);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .sb-report-title {
+    color: var(--sb-card-gold);
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-shadow: 0 0 0.5rem rgb(216 186 124 / 40%);
+  }
+
+  .sb-report-class + .sb-report-class {
+    margin-top: 0.65rem;
+    padding-top: 0.55rem;
+    border-top: 0.0625rem solid var(--sb-card-divider);
+  }
+
+  h3 {
+    margin: 0.35rem 0;
+    color: var(--sb-card-text);
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+  }
+
+  .sb-change-table {
+    width: 100%;
+    margin: 0.2rem 0 0;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+
+  .sb-change-head th {
+    padding: 0.4rem 0 0.15rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-align: left;
+    border-bottom: 0.0625rem solid var(--sb-card-divider);
+  }
+
+  .sb-change-head th::before {
+    margin-right: 0.3rem;
+    font-weight: 700;
+  }
+
+  .sb-change-added th {
+    color: rgb(126 214 134);
+  }
+
+  .sb-change-added th:first-child::before {
+    content: '+';
+  }
+
+  .sb-change-removed th {
+    color: rgb(240 138 138);
+  }
+
+  .sb-change-removed th:first-child::before {
+    content: '\2212';
+  }
+
+  .sb-change-row td {
+    padding: 0.12rem 0;
+    line-height: 1.4;
+    vertical-align: baseline;
+  }
+
+  .sb-change-name {
+    padding-left: 0.4rem;
+    color: var(--sb-card-text);
+  }
+
+  .sb-change-lvl {
+    width: 2.5rem;
+    text-align: center;
+    color: var(--sb-card-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sb-report-warning {
+    margin: 0.45rem 0 0;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.82rem;
+    background: rgb(255 198 90 / 10%);
+    border-left: 0.15rem solid var(--sb-warning);
+    border-radius: var(--sb-radius-sm);
+  }
+
+  a.content-link {
+    padding: 0 0.1rem;
+    color: var(--sb-card-gold);
+    background: none;
+    border: none;
+
+    i {
+      display: none;
+    }
+
+    &:hover {
+      text-shadow: 0 0 0.4rem rgb(216 186 124 / 60%);
+    }
+  }
+
+  strong.warning {
+    color: var(--sb-warning);
+  }
+}
+
 .spell-book.chat-release {
   .release-header {
     gap: 0.5rem;

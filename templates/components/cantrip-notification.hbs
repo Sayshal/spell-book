@@ -1,55 +1,58 @@
 <div class="spell-book-chat-message spell-book-update-report">
-  <h2>{{localize 'SPELLBOOK.Chat.UpdateReport.Title' name=actorName}}</h2>
+  <header class="sb-report-header">
+    <img class="sb-report-icon" src="modules/spell-book/assets/icon_colored.png" alt="" />
+    <div class="sb-report-titles">
+      <span class="sb-report-eyebrow">{{actorName}}</span>
+      <span class="sb-report-title">{{localize 'SPELLBOOK.Chat.UpdateReport.Title'}}</span>
+    </div>
+  </header>
   {{#each classChanges}}
     {{#if this.hasChanges}}
-      <h3>{{this.className}}</h3>
-      {{#if this.cantripChanges.hasChanges}}
-        <h4>{{localize 'SPELLBOOK.Notifications.CantripChanges'}}</h4>
-        <ul>
-          {{#if this.cantripChanges.removedNames}}
-            <li><strong class="removed">{{localize 'SPELLBOOK.Notifications.Removed'}}:</strong>
-              {{this.cantripChanges.removedNames}}
-            </li>
-          {{/if}}
-          {{#if this.cantripChanges.addedNames}}
-            <li><strong class="added">{{localize 'SPELLBOOK.Notifications.Added'}}:</strong>
-              {{this.cantripChanges.addedNames}}
-            </li>
-          {{/if}}
-        </ul>
-      {{/if}}
-      {{#if this.spellChanges.hasChanges}}
-        <h4>{{localize 'SPELLBOOK.Notifications.SpellChanges'}}</h4>
-        <ul>
-          {{#if this.spellChanges.removedNames}}
-            <li><strong class="removed">{{localize 'SPELLBOOK.Notifications.Removed'}}:</strong>
-              {{this.spellChanges.removedNames}}
-            </li>
-          {{/if}}
-          {{#if this.spellChanges.addedNames}}
-            <li><strong class="added">{{localize 'SPELLBOOK.Notifications.Added'}}:</strong>
-              {{this.spellChanges.addedNames}}
-            </li>
-          {{/if}}
-        </ul>
-      {{/if}}
-      {{#if this.overLimits.cantrips.isOver}}
-        <p><strong class="warning">{{localize 'SPELLBOOK.Notifications.CantripOverLimit'}}:</strong>
-          {{this.overLimits.cantrips.current}}/{{this.overLimits.cantrips.max}}
-          ({{this.overLimits.cantrips.overCount}} over)
-        </p>
-      {{/if}}
-      {{#if this.overLimits.spells.isOver}}
-        <p><strong class="warning">{{localize 'SPELLBOOK.Notifications.SpellOverLimit'}}:</strong>
-          {{this.overLimits.spells.current}}/{{this.overLimits.spells.max}}
-          ({{this.overLimits.spells.overCount}} over)
-        </p>
-      {{/if}}
-      {{#if ../classChanges.length}}
-        {{#if (gt ../classChanges.length 1)}}
-          <hr>
+      <section class="sb-report-class">
+        <h3>{{this.className}}</h3>
+        {{#if this.hasRows}}
+          <table class="sb-change-table">
+            <tbody>
+              {{#if this.removed.length}}
+                <tr class="sb-change-head sb-change-removed">
+                  <th>{{localize 'SPELLBOOK.Notifications.Removed'}}</th>
+                  <th class="sb-change-lvl">{{localize 'SPELLBOOK.Notifications.Level'}}</th>
+                </tr>
+                {{#each this.removed}}
+                  <tr class="sb-change-row">
+                    <td class="sb-change-name">{{this.link}}</td>
+                    <td class="sb-change-lvl">{{this.level}}</td>
+                  </tr>
+                {{/each}}
+              {{/if}}
+              {{#if this.added.length}}
+                <tr class="sb-change-head sb-change-added">
+                  <th>{{localize 'SPELLBOOK.Notifications.Added'}}</th>
+                  <th class="sb-change-lvl">{{localize 'SPELLBOOK.Notifications.Level'}}</th>
+                </tr>
+                {{#each this.added}}
+                  <tr class="sb-change-row">
+                    <td class="sb-change-name">{{this.link}}</td>
+                    <td class="sb-change-lvl">{{this.level}}</td>
+                  </tr>
+                {{/each}}
+              {{/if}}
+            </tbody>
+          </table>
         {{/if}}
-      {{/if}}
+        {{#if this.overLimits.cantrips.isOver}}
+          <p class="sb-report-warning"><strong class="warning">{{localize 'SPELLBOOK.Notifications.CantripOverLimit'}}:</strong>
+            {{this.overLimits.cantrips.current}}/{{this.overLimits.cantrips.max}}
+            ({{this.overLimits.cantrips.overCount}} over)
+          </p>
+        {{/if}}
+        {{#if this.overLimits.spells.isOver}}
+          <p class="sb-report-warning"><strong class="warning">{{localize 'SPELLBOOK.Notifications.SpellOverLimit'}}:</strong>
+            {{this.overLimits.spells.current}}/{{this.overLimits.spells.max}}
+            ({{this.overLimits.spells.overCount}} over)
+          </p>
+        {{/if}}
+      </section>
     {{/if}}
   {{/each}}
 </div>
