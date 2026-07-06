@@ -1,6 +1,7 @@
 import { SpellBook, SpellListManager } from './apps/_module.mjs';
 import { MODULE, PACK, SETTINGS } from './constants.mjs';
 import { SpellDataManager } from './managers/_module.mjs';
+import { onAdvancementComplete, onRenderSpellcastingNotice, onSpellcastingItemCreate } from './managers/spellcasting-notice.mjs';
 import { DescriptionInjector } from './ui/description-injector.mjs';
 import { log } from './utils/logger.mjs';
 import { addJournalSpellBookButton, addSpellbookButton, handleRestCompleted, onGroupActorRender, onTidy5eGroupSheetRender, onTidy5eQuadroneRender, onTidy5eRender } from './utils/sheets.mjs';
@@ -29,6 +30,9 @@ export function registerAllHooks() {
   });
   Hooks.on('updateItem', DescriptionInjector.onUpdateItem.bind(DescriptionInjector));
   Hooks.on('createItem', DescriptionInjector.onCreateItem.bind(DescriptionInjector));
+  Hooks.on('createItem', onSpellcastingItemCreate);
+  Hooks.on('dnd5e.advancementManagerComplete', onAdvancementComplete);
+  Hooks.on('renderChatMessageHTML', onRenderSpellcastingNotice);
   Hooks.once('setup', () => {
     let position = game.settings.get(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION);
     if (!position || (typeof position === 'object' && Object.keys(position).length === 0)) position = { height: 850, width: 700, left: 300, top: 100 };

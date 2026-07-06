@@ -793,6 +793,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   _buildNoListNotice(tabId) {
     const classId = this._resolveClassId(tabId) ?? '';
+    const rules = classId ? RuleSet.getClassRules(this.actor, classId) : {};
+    const listAssigned = [rules.customSpellList, rules.customSubclassSpellList].some((l) => (Array.isArray(l) ? l.length > 0 : !!l));
     const li = document.createElement('li');
     li.className = 'spell-list-notice no-list-notice';
     const button = game.user.isGM
@@ -801,9 +803,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         <span>${_loc('SPELLBOOK.NoListAssigned.OpenSettings')}</span>
       </button>`
       : '';
+    const title = listAssigned ? 'SPELLBOOK.NoListAssigned.SourceHiddenTitle' : 'SPELLBOOK.NoListAssigned.Title';
+    const hint = listAssigned ? 'SPELLBOOK.NoListAssigned.SourceHiddenHint' : 'SPELLBOOK.NoListAssigned.Hint';
     li.innerHTML = `
-      <p><strong>${_loc('SPELLBOOK.NoListAssigned.Title')}</strong></p>
-      <p>${_loc('SPELLBOOK.NoListAssigned.Hint')}</p>
+      <p><strong>${_loc(title)}</strong></p>
+      <p>${_loc(hint)}</p>
       ${button}`;
     return li;
   }
@@ -1264,6 +1268,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         isRitual: cb.dataset.ritual === 'true'
       };
     }
+    const classChanges = {};
     for (const [classId, classSpellData] of Object.entries(spellDataByClass)) {
       const ritualMode = RuleSet.getClassRule(this.actor, classId, 'ritualCasting', 'none');
       if (ritualMode === 'always') {
@@ -1282,7 +1287,28 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           }
         }
       }
-      await SpellManager.saveClassSpecificPreparedSpells(this.actor, classId, classSpellData);
+      const changes = await SpellManager.saveClassSpecificPreparedSpells(this.actor, classId, classSpellData);
+      if (SpellManager.getSettings(this.actor, classId).notifyGm) {
+        let curCantrips = 0;
+        let curSpells = 0;
+        for (const d of Object.values(classSpellData)) {
+          if (!d.isPrepared) continue;
+          if (d.spellLevel === 0) curCantrips++;
+          else curSpells++;
+        }
+        const maxCantrips = SpellManager.getMaxCantrips(this.actor, classId);
+        const scData = this.actor.spellcastingClasses?.[classId];
+        const baseMax = scData?.preparation?.max ?? scData?.spellcasting?.preparation?.max ?? this.actor.system.attributes?.preparation?.max ?? 0;
+        const maxSpells = Math.max(0, baseMax + RuleSet.getClassRule(this.actor, classId, 'spellPreparationBonus', 0));
+        classChanges[classId] = {
+          className: scData?.name ?? classId,
+          changes,
+          overLimits: {
+            cantrips: { current: curCantrips, max: maxCantrips, isOver: maxCantrips > 0 && curCantrips > maxCantrips },
+            spells: { current: curSpells, max: maxSpells, isOver: maxSpells > 0 && curSpells > maxSpells }
+          }
+        };
+      }
       if (ritualMode !== 'always') {
         const ritualSpells = this.actor.itemTypes.spell.filter(
           (s) => s.system?.method === 'ritual' && ClassManager.getSpellClassIdentifier(s) === classId && s.flags?.[MODULE.ID]?.isModuleRitual === true
@@ -1302,6 +1328,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     }
     this.#pendingChanges.clear();
+    if (Object.keys(classChanges).length) await SpellManager.sendNotification({ actorName: this.actor.name, classChanges });
     if (game.modules.get('chris-premades')?.active && game.settings.get(MODULE.ID, SETTINGS.CPR_COMPATIBILITY)) await chrisPremades.utils.actorUtils.updateAll(this.actor);
     ui.notifications.info('SPELLBOOK.UI.ChangesSaved', { localize: true });
     for (const cb of this.element.querySelectorAll('input[type="checkbox"][data-uuid]')) cb.dataset.wasPrepared = String(cb.checked);
