@@ -1,7 +1,7 @@
 name: Bug Report
 description: File a bug report
 title: '[BUG] '
-labels: ['bug']
+labels: ['type:bug']
 assignees:
   - Sayshal
 body:
@@ -15,7 +15,7 @@ body:
       label: Spell Book Troubleshooter
       description: Recreate the issue being reported in Spell Book, and without closing the application, open the troubleshooter from the Settings menu. Download the troubleshooter file and attach it below.
       options:
-        - label: I understand that I will not recieve support until a troubleshooter file has been uploaded.
+        - label: I understand that I will not receive support until a troubleshooter file has been uploaded.
           required: true
   - type: textarea
     id: what-happened
@@ -38,17 +38,17 @@ body:
     attributes:
       label: Foundry Version
       description: What version of foundry?
-      placeholder: '12.331'
+      placeholder: '13.347'
     validations:
       required: true
   - type: input
     id: system-version
     attributes:
-      label: D&D Version
-      description: What version of the system?
-      placeholder: '5.1.2'
+      label: Game System
+      description: What game system and version? (e.g., dnd5e 5.2.4, pf2e 6.1.0)
+      placeholder: 'dnd5e 5.2.4'
     validations:
-      required: true
+      required: false
   - type: textarea
     id: logs
     attributes:
