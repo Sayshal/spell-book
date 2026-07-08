@@ -38,7 +38,7 @@ body:
     attributes:
       label: Foundry Version
       description: What version of foundry?
-      placeholder: '13.347'
+      placeholder: '14.364'
     validations:
       required: true
   - type: textarea
