@@ -4,7 +4,6 @@
  * @author Tyler
  */
 
-import { log } from '../utils/logger.mjs';
 
 /** @type {object} dnd5e CompendiumBrowser class reference */
 const CompendiumBrowser = dnd5e.applications.CompendiumBrowser;
@@ -55,7 +54,7 @@ export async function fetchAllSpells({ maxLevel, onProgress } = {}) {
       sort
     });
     applyLabelsFallback(results);
-    log(3, `Fetched ${results.length} spells.`);
+    ATLAS.log(3, `Fetched ${results.length} spells.`);
     return results;
   }
   const Filter = dnd5e?.Filter;
@@ -81,7 +80,7 @@ export async function fetchAllSpells({ maxLevel, onProgress } = {}) {
   }
   results.sort(sort);
   applyLabelsFallback(results);
-  log(3, `Fetched ${results.length} spells across ${eligiblePacks.length} packs.`);
+  ATLAS.log(3, `Fetched ${results.length} spells across ${eligiblePacks.length} packs.`);
   return results;
 }
 

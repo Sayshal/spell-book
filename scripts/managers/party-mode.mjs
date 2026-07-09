@@ -6,7 +6,6 @@
 
 import { FLAGS, MODULE } from '../constants.mjs';
 import { extractDamageTypes, extractSaveAbilities } from '../ui/formatting.mjs';
-import { log } from '../utils/logger.mjs';
 import { ClassManager } from './class-manager.mjs';
 
 /** Party Mode Manager — analysis-only, no UI helpers. */
@@ -17,7 +16,7 @@ export class PartyMode {
    * @returns {object} { actors, spellsByLevel, synergy }
    */
   static analyzePartySpells(partyActors) {
-    log(3, 'Analyzing party spells.', { count: partyActors.length });
+    ATLAS.log(3, 'Analyzing party spells.', { count: partyActors.length });
     const actors = [];
     for (const actor of partyActors) actors.push(this._getActorSpellData(actor));
     const spellsByLevel = this._organizeByLevel(actors);
@@ -31,7 +30,7 @@ export class PartyMode {
    * @returns {object} Full analysis data structure
    */
   static getSpellSynergyAnalysis(partyActors) {
-    log(3, 'Getting spell synergy analysis.');
+    ATLAS.log(3, 'Getting spell synergy analysis.');
     const analysis = this._initializeAnalysis();
     const collectors = this._initializeCollectors();
     for (const actor of partyActors) {
@@ -86,7 +85,7 @@ export class PartyMode {
         if (casters.length > 0) return casters;
       }
     } catch (error) {
-      log(1, 'Error getting primary party.', { error });
+      ATLAS.log(1, 'Error getting primary party.', { error });
     }
     if (game.user.isGM) ui.notifications.warn('SPELLBOOK.Party.NoPrimaryPartySet', { localize: true });
     else ui.notifications.info('SPELLBOOK.Party.AskGMToSetParty', { localize: true });
@@ -138,7 +137,7 @@ export class PartyMode {
         if (creatures.some((c) => c?.id === actor.id)) return primaryPartyActor;
       }
     } catch (error) {
-      log(1, 'Error getting primary party data.', { error });
+      ATLAS.log(1, 'Error getting primary party data.', { error });
     }
     return this.findGroupsForActor(actor)[0] || null;
   }

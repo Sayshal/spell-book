@@ -1,5 +1,4 @@
 import { CLASS_IDENTIFIERS, FLAGS, MODULE, RITUAL_CASTING_MODES, SETTINGS, SPELL_MODE, SWAP_MODES, TEMPLATES } from '../constants.mjs';
-import { log } from '../utils/logger.mjs';
 import { ClassManager } from './class-manager.mjs';
 import { RuleSet } from './rule-set.mjs';
 
@@ -76,7 +75,7 @@ export class SpellManager {
     this._settingsCache.delete(actor);
     this._cantripMaxCache.delete(actor);
     this._cantripCountCache.delete(actor);
-    log(3, 'SpellManager cache invalidated.', { actorName: actor.name });
+    ATLAS.log(3, 'SpellManager cache invalidated.', { actorName: actor.name });
   }
 
   /**
@@ -339,7 +338,7 @@ export class SpellManager {
    * @returns {Promise<{ added: object[], removed: object[] }>} Prepared-spell changes
    */
   static async saveClassSpecificPreparedSpells(actor, classIdentifier, classSpellData) {
-    log(3, 'Saving class-specific prepared spells.', { actorName: actor.name, classIdentifier, spellCount: Object.keys(classSpellData).length });
+    ATLAS.log(3, 'Saving class-specific prepared spells.', { actorName: actor.name, classIdentifier, spellCount: Object.keys(classSpellData).length });
     const classes = ClassManager.detectSpellcastingClasses(actor);
     const defaultPrepMode = classes[classIdentifier]?.preparationMode || SPELL_MODE.SPELL;
     const changes = this._computeChanges(classSpellData);
@@ -347,7 +346,7 @@ export class SpellManager {
     await this._applyItemChanges(actor, updates.spellsToCreate, updates.spellsToUpdate, updates.spellIdsToRemove);
     await this._updateFlags(actor, classIdentifier, updates.preparedSpellKeys);
     this._cantripCountCache.delete(actor);
-    log(3, 'Class-specific prepared spells saved.', { actorName: actor.name, classIdentifier });
+    ATLAS.log(3, 'Class-specific prepared spells saved.', { actorName: actor.name, classIdentifier });
     return changes;
   }
 
@@ -587,7 +586,7 @@ export class SpellManager {
       newSpellData.system.sourceItem = sourceItem;
       spellsToCreate.push(newSpellData);
     } else {
-      log(2, 'Could not find source spell.', { actorName: actor.name, uuid, classIdentifier });
+      ATLAS.log(2, 'Could not find source spell.', { actorName: actor.name, uuid, classIdentifier });
     }
   }
 
@@ -600,7 +599,7 @@ export class SpellManager {
    * @private
    */
   static async _ensureRitualSpellOnActor(actor, uuid, classIdentifier, spellsToCreate) {
-    log(3, 'Ensuring ritual spell on actor.', { actorName: actor.name, uuid, classIdentifier });
+    ATLAS.log(3, 'Ensuring ritual spell on actor.', { actorName: actor.name, uuid, classIdentifier });
     const existingRitual = actor.itemTypes.spell.find(
       (s) => (s._stats?.compendiumSource === uuid || s.uuid === uuid) && ClassManager.getSpellClassIdentifier(s) === classIdentifier && s.system?.method === SPELL_MODE.RITUAL
     );
@@ -615,7 +614,7 @@ export class SpellManager {
       newSpellData.flags[MODULE.ID].isModuleRitual = true;
       spellsToCreate.push(newSpellData);
     } else {
-      log(2, 'Could not find source spell for ritual.', { actorName: actor.name, uuid, classIdentifier });
+      ATLAS.log(2, 'Could not find source spell for ritual.', { actorName: actor.name, uuid, classIdentifier });
     }
   }
 

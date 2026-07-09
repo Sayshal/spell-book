@@ -2,7 +2,6 @@ import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import { getTargetUserId, loadUserSpellData, saveUserSpellData } from '../data/_module.mjs';
 import { getCanonicalSpellUuid } from '../managers/spell-manager.mjs';
 import { DescriptionInjector } from '../ui/description-injector.mjs';
-import { log } from '../utils/logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -124,6 +123,6 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
       icon.setAttribute('aria-label', tip);
     }
     await DescriptionInjector.handleNotesChange(canonicalUuid);
-    log(3, 'Spell notes saved.', { canonicalUuid, hasNotes });
+    ATLAS.log(3, 'Spell notes saved.', { canonicalUuid, hasNotes });
   }
 }

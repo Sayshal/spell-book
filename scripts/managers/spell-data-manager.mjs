@@ -1,7 +1,6 @@
 import { CLASS_IDENTIFIERS, SPELL_MODE } from '../constants.mjs';
 import { fetchSpellsByUuids } from '../data/spell-fetcher.mjs';
 import { getClassSpellList } from '../data/spell-list-resolver.mjs';
-import { log } from '../utils/logger.mjs';
 import { ClassManager } from './class-manager.mjs';
 import { RuleSet } from './rule-set.mjs';
 import { WizardBook } from './wizard-book.mjs';
@@ -71,14 +70,14 @@ export class SpellDataManager {
     if (cached) return cached;
     const spellUuids = await getClassSpellList(classIdentifier, actor);
     if (!spellUuids?.size) {
-      log(3, 'No spell list assigned for class.', { actorName: actor.name, classIdentifier });
+      ATLAS.log(3, 'No spell list assigned for class.', { actorName: actor.name, classIdentifier });
       this._setCache(actor, classIdentifier, []);
       return [];
     }
     const maxLevel = this._calculateMaxSpellLevel(actor, classIdentifier);
     const spells = await fetchSpellsByUuids(spellUuids, maxLevel);
     this._setCache(actor, classIdentifier, spells);
-    log(3, 'Class spell list loaded.', { actorName: actor.name, classIdentifier, count: spells.length, maxLevel });
+    ATLAS.log(3, 'Class spell list loaded.', { actorName: actor.name, classIdentifier, count: spells.length, maxLevel });
     return spells;
   }
 
@@ -120,13 +119,13 @@ export class SpellDataManager {
    */
   static invalidateCache(actor) {
     this._cache.delete(actor);
-    log(3, 'SpellDataManager cache invalidated.', { actorName: actor.name });
+    ATLAS.log(3, 'SpellDataManager cache invalidated.', { actorName: actor.name });
   }
 
   /** Invalidate all cached spell data for every actor (e.g. when spell list definitions change). */
   static invalidateAllCaches() {
     this._cache = new WeakMap();
-    log(3, 'SpellDataManager: all caches invalidated.');
+    ATLAS.log(3, 'SpellDataManager: all caches invalidated.');
   }
 
   /**

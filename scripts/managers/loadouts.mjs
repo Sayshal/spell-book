@@ -5,7 +5,6 @@
  */
 
 import { FLAGS, MODULE } from '../constants.mjs';
-import { log } from '../utils/logger.mjs';
 
 /** Loadout Manager — data layer for spell preparation presets. No DOM querying. */
 export class Loadouts {
@@ -49,7 +48,7 @@ export class Loadouts {
    */
   static async saveLoadout(actor, classIdentifier, name, description, spellConfig) {
     if (!name?.trim()) {
-      log(2, 'Loadout name is required.', { actorName: actor.name });
+      ATLAS.log(2, 'Loadout name is required.', { actorName: actor.name });
       return null;
     }
     const loadoutId = foundry.utils.randomID();
@@ -64,7 +63,7 @@ export class Loadouts {
     };
     await actor.update({ [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.${loadoutId}`]: loadout });
     this._cache.delete(actor);
-    log(3, 'Loadout saved.', { actorName: actor.name, loadoutId, name: loadout.name });
+    ATLAS.log(3, 'Loadout saved.', { actorName: actor.name, loadoutId, name: loadout.name });
     return loadoutId;
   }
 
@@ -77,12 +76,12 @@ export class Loadouts {
   static async deleteLoadout(actor, loadoutId) {
     const loadouts = actor.getFlag(MODULE.ID, FLAGS.SPELL_LOADOUTS) || {};
     if (!loadouts[loadoutId]) {
-      log(2, 'Loadout not found.', { actorName: actor.name, loadoutId });
+      ATLAS.log(2, 'Loadout not found.', { actorName: actor.name, loadoutId });
       return false;
     }
     await actor.update({ [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.-=${loadoutId}`]: null });
     this._cache.delete(actor);
-    log(3, 'Loadout deleted.', { actorName: actor.name, loadoutId });
+    ATLAS.log(3, 'Loadout deleted.', { actorName: actor.name, loadoutId });
     return true;
   }
 

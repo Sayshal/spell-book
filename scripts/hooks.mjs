@@ -3,7 +3,6 @@ import { MODULE, PACK, SETTINGS } from './constants.mjs';
 import { SpellDataManager } from './managers/_module.mjs';
 import { onAdvancementComplete, onRenderSpellcastingNotice, onSpellcastingItemCreate } from './managers/spellcasting-notice.mjs';
 import { DescriptionInjector } from './ui/description-injector.mjs';
-import { log } from './utils/logger.mjs';
 import { addJournalSpellBookButton, addSpellbookButton, handleRestCompleted, onGroupActorRender, onTidy5eGroupSheetRender, onTidy5eQuadroneRender, onTidy5eRender } from './utils/sheets.mjs';
 
 /** Register all hooks for the Spell Book module. */
@@ -41,5 +40,5 @@ export function registerAllHooks() {
     if (!managerPosition || (typeof managerPosition === 'object' && Object.keys(managerPosition).length === 0)) managerPosition = { height: 800, width: 1100, left: 200, top: 80 };
     SpellListManager.DEFAULT_OPTIONS.position = managerPosition;
   });
-  log(3, 'Hooks registered.');
+  ATLAS.log(3, 'Hooks registered.');
 }

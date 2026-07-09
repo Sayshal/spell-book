@@ -7,7 +7,6 @@
 import { MODULE } from '../constants.mjs';
 import { getConfigLabel, getSpellSourceDocument, isGrantingItemActive } from '../data/_module.mjs';
 import { ClassManager } from '../managers/class-manager.mjs';
-import { log } from '../utils/logger.mjs';
 import { buildGMMetadata, isGMElementEnabled } from './custom-ui.mjs';
 
 /**
@@ -19,7 +18,7 @@ import { buildGMMetadata, isGMElementEnabled } from './custom-ui.mjs';
  * @returns {object} Processed spell list with display data
  */
 export function processSpellListForDisplay(spellList, classFolderCache = null, availableSpellLists = null, enabledElements = null) {
-  log(3, 'Processing spell list for display.', { spellListName: spellList.document?.name, isCustom: !!spellList.document?.flags?.[MODULE.ID]?.isCustom });
+  ATLAS.log(3, 'Processing spell list for display.', { spellListName: spellList.document?.name, isCustom: !!spellList.document?.flags?.[MODULE.ID]?.isCustom });
   const processed = { ...spellList };
   processed.isCustomList = !!spellList.document?.flags?.[MODULE.ID]?.isCustom || !!spellList.document?.flags?.[MODULE.ID]?.isDuplicate;
   processed.canRestore = !!(processed.isCustomList && spellList.document.flags?.[MODULE.ID]?.originalUuid);
@@ -42,7 +41,7 @@ export function processSpellListForDisplay(spellList, classFolderCache = null, a
   if (spellList.spellsByLevel?.length) {
     processed.spellsByLevel = spellList.spellsByLevel.map((level) => ({ ...level, spells: level.spells.map((spell) => processSpellItemForDisplay(spell, enabledElements)) }));
   }
-  log(3, 'Spell list processed for display.', { isPlayerSpellbook: processed.isPlayerSpellbook, spellLevels: processed.spellsByLevel?.length });
+  ATLAS.log(3, 'Spell list processed for display.', { isPlayerSpellbook: processed.isPlayerSpellbook, spellLevels: processed.spellsByLevel?.length });
   return processed;
 }
 

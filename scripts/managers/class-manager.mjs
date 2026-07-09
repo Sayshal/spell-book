@@ -5,7 +5,6 @@
  */
 
 import { CLASS_IDENTIFIERS, FLAGS, MODULE, SPELL_MODE } from '../constants.mjs';
-import { log } from '../utils/logger.mjs';
 import { RuleSet } from './rule-set.mjs';
 
 /** Manages spellcasting class detection, configuration, and identifier resolution. */
@@ -23,7 +22,7 @@ export class ClassManager {
    */
   static detectSpellcastingClasses(actor) {
     if (this._classCache.has(actor)) return this._classCache.get(actor);
-    log(3, 'Detecting spellcasting classes.', { actorName: actor.name });
+    ATLAS.log(3, 'Detecting spellcasting classes.', { actorName: actor.name });
     const classes = {};
     if (!actor.spellcastingClasses) {
       this._classCache.set(actor, classes);
@@ -47,7 +46,7 @@ export class ClassManager {
       };
     }
     this._classCache.set(actor, classes);
-    log(3, 'Spellcasting classes detected.', { actorName: actor.name, classCount: Object.keys(classes).length, classIds: Object.keys(classes) });
+    ATLAS.log(3, 'Spellcasting classes detected.', { actorName: actor.name, classCount: Object.keys(classes).length, classIds: Object.keys(classes) });
     return classes;
   }
 
@@ -69,7 +68,7 @@ export class ClassManager {
       }
     }
     this._wizardCache.set(actor, result);
-    log(3, 'Wizard classes detected.', { actorName: actor.name, count: result.length });
+    ATLAS.log(3, 'Wizard classes detected.', { actorName: actor.name, count: result.length });
     return result;
   }
 
@@ -170,7 +169,7 @@ export class ClassManager {
   static invalidateCache(actor) {
     this._classCache.delete(actor);
     this._wizardCache.delete(actor);
-    log(3, 'ClassManager cache invalidated.', { actorName: actor.name });
+    ATLAS.log(3, 'ClassManager cache invalidated.', { actorName: actor.name });
   }
 
   /**
@@ -228,7 +227,7 @@ export class ClassManager {
       const classId = flagKey.substring(separatorIndex + 1);
       if (!currentClassIds.includes(classId)) await actor.unsetFlag(MODULE.ID, flagKey);
     }
-    log(3, 'Stale flags cleanup completed.', { actorName: actor.name });
+    ATLAS.log(3, 'Stale flags cleanup completed.', { actorName: actor.name });
   }
 
   /**

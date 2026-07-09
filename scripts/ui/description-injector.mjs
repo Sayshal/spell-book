@@ -2,7 +2,6 @@ import { MODULE, SETTINGS } from '../constants.mjs';
 import { getTargetUserId } from '../data/helpers.mjs';
 import { loadUserSpellData } from '../data/user-data.mjs';
 import { getCanonicalSpellUuid } from '../managers/spell-manager.mjs';
-import { log } from '../utils/logger.mjs';
 
 const NOTES_REGEX = /<div class='spell-book-personal-notes'[^>]*>.*?<\/div>/gs;
 
@@ -30,7 +29,7 @@ export class DescriptionInjector {
    * @returns {Promise<void>}
    */
   static async handleSettingChange(newValue) {
-    log(3, 'Handling description injection setting change.', { newValue });
+    ATLAS.log(3, 'Handling description injection setting change.', { newValue });
     if (newValue === 'off') await this.removeAllNotesFromDescriptions();
     else await this.reapplyAllNotes();
   }
@@ -41,7 +40,7 @@ export class DescriptionInjector {
    */
   static async removeAllNotesFromDescriptions() {
     for (const actor of game.actors) for (const spell of actor.itemTypes.spell) await this.removeNotesFromDescription(spell);
-    log(3, 'All notes removed from descriptions.');
+    ATLAS.log(3, 'All notes removed from descriptions.');
   }
 
   /**
@@ -50,7 +49,7 @@ export class DescriptionInjector {
    */
   static async reapplyAllNotes() {
     for (const actor of game.actors) for (const spell of actor.itemTypes.spell) await this.updateSpellDescription(spell);
-    log(3, 'All notes reapplied to descriptions.');
+    ATLAS.log(3, 'All notes reapplied to descriptions.');
   }
 
   /**
@@ -62,7 +61,7 @@ export class DescriptionInjector {
    */
   static async onCreateItem(item, _options, _userId) {
     if (item.type !== 'spell' || !item.parent || item.parent.documentName !== 'Actor') return;
-    log(3, 'Item created, updating spell description.', { item: item.name });
+    ATLAS.log(3, 'Item created, updating spell description.', { item: item.name });
     await this.updateSpellDescription(item);
   }
 
@@ -80,7 +79,7 @@ export class DescriptionInjector {
     const spellKey = this._buildKey(item);
     if (this._updatingSpells.has(spellKey)) return;
     if (changes.system?.description) await this.updateSpellDescription(item);
-    log(3, 'Item updated.', { item: item.name, hasDescriptionChange: !!changes.system?.description });
+    ATLAS.log(3, 'Item updated.', { item: item.name, hasDescriptionChange: !!changes.system?.description });
   }
 
   /**
@@ -95,7 +94,7 @@ export class DescriptionInjector {
     const actor = spellItem.parent;
     const targetUserId = getTargetUserId(actor);
     const canonicalUuid = getCanonicalSpellUuid(spellItem.uuid);
-    log(3, 'Updating spell description.', { spell: spellItem.name, injectionMode });
+    ATLAS.log(3, 'Updating spell description.', { spell: spellItem.name, injectionMode });
     const allData = await loadUserSpellData(targetUserId);
     const userData = allData[canonicalUuid];
     if (!userData?.notes?.trim()) {
@@ -137,7 +136,7 @@ export class DescriptionInjector {
    */
   static async addNotesToDescription(spellItem, notesHtml, injectionMode, currentDescription) {
     const newDescription = injectionMode === 'before' ? notesHtml + currentDescription : currentDescription + notesHtml;
-    log(3, 'Adding notes to description.', { spell: spellItem.name, injectionMode });
+    ATLAS.log(3, 'Adding notes to description.', { spell: spellItem.name, injectionMode });
     await spellItem.update({ 'system.description.value': newDescription }, { spellBookModuleUpdate: true });
   }
 
@@ -151,7 +150,7 @@ export class DescriptionInjector {
   static async replaceNotesInDescription(spellItem, notesHtml, injectionMode) {
     let stripped = (spellItem.system.description?.value || '').replace(NOTES_REGEX, '');
     const newDescription = injectionMode === 'before' ? notesHtml + stripped : stripped + notesHtml;
-    log(3, 'Replacing notes in description.', { spell: spellItem.name, injectionMode });
+    ATLAS.log(3, 'Replacing notes in description.', { spell: spellItem.name, injectionMode });
     await spellItem.update({ 'system.description.value': newDescription }, { spellBookModuleUpdate: true });
   }
 
@@ -165,7 +164,7 @@ export class DescriptionInjector {
     if (!currentDescription.includes("class='spell-book-personal-notes'")) return;
     const newDescription = currentDescription.replace(NOTES_REGEX, '');
     if (newDescription !== currentDescription) {
-      log(3, 'Removing notes from description.', { spell: spellItem.name });
+      ATLAS.log(3, 'Removing notes from description.', { spell: spellItem.name });
       await spellItem.update({ 'system.description.value': newDescription }, { spellBookModuleUpdate: true });
     }
   }
@@ -177,7 +176,7 @@ export class DescriptionInjector {
    */
   static async handleNotesChange(spellUuid) {
     const canonicalUuid = getCanonicalSpellUuid(spellUuid);
-    log(3, 'Handling notes change for spell.', { spellUuid, canonicalUuid });
+    ATLAS.log(3, 'Handling notes change for spell.', { spellUuid, canonicalUuid });
     for (const actor of game.actors) {
       const matchingSpells = actor.itemTypes.spell.filter((spell) => getCanonicalSpellUuid(spell.uuid) === canonicalUuid);
       for (const spell of matchingSpells) await this.updateSpellDescription(spell);

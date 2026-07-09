@@ -2,7 +2,6 @@ import { SpellBook } from '../apps/_module.mjs';
 import { FLAGS, MODULE, TEMPLATES } from '../constants.mjs';
 import { getClassSpellList } from '../data/spell-list-resolver.mjs';
 import { ClassRules } from '../dialogs/_module.mjs';
-import { log } from '../utils/logger.mjs';
 import { ClassManager } from './class-manager.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
@@ -45,7 +44,7 @@ async function checkSpellcastingLists(actor) {
   const recipients = game.users.filter((u) => u.isGM || actor.testUserPermission(u, 'OWNER')).map((u) => u.id);
   const content = await renderTemplate(TEMPLATES.COMPONENTS.SPELLCASTING_NOTICE, { actorName: actor.name, actorUuid: actor.uuid, classes: fresh });
   await ChatMessage.create({ content, whisper: recipients, flags: { [MODULE.ID]: { messageType: 'spellcasting-notice' } } });
-  log(3, `Spellcasting list notice sent for ${actor.name}: ${fresh.map((c) => c.identifier).join(', ')}`);
+  ATLAS.log(3, `Spellcasting list notice sent for ${actor.name}: ${fresh.map((c) => c.identifier).join(', ')}`);
 }
 
 /**

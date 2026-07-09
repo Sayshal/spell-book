@@ -1,4 +1,3 @@
-import { Troubleshooter } from './apps/_module.mjs';
 import { MODULE, RULE_SETS, SETTINGS } from './constants.mjs';
 import { DetailsCustomization } from './dialogs/_module.mjs';
 
@@ -136,27 +135,6 @@ export function registerSettings() {
     type: new NumberField({ min: 2, max: 8, step: 1, initial: 4, nullable: false })
   });
   register(SETTINGS.HIDDEN_SPELL_LISTS, { scope: 'world', config: false, type: new ArrayField(new StringField()) });
-  register(SETTINGS.TROUBLESHOOTER_INCLUDE_ACTORS, { scope: 'client', config: false, type: new BooleanField({ initial: false }) });
-  register(SETTINGS.LOGGING_LEVEL, {
-    name: 'SPELLBOOK.Settings.Logger.Name',
-    hint: 'SPELLBOOK.Settings.Logger.Hint',
-    scope: 'client',
-    config: true,
-    type: new StringField({
-      required: true,
-      blank: false,
-      choices: {
-        0: 'SPELLBOOK.Settings.Logger.Choices.Off',
-        1: 'SPELLBOOK.Settings.Logger.Choices.Errors',
-        2: 'SPELLBOOK.Settings.Logger.Choices.Warnings',
-        3: 'SPELLBOOK.Settings.Logger.Choices.Verbose'
-      },
-      initial: 2
-    }),
-    onChange: (value) => {
-      MODULE.LOG_LEVEL = parseInt(value);
-    }
-  });
   game.settings.registerMenu(MODULE.ID, 'spellDetailsCustomization', {
     name: 'SPELLBOOK.Settings.DetailsCustomization.MenuName',
     hint: 'SPELLBOOK.Settings.DetailsCustomization.MenuHint',
@@ -164,14 +142,5 @@ export function registerSettings() {
     icon: 'fa-solid fa-palette',
     type: DetailsCustomization,
     restricted: false
-  });
-  game.settings.registerMenu(MODULE.ID, 'troubleshooterMenu', {
-    name: 'SPELLBOOK.Settings.Troubleshooter.Menu.Name',
-    hint: 'SPELLBOOK.Settings.Troubleshooter.Menu.Hint',
-    label: 'SPELLBOOK.Settings.Troubleshooter.GenerateReport',
-    icon: 'fas fa-bug',
-    scope: 'world',
-    type: Troubleshooter,
-    restricted: true
   });
 }

@@ -1,5 +1,4 @@
 import { MODULE, PACK } from '../constants.mjs';
-import { log } from '../utils/logger.mjs';
 
 /**
  * @type {Array<{flagKey: string, version: string, name: string, command: string, img: string}>}
@@ -58,7 +57,7 @@ export async function initializeMacros() {
     const keyFlag = Object.keys(doc.flags?.[MODULE.ID] ?? {}).find((k) => MANAGED_FLAG_KEYS.has(k) || k === 'managed');
     if (managed && keyFlag && !MANAGED_FLAG_KEYS.has(managed)) {
       await doc.delete();
-      log(3, `Removed obsolete macro: ${doc.name}`);
+      ATLAS.log(3, `Removed obsolete macro: ${doc.name}`);
     }
   }
 }
@@ -80,7 +79,7 @@ async function upsertMacro(pack, existing, def) {
       [`flags.${MODULE.ID}.version`]: def.version,
       [`flags.${MODULE.ID}.managed`]: def.flagKey
     });
-    log(3, `Updated macro "${def.name}" to ${def.version}`);
+    ATLAS.log(3, `Updated macro "${def.name}" to ${def.version}`);
     return;
   }
   await Macro.create(
@@ -94,5 +93,5 @@ async function upsertMacro(pack, existing, def) {
     },
     { pack: pack.collection }
   );
-  log(3, `Created macro "${def.name}" (v${def.version})`);
+  ATLAS.log(3, `Created macro "${def.name}" (v${def.version})`);
 }

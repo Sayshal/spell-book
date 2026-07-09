@@ -5,7 +5,6 @@
  */
 
 import { FLAGS, MODULE, PACK, SETTINGS, WIZARD_DEFAULTS, WIZARD_SPELL_SOURCE } from '../constants.mjs';
-import { log } from '../utils/logger.mjs';
 import { RuleSet } from './rule-set.mjs';
 
 /** Wizard Spellbook Manager — journal-based wizard spell management. */
@@ -60,7 +59,7 @@ export class WizardBook {
    * @returns {Promise<boolean>} Success state
    */
   static async addSpellToSpellbook(actor, classId, spellUuid, source = WIZARD_SPELL_SOURCE.FREE, metadata = null) {
-    log(3, 'Adding spell to spellbook.', { actorName: actor.name, classId, spellUuid, source });
+    ATLAS.log(3, 'Adding spell to spellbook.', { actorName: actor.name, classId, spellUuid, source });
     await this._ensureFlagsInitialized(actor, classId);
     const journal = await this._getOrCreateSpellbookJournal(actor, classId);
     const page = journal?.pages?.find((p) => p.type === 'spells');
@@ -87,7 +86,7 @@ export class WizardBook {
    * @returns {Promise<boolean>} Success state
    */
   static async removeSpellFromSpellbook(actor, classId, spellUuid) {
-    log(3, 'Removing spell from spellbook.', { actorName: actor.name, classId, spellUuid });
+    ATLAS.log(3, 'Removing spell from spellbook.', { actorName: actor.name, classId, spellUuid });
     await this._ensureFlagsInitialized(actor, classId);
     const journal = await this._findSpellbookJournal(actor, classId);
     if (!journal) return false;
@@ -116,7 +115,7 @@ export class WizardBook {
    * @returns {Promise<boolean>} Success state
    */
   static async copySpell(actor, classId, spellUuid, cost, time, isFree = false) {
-    log(3, 'Copying spell to spellbook.', { actorName: actor.name, classId, spellUuid, cost, time, isFree });
+    ATLAS.log(3, 'Copying spell to spellbook.', { actorName: actor.name, classId, spellUuid, cost, time, isFree });
     if (!isFree && game.settings.get(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST) && cost > 0) {
       const success = await this._deductCurrency(actor, cost);
       if (!success) return false;
@@ -248,7 +247,7 @@ export class WizardBook {
   static invalidateCache(actor) {
     this._journalCache.delete(actor);
     this._spellbookCache.delete(actor);
-    log(3, 'WizardBook cache invalidated.', { actorName: actor.name });
+    ATLAS.log(3, 'WizardBook cache invalidated.', { actorName: actor.name });
   }
 
   /**
@@ -283,7 +282,7 @@ export class WizardBook {
    * @private
    */
   static async _createSpellbookJournal(actor, classId) {
-    log(3, 'Creating spellbook journal.', { actorName: actor.name, classId });
+    ATLAS.log(3, 'Creating spellbook journal.', { actorName: actor.name, classId });
     const pack = game.packs.get(PACK.SPELLS);
     const folder = pack.folders.find((f) => f.name === 'Actor Spellbooks') || null;
     const classData = actor.spellcastingClasses?.[classId];

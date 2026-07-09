@@ -1,5 +1,4 @@
 import { MODULE, SETTINGS } from '../constants.mjs';
-import { log } from '../utils/logger.mjs';
 import { formatMaterialComponents, formatSpellActivation, formatSpellComponents, formatSpellLevel, formatSpellRange, formatSpellSchool, hasSpellProperty } from './formatting.mjs';
 
 const PLAYER_ELEMENTS = ['compare', 'favorites', 'notes', 'spellLevel', 'components', 'school', 'castingTime', 'range', 'damageTypes', 'conditions', 'save', 'concentration', 'materialComponents'];
@@ -59,7 +58,7 @@ export function isGMElementEnabled(element) {
 export function getEnabledPlayerElements() {
   const enabled = new Set();
   for (const element of PLAYER_ELEMENTS) if (isPlayerElementEnabled(element)) enabled.add(element);
-  log(3, 'Retrieved enabled player elements.', { count: enabled.size });
+  ATLAS.log(3, 'Retrieved enabled player elements.', { count: enabled.size });
   return enabled;
 }
 
@@ -70,7 +69,7 @@ export function getEnabledPlayerElements() {
 export function getEnabledGMElements() {
   const enabled = new Set();
   for (const element of GM_ELEMENTS) if (isGMElementEnabled(element)) enabled.add(element);
-  log(3, 'Retrieved enabled GM elements.', { count: enabled.size });
+  ATLAS.log(3, 'Retrieved enabled GM elements.', { count: enabled.size });
   return enabled;
 }
 

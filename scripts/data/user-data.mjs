@@ -5,7 +5,6 @@
  */
 
 import { FLAGS, MODULE, PACK, TEMPLATES } from '../constants.mjs';
-import { log } from '../utils/logger.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
 
@@ -43,7 +42,7 @@ function decodeUuidKey(key) {
 async function getJournal() {
   const pack = game.packs.get(PACK.USERDATA);
   if (!pack) {
-    log(2, `User spell data pack "${PACK.USERDATA}" not found. Reinstall the module or restart the world to restore it.`);
+    ATLAS.log(2, `User spell data pack "${PACK.USERDATA}" not found. Reinstall the module or restart the world to restore it.`);
     return null;
   }
   const docs = await pack.getDocuments();

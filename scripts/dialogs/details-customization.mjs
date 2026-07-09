@@ -1,5 +1,4 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
-import { log } from '../utils/logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -186,6 +185,6 @@ export class DetailsCustomization extends HandlebarsApplicationMixin(Application
     for (const app of foundry.applications.instances.values()) {
       if (typeof app.refreshDisplay === 'function' && (app.constructor.name === 'SpellBook' || app.constructor.name === 'SpellListManager')) app.refreshDisplay();
     }
-    log(3, 'Details customization saved.');
+    ATLAS.log(3, 'Details customization saved.');
   }
 }

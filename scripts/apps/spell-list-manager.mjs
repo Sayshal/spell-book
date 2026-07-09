@@ -17,7 +17,6 @@ import { DetailsCustomization, SpellComparison } from '../dialogs/_module.mjs';
 import { buildGMMetadata, getEnabledGMElements } from '../ui/custom-ui.mjs';
 import { confirmDialog, detachedRenderOptions } from '../ui/dialogs.mjs';
 import { createSpellIconLink, extractSpellFilterData, processSpellListForDisplay } from '../ui/formatting.mjs';
-import { log } from '../utils/logger.mjs';
 
 const { ApplicationV2, DialogV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const { renderTemplate } = foundry.applications.handlebars;
@@ -266,7 +265,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     if (!this.element || this.element.querySelector(':scope > .spell-book-resize-handle')) return;
     const handle = document.createElement('div');
     handle.className = 'spell-book-resize-handle';
-    handle.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.Resize'));
+    handle.setAttribute('aria-label', _loc('SPELLBOOK.UI.Resize'));
     this.element.appendChild(handle);
   }
 
@@ -369,9 +368,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         onProgress: (_pack, count) => progress.update({ pct: Math.min(count / ESTIMATE, 1) })
       });
       progress.update({ pct: 1 });
-      log(3, `SpellListManager loaded ${this.availableLists.length} lists, ${this.availableSpells.length} spells`);
+      ATLAS.log(3, `SpellListManager loaded ${this.availableLists.length} lists, ${this.availableSpells.length} spells`);
     } catch (err) {
-      log(1, 'SpellListManager load failed:', err);
+      ATLAS.log(1, 'SpellListManager load failed:', err);
       progress.update({ pct: 1, message: 'SPELLMANAGER.Loading.Failed', localize: true });
     } finally {
       this.isLoading = false;
@@ -410,7 +409,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         const index = await pack.getIndex({ fields: ['type', 'system.identifier'] });
         for (const entry of index) if ((entry.type === 'class' || entry.type === 'subclass') && entry.system?.identifier) cache.set(`${topLevelFolder}:${entry.system.identifier.toLowerCase()}`, true);
       } catch (err) {
-        log(2, `Error indexing pack "${pack.collection}" for class cache: ${err.message}`);
+        ATLAS.log(2, `Error indexing pack "${pack.collection}" for class cache: ${err.message}`);
       }
     }
     return cache;
@@ -442,7 +441,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         const entry = index.find((e) => (e.type === 'class' || e.type === 'subclass') && e.system?.identifier?.toLowerCase() === identifier.toLowerCase());
         if (entry) return await pack.getDocument(entry._id);
       } catch (err) {
-        log(2, `Error indexing pack "${pack.collection}": ${err.message}`);
+        ATLAS.log(2, `Error indexing pack "${pack.collection}": ${err.message}`);
       }
     }
     return null;
@@ -1626,11 +1625,11 @@ class EditingController {
     if (!uuid) return;
     if (app.comparisonSet.has(uuid)) app.comparisonSet.delete(uuid);
     else app.comparisonSet.add(uuid);
-    log(3, `[compare] toggled uuid=${uuid} size=${app.comparisonSet.size} dialogExists=${!!app.comparisonDialog}`);
+    ATLAS.log(3, `[compare] toggled uuid=${uuid} size=${app.comparisonSet.size} dialogExists=${!!app.comparisonDialog}`);
     try {
       if (app.comparisonSet.size >= 2) {
         if (!app.comparisonDialog) {
-          log(3, '[compare] opening new SpellComparison dialog');
+          ATLAS.log(3, '[compare] opening new SpellComparison dialog');
           app.comparisonDialog = new SpellComparison({
             spellUuids: Array.from(app.comparisonSet),
             onClose: () => {
@@ -1640,7 +1639,7 @@ class EditingController {
             }
           });
           await app.comparisonDialog.render({ force: true, ...detachedRenderOptions(app) });
-          log(3, '[compare] SpellComparison rendered');
+          ATLAS.log(3, '[compare] SpellComparison rendered');
         } else {
           app.comparisonDialog.spellUuids = Array.from(app.comparisonSet);
           await app.comparisonDialog.render({ force: false, ...detachedRenderOptions(app) });
@@ -1651,7 +1650,7 @@ class EditingController {
         app.comparisonDialog = null;
       }
     } catch (err) {
-      log(1, '[compare] failed', err);
+      ATLAS.log(1, '[compare] failed', err);
       ui.notifications.error(`Spell comparison failed: ${err.message}`);
     }
     app.render(false, { parts: ['content'] });
@@ -1937,7 +1936,7 @@ class CreationController {
           options.push({ id, name: entry.name, plainName: entry.name });
         }
       } catch (err) {
-        log(2, `Error indexing ${pack.collection}: ${err.message}`);
+        ATLAS.log(2, `Error indexing ${pack.collection}: ${err.message}`);
       }
     }
     for (const opt of findSpellListsByType('class')) {

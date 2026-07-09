@@ -18,17 +18,10 @@
   "flags": {
     "hotReload": {
       "extensions": ["css", "html", "hbs", "json"],
-      "paths": ["styles", "lang", "templates"]
+      "paths": ["styles", "templates"]
     }
   },
   "id": "spell-book",
-  "languages": [
-    {
-      "lang": "en",
-      "name": "English",
-      "path": "lang/en.json"
-    }
-  ],
   "license": "https://github.com/Sayshal/spell-book?tab=MIT-1-ov-file",
   "manifest": "https://github.com/Sayshal/spell-book/releases/latest/download/module.json",
   "media": [
@@ -86,6 +79,12 @@
   "persistentStorage": true,
   "readme": "https://github.com/Sayshal/spell-book?tab=readme-ov-file",
   "relationships": {
+    "requires": [
+      {
+        "id": "3ds-atlas",
+        "type": "module"
+      }
+    ],
     "systems": [
       {
         "compatibility": {
