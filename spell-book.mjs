@@ -7,7 +7,7 @@ import { registerSettings } from './scripts/settings.mjs';
 import { SocketHandler } from './scripts/utils/sockets.mjs';
 
 Hooks.once('init', async () => {
-  ATLAS.register(MODULE.ID, { title: MODULE.NAME, github: 'Sayshal/spell-book' });
+  ATLAS.register(MODULE.ID, { title: MODULE.NAME, github: 'Sayshal/spell-book', theme: { scope: '.spell-book', default: 'spellbook' } });
   CONFIG.DND5E.spellListTypes['actor-spellbook'] = _loc('SPELLBOOK.Registry.ActorSpellBooksGroup');
   registerSettings();
   registerAllHooks();
