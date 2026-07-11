@@ -73,6 +73,7 @@ jobs:
           templates/ \
           LICENSE \
           module.json \
+          release_notes.txt \
           README.md \
           spell-book.mjs \
           -x "*.lock" \
