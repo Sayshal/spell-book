@@ -12,10 +12,10 @@
   --sb-bg-secondary: rgb(from var(--atlas-bg-lighter, #2a2c33) r g b / 95%);
   --sb-bg-selected: rgb(from var(--atlas-today, #55aaff) r g b / 10%);
   --sb-bg-sidebar: var(--atlas-bg, rgb(27 29 36));
-  --sb-bg-sidebar-gradient: linear-gradient(180deg, rgb(18 14 28) 0%, rgb(28 22 40) 100%);
+  --sb-bg-sidebar-gradient: linear-gradient(180deg, var(--atlas-bg, rgb(27 29 36)) 0%, var(--atlas-bg-lighter, rgb(42 44 51)) 100%);
   --sb-bg-surface: rgb(from var(--atlas-bg-hover, #3a3c43) r g b / 90%);
   --sb-bg-tab: rgb(from var(--atlas-bg, #1b1d24) r g b / 90%);
-  --sb-border-dark: rgb(from var(--atlas-divider, #555555) r g b / 50%);
+  --sb-border-dark: rgb(from var(--atlas-divider, #555555) r g b / 90%);
   --sb-border-focus: var(--atlas-today, rgb(85 170 255));
   --sb-border-highlight: var(--atlas-primary, rgb(159 146 117));
   --sb-border-light: rgb(from var(--atlas-border-light, #c9c7b8) r g b / 16.5%);
@@ -95,6 +95,12 @@
 }
 
 .spell-book {
+  input[type='checkbox'],
+  input[type='radio'] {
+    --checkbox-background-color: var(--sb-border-medium);
+    --checkbox-checked-color: var(--sb-border-highlight);
+  }
+
   .loading-spinner {
     display: flex;
     flex-direction: column;
@@ -871,41 +877,22 @@
           background: transparent;
         }
 
-        .prop-indicator::before {
-          inset: 0;
-          display: flex;
-          position: absolute;
-          justify-content: center;
-          align-items: center;
-          color: var(--sb-text-on-color);
-          font-weight: bold;
-          font-size: 0.65rem;
-          line-height: 1;
-          font-family: sans-serif;
-          text-align: center;
-          content: '';
+        &[data-state='include'] .prop-indicator {
+          border-color: var(--sb-border-highlight);
+          background: var(--sb-border-highlight);
+          mask:
+            url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 448 512'><path d='M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z' fill='%23000'/></svg>") center / 65% no-repeat,
+            linear-gradient(#000 0 0);
+          mask-composite: exclude;
         }
 
-        &[data-state='include'] {
-          .prop-indicator {
-            border-color: var(--sb-success);
-            background: var(--sb-success);
-          }
-
-          .prop-indicator::before {
-            content: '\2713';
-          }
-        }
-
-        &[data-state='exclude'] {
-          .prop-indicator {
-            border-color: var(--sb-error);
-            background: var(--sb-error);
-          }
-
-          .prop-indicator::before {
-            content: '\2715';
-          }
+        &[data-state='exclude'] .prop-indicator {
+          border-color: var(--sb-error);
+          background: var(--sb-error);
+          mask:
+            url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 384 512'><path d='M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256z' fill='%23000'/></svg>") center / 60% no-repeat,
+            linear-gradient(#000 0 0);
+          mask-composite: exclude;
         }
 
         &:focus,
