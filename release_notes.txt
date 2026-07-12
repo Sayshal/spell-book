@@ -1,20 +1,20 @@
-## New Features
+## Breaking Changes
 
-- A class or subclass that gains spellcasting with no spell list assigned now sends a whispered chat card to the GM and the character's owners naming the affected classes, with a button that opens Class Rules for a GM and the Spell Book for a player.
-- A class tab whose assigned list resolves empty because its sources are disabled now shows a "No spells available" notice instead of the generic no-list message.
-- A list already assigned to a class stays in the Class Rules dropdown labeled "(source disabled)" when its sources are off.
-- Party recommendations now flag missing healing, damage-type concentration, save concentration, short-range reliance, and costly material components.
-- Spell lists whose spells all come from sources disabled in the dnd5e Compendium Browser are now hidden from the Class Rules dropdown and the Spell List Manager sidebar; custom, merged, and actor-owned lists stay visible.
-- The Party Spell Synergy Analysis shows a Saving Throws spread beside Damage Types, with the left column ordered Damage Types, Saving Throws, Spell Levels, School.
-- The Spell List Manager footer shows a count of lists hidden by disabled sources while browsing lists.
+- Spell Book now requires the 3DS:ATLAS module, which provides shared theming, logging, localization, and update notices.
+- Theming now runs through ATLAS: the spell book palette maps to ATLAS theme variables and defaults to the spellbook preset; the in-module logging-level and troubleshooter settings are gone.
 
 ## Bug Fixes
 
-- A single malformed compendium pack no longer blanks the Class Rules spell-list dropdown; the bad pack is skipped with a warning and the remaining spell lists still appear.
-- Fixed the Damage Types and Saving Throws spreads reading blank under dnd5e 5.x; both now populate from spell activities.
-- Saving Class Rules no longer wipes a class's assigned list when that list's sources are disabled.
-- The GM whisper for spell changes is now delivered; it fires once per save when "Notify GM on Spell Changes" is enabled and a player adds or removes any prepared cantrip or spell.
+- SRD spell lists no longer vanish from the Spell List Manager when it is reopened without reloading the page.
+- The unchecked spell prepare checkbox border is more visible on dark themes.
 
 ## Changes
 
-- Restyled the spell-change chat card with an arcane themed layout and a single alphabetical Removed/Added table; it lists removed and added spells as content links with a level column and shows an over-limit warning line when a class exceeds its cantrip or prepared spell limit.
+- Bug reports run through the ATLAS troubleshooter, which attaches the enabled dnd5e compendium sources and every configured spell list for support.
+- Bumped the bug-report template's version placeholders to Foundry 14.364 and dnd5e 6.0.0.
+- Release and update notices are posted through ATLAS instead of an in-module chat card.
+- Removed the bundled localization files; translations now come from the required 3DS:ATLAS module.
+- Removed the redundant Game System field from the bug report template.
+- Sidebar, filter checkbox, and property-toggle colors now follow the active ATLAS theme instead of fixed values.
+- Standardized the GitHub issue templates on canonical type labels and added a Discord contact link to the issue chooser.
+- Verified compatibility raised to Foundry 14.364.
