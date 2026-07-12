@@ -2,7 +2,6 @@ import { PartyCoordinator, SpellBook, SpellListManager } from '../apps/_module.m
 import { ASSETS, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import { PartyMode } from '../managers/party-mode.mjs';
 import { SpellManager } from '../managers/spell-manager.mjs';
-import { log } from './logger.mjs';
 
 const { DialogV2 } = foundry.applications.api;
 const { renderTemplate } = foundry.applications.handlebars;
@@ -52,7 +51,7 @@ async function openSpellBook(event, actor) {
     const renderOptions = windowId ? { force: true, window: { windowId } } : { force: true };
     new SpellBook({ actor }).render(renderOptions);
   } catch (error) {
-    log(1, 'Failed to open spell book from sheet button.', error);
+    ATLAS.log(1, 'Failed to open spell book from sheet button.', error);
   } finally {
     icon?.classList.remove('fa-spin');
     button.disabled = false;

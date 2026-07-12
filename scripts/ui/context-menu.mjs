@@ -1,7 +1,6 @@
 import { FLAGS, MODULE, TEMPLATES } from '../constants.mjs';
 import { Loadouts } from '../managers/loadouts.mjs';
 import { PartyMode } from '../managers/party-mode.mjs';
-import { log } from '../utils/logger.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
 
@@ -33,7 +32,7 @@ export class SpellBookContextMenu {
    * @param {HTMLElement} target - The button element
    */
   async showLoadoutMenu(_event, target) {
-    log(3, 'Showing loadout context menu.');
+    ATLAS.log(3, 'Showing loadout context menu.');
     this.hide();
     const activeTab = this.app.tabGroups['spellbook-tabs'];
     const activeTabContent = this.element.querySelector(`.tab[data-tab="${activeTab}"]`);
@@ -66,7 +65,7 @@ export class SpellBookContextMenu {
    * @param {HTMLElement} target - The button element
    */
   async showPartyMenu(_event, target) {
-    log(3, 'Showing party context menu.');
+    ATLAS.log(3, 'Showing party context menu.');
     this.hide();
     const isPartyMode = this.actor.getFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED) || false;
     const items = [

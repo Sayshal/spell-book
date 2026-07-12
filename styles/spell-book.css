@@ -1,26 +1,26 @@
-:root {
-  --sb-bg-active: rgb(0 0 0 / 15%);
-  --sb-bg-app: rgb(27 29 36);
-  --sb-bg-disabled: rgb(0 0 0 / 3%);
-  --sb-bg-header-strip: rgb(0 0 0 / 20%);
-  --sb-bg-hover: rgb(0 0 0 / 10%);
-  --sb-bg-input: rgb(58 60 67 / 30%);
-  --sb-bg-overlay: rgb(0 0 0 / 40%);
-  --sb-bg-prepared: rgb(0 128 0 / 10%);
-  --sb-bg-prepared-full: rgb(0 128 0 / 20%);
-  --sb-bg-primary: rgb(27 29 36 / 90%);
-  --sb-bg-secondary: rgb(42 44 51 / 95%);
-  --sb-bg-selected: rgb(85 170 255 / 10%);
-  --sb-bg-sidebar: rgb(27 29 36);
+.spell-book {
+  --sb-bg-active: rgb(from var(--atlas-shadow-color, #000) r g b / 15%);
+  --sb-bg-app: var(--atlas-bg, rgb(27 29 36));
+  --sb-bg-disabled: rgb(from var(--atlas-shadow-color, #000) r g b / 3%);
+  --sb-bg-header-strip: rgb(from var(--atlas-shadow-color, #000) r g b / 20%);
+  --sb-bg-hover: rgb(from var(--atlas-shadow-color, #000) r g b / 10%);
+  --sb-bg-input: rgb(from var(--atlas-input-bg, #3a3c43) r g b / 30%);
+  --sb-bg-overlay: rgb(from var(--atlas-overlay-color, #000) r g b / 40%);
+  --sb-bg-prepared: rgb(from var(--atlas-success, #008000) r g b / 10%);
+  --sb-bg-prepared-full: rgb(from var(--atlas-success, #008000) r g b / 20%);
+  --sb-bg-primary: rgb(from var(--atlas-bg, #1b1d24) r g b / 90%);
+  --sb-bg-secondary: rgb(from var(--atlas-bg-lighter, #2a2c33) r g b / 95%);
+  --sb-bg-selected: rgb(from var(--atlas-today, #55aaff) r g b / 10%);
+  --sb-bg-sidebar: var(--atlas-bg, rgb(27 29 36));
   --sb-bg-sidebar-gradient: linear-gradient(180deg, rgb(18 14 28) 0%, rgb(28 22 40) 100%);
-  --sb-bg-surface: rgb(58 60 67 / 90%);
-  --sb-bg-tab: rgb(11 10 19 / 90%);
-  --sb-border-dark: rgb(85 85 85 / 50%);
-  --sb-border-focus: rgb(85 170 255);
-  --sb-border-highlight: rgb(159 146 117);
-  --sb-border-light: rgb(201 199 184 / 16.5%);
-  --sb-border-medium: rgb(153 153 153 / 25%);
-  --sb-error: rgb(244 67 54);
+  --sb-bg-surface: rgb(from var(--atlas-bg-hover, #3a3c43) r g b / 90%);
+  --sb-bg-tab: rgb(from var(--atlas-bg, #1b1d24) r g b / 90%);
+  --sb-border-dark: rgb(from var(--atlas-divider, #555555) r g b / 50%);
+  --sb-border-focus: var(--atlas-today, rgb(85 170 255));
+  --sb-border-highlight: var(--atlas-primary, rgb(159 146 117));
+  --sb-border-light: rgb(from var(--atlas-border-light, #c9c7b8) r g b / 16.5%);
+  --sb-border-medium: rgb(from var(--atlas-border, #999999) r g b / 25%);
+  --sb-error: var(--atlas-error, rgb(244 67 54));
   --sb-font-2xl: 0.938rem;
   --sb-font-lg: 0.813rem;
   --sb-font-md: 0.75rem;
@@ -29,14 +29,14 @@
   --sb-font-xl: 0.875rem;
   --sb-font-xs: 0.625rem;
   --sb-footer-height: 3.75rem;
-  --sb-glow-blue: 0 0 0.375rem rgb(85 170 255);
-  --sb-glow-gold: 0 0 0.375rem rgb(255 201 25);
-  --sb-glow-green: 0 0 0.375rem rgb(76 175 80);
-  --sb-glow-red: 0 0 0.375rem rgb(244 67 54);
+  --sb-glow-blue: 0 0 0.375rem var(--atlas-today, rgb(85 170 255));
+  --sb-glow-gold: 0 0 0.375rem var(--atlas-accent, rgb(255 201 25));
+  --sb-glow-green: 0 0 0.375rem var(--atlas-success, rgb(76 175 80));
+  --sb-glow-red: 0 0 0.375rem var(--atlas-error, rgb(244 67 54));
   --sb-icon: 2rem;
   --sb-icon-sm: 1.5rem;
   --sb-icon-xs: 1rem;
-  --sb-info: rgb(33 150 243);
+  --sb-info: var(--atlas-today, rgb(33 150 243));
   --sb-manager-footer-height: 3.75rem;
   --sb-manager-sidebar-width: 15rem;
   --sb-radius-lg: 0.25rem;
@@ -44,11 +44,11 @@
   --sb-radius-round: 50%;
   --sb-radius-sm: 0.125rem;
   --sb-radius-xl: 0.5rem;
-  --sb-shadow-heavy: 0 0 0.5rem rgb(0 0 0 / 75%);
-  --sb-shadow-highlight: 0 0 0.5rem rgb(255 201 25 / 50%);
-  --sb-shadow-light: 0 0 0.25rem rgb(0 0 0 / 25%);
-  --sb-shadow-normal: 0 0 0.375rem rgb(0 0 0 / 50%);
-  --sb-shadow-top: 0 -0.125rem 0.375rem rgb(0 0 0 / 10%);
+  --sb-shadow-heavy: 0 0 0.5rem rgb(from var(--atlas-shadow-color, #000) r g b / 75%);
+  --sb-shadow-highlight: 0 0 0.5rem rgb(from var(--atlas-accent, #ffc919) r g b / 50%);
+  --sb-shadow-light: 0 0 0.25rem rgb(from var(--atlas-shadow-color, #000) r g b / 25%);
+  --sb-shadow-normal: 0 0 0.375rem rgb(from var(--atlas-shadow-color, #000) r g b / 50%);
+  --sb-shadow-top: 0 -0.125rem 0.375rem rgb(from var(--atlas-shadow-color, #000) r g b / 10%);
   --sb-sidebar-width: 12.5rem;
   --sb-space-2xl: 1.5rem;
   --sb-space-3xl: 2rem;
@@ -57,7 +57,7 @@
   --sb-space-sm: 0.25rem;
   --sb-space-xl: 1rem;
   --sb-space-xs: 0.125rem;
-  --sb-success: rgb(76 175 80);
+  --sb-success: var(--atlas-success, rgb(76 175 80));
   --sb-tab-height: 2.5rem;
   --sb-tag-actor: rgb(107 209 77);
   --sb-tag-always: rgb(63 198 193);
@@ -75,60 +75,23 @@
   --sb-tag-pact: rgb(155 89 182);
   --sb-tag-prepared: rgb(76 175 80);
   --sb-tag-ritual: rgb(241 196 15);
-  --sb-text-accent: rgb(159 146 117);
-  --sb-text-disabled: rgb(102 102 102);
-  --sb-text-heading: rgb(241 241 241);
-  --sb-text-hyperlink: rgb(85 170 255);
-  --sb-text-muted: rgb(119 119 119);
-  --sb-text-on-color: rgb(255 255 255);
-  --sb-text-primary: rgb(241 241 241);
-  --sb-text-secondary: rgb(186 186 186);
+  --sb-text-accent: var(--atlas-title-text, rgb(159 146 117));
+  --sb-text-disabled: var(--atlas-text-dim, rgb(102 102 102));
+  --sb-text-heading: var(--atlas-text-heading, rgb(241 241 241));
+  --sb-text-hyperlink: var(--atlas-today, rgb(85 170 255));
+  --sb-text-muted: var(--atlas-text-dim, rgb(119 119 119));
+  --sb-text-on-color: var(--atlas-text-on-color, rgb(255 255 255));
+  --sb-text-primary: var(--atlas-text, rgb(241 241 241));
+  --sb-text-secondary: var(--atlas-text-secondary, rgb(186 186 186));
   --sb-transition-collapse: max-height 400ms ease;
   --sb-transition-fast: all 150ms ease;
   --sb-transition-normal: all 250ms ease;
   --sb-transition-slow: all 450ms ease;
-  --sb-warning: rgb(255 193 7);
+  --sb-warning: var(--atlas-warning, rgb(255 193 7));
   --sb-z-dropdown: 10000;
   --sb-z-modal: 9998;
   --sb-z-overlay: 9997;
   --sb-z-tooltip: 9999;
-}
-
-.theme-light {
-  --sb-bg-active: rgb(0 0 0 / 8%);
-  --sb-bg-app: url('../../../systems/dnd5e/ui/parchment.jpg') repeat;
-  --sb-bg-disabled: rgb(0 0 0 / 2%);
-  --sb-bg-header-strip: rgb(250 250 250);
-  --sb-bg-hover: rgb(0 0 0 / 5%);
-  --sb-bg-input: rgb(255 251 242 / 80%);
-  --sb-bg-prepared: rgb(107 142 35 / 15%);
-  --sb-bg-primary: rgb(244 244 244 / 90%);
-  --sb-bg-secondary: rgb(250 250 250 / 95%);
-  --sb-bg-sidebar: rgb(244 244 244);
-  --sb-bg-sidebar-gradient: linear-gradient(180deg, rgb(240 237 229) 0%, rgb(228 222 208) 100%);
-  --sb-bg-surface: rgb(255 255 255 / 90%);
-  --sb-bg-tab: url('../../../systems/dnd5e/ui/parchment.jpg') repeat;
-  --sb-border-dark: rgb(136 136 136 / 75%);
-  --sb-border-focus: rgb(0 102 204);
-  --sb-border-highlight: rgb(120 68 24);
-  --sb-border-light: rgb(176 150 110 / 40%);
-  --sb-border-medium: rgb(170 170 170 / 50%);
-  --sb-error: rgb(155 35 20);
-  --sb-info: rgb(4 44 78);
-  --sb-shadow-heavy: 0 0 0.5rem rgb(0 0 0 / 30%);
-  --sb-shadow-highlight: 0 0 0.5rem rgb(120 68 24 / 30%);
-  --sb-shadow-light: 0 0 0.25rem rgb(0 0 0 / 10%);
-  --sb-shadow-normal: 0 0 0.375rem rgb(0 0 0 / 20%);
-  --sb-shadow-top: 0 -0.125rem 0.375rem rgb(0 0 0 / 5%);
-  --sb-success: rgb(56 118 42);
-  --sb-tag-ritual: rgb(176 137 19);
-  --sb-text-accent: rgb(120 68 24);
-  --sb-text-disabled: rgb(153 153 153);
-  --sb-text-hyperlink: rgb(0 102 204);
-  --sb-text-muted: rgb(136 136 136);
-  --sb-text-primary: rgb(17 17 17);
-  --sb-text-secondary: rgb(68 68 68);
-  --sb-warning: rgb(177 137 5);
 }
 
 .spell-book {
@@ -2625,7 +2588,6 @@
 .spell-book.spell-comparison-dialog,
 .spell-book.spell-notes-dialog,
 .spell-book.spell-manager-documentation,
-.spell-book.spell-book-troubleshooter,
 .spell-book.create-spell-list-dialog,
 .spell-book.merge-spell-lists-dialog,
 .spell-book.rename-spell-list-dialog {
@@ -2856,63 +2818,6 @@
       font-weight: normal;
       font-size: var(--sb-font-sm);
       cursor: pointer;
-    }
-  }
-
-  &.spell-book-troubleshooter {
-    .window-content {
-      display: flex;
-      flex-direction: column;
-    }
-
-    [data-application-part='main'] {
-      gap: var(--sb-space-md);
-      display: flex;
-      flex: 1;
-      flex-direction: column;
-      min-height: 0;
-
-      > section {
-        gap: var(--sb-space-md);
-        display: flex;
-        flex: 1;
-        flex-direction: column;
-        min-height: 0;
-      }
-
-      .form-group {
-        flex: 0 0 auto;
-
-        .hint {
-          max-height: 4.5rem;
-          overflow-y: auto;
-        }
-      }
-    }
-
-    [data-application-part='footer'] {
-      flex: 0 0 auto;
-      margin-top: auto;
-    }
-
-    .output-label {
-      flex: 0 0 auto;
-      font-weight: 600;
-    }
-
-    #troubleshooter-output {
-      flex: 1;
-      width: 100%;
-      min-height: 8rem;
-      padding: var(--sb-space-md);
-      border: 0.0625rem solid var(--sb-border-light);
-      border-radius: var(--sb-radius-sm);
-      overflow: auto;
-      color: var(--sb-text-primary);
-      font-size: var(--sb-font-sm);
-      font-family: var(--font-monospace, monospace);
-      resize: none;
-      background: var(--sb-bg-input);
     }
   }
 
@@ -3718,74 +3623,6 @@ li.chat-message:has(.spell-book-update-report) {
     &:hover {
       text-shadow: 0 0 0.4rem rgb(216 186 124 / 50%);
       background: rgb(216 186 124 / 20%);
-    }
-  }
-}
-
-.spell-book.chat-release {
-  .release-header {
-    gap: 0.5rem;
-    display: flex;
-    align-items: center;
-    font-size: 1rem;
-
-    i {
-      color: var(--sb-text-accent);
-      font-size: 1.25rem;
-    }
-  }
-
-  .release-body {
-    h4 {
-      margin: 1rem 0 0.25rem;
-    }
-
-    ul {
-      margin: 0.25rem 0;
-      padding-left: 1.25rem;
-    }
-
-    .release-patreon {
-      padding: 0.5rem;
-      border: 0.0625rem solid var(--sb-border-light);
-      border-radius: var(--sb-radius-sm);
-
-      strong {
-        display: block;
-        margin-bottom: 0.25rem;
-
-        a {
-          color: var(--sb-text-hyperlink);
-          text-decoration: none;
-
-          &:hover {
-            text-decoration: underline;
-          }
-
-          i {
-            margin-right: 0.25rem;
-          }
-        }
-      }
-    }
-
-    code {
-      font-size: 0.9em;
-    }
-  }
-
-  .open-note {
-    gap: 0.35rem;
-    display: inline-flex;
-    align-items: center;
-    margin-top: 0.5rem;
-    color: var(--sb-text-hyperlink);
-    font-size: 0.85em;
-    text-decoration: none;
-    cursor: pointer;
-
-    &:hover {
-      text-decoration: underline;
     }
   }
 }

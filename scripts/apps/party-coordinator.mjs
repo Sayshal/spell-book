@@ -1,7 +1,6 @@
 import { FLAGS, MODULE, TEMPLATES } from '../constants.mjs';
 import { SynergyAnalysis } from '../dialogs/_module.mjs';
 import { PartyMode } from '../managers/party-mode.mjs';
-import { log } from '../utils/logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -397,6 +396,6 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
       if (count) count.textContent = this._filteredActorId ? `(${visible.length}/${spellItems.length} ${spellsLabel})` : `(${spellItems.length} ${spellsLabel})`;
       group.style.display = visible.length === 0 ? 'none' : '';
     }
-    log(3, 'Party coordinator: level headers updated.');
+    ATLAS.log(3, 'Party coordinator: level headers updated.');
   }
 }

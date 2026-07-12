@@ -1,5 +1,4 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
-import { log } from '../utils/logger.mjs';
 
 const { DialogV2 } = foundry.applications.api;
 const { renderTemplate } = foundry.applications.handlebars;
@@ -31,7 +30,7 @@ export async function showLearnFromScrollDialog({ spell, cost, time, isFree, isA
     });
     return result === 'confirm';
   } catch (error) {
-    log(1, 'Error showing learn-from-scroll dialog.', { error });
+    ATLAS.log(1, 'Error showing learn-from-scroll dialog.', { error });
     return false;
   }
 }

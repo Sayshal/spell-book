@@ -1,4 +1,3 @@
-import { log } from '../utils/logger.mjs';
 import { RuleSet } from '../managers/_module.mjs';
 
 /** @type {object} dnd5e SpellListRegistry reference */
@@ -15,12 +14,12 @@ export async function getClassSpellList(classIdentifier, actor) {
   const classRules = RuleSet.getClassRules(actor, classIdentifier);
   const classUuids = await resolveCustomSpellLists(classRules.customSpellList);
   if (!classUuids.size) {
-    log(3, `No spell list assigned for class: ${classIdentifier}`);
+    ATLAS.log(3, `No spell list assigned for class: ${classIdentifier}`);
     return new Set();
   }
   const subclassUuids = await resolveCustomSpellLists(classRules.customSubclassSpellList);
   for (const uuid of subclassUuids) classUuids.add(uuid);
-  log(3, `Resolved spell list for ${classIdentifier} (${classUuids.size} spells).`);
+  ATLAS.log(3, `Resolved spell list for ${classIdentifier} (${classUuids.size} spells).`);
   return classUuids;
 }
 

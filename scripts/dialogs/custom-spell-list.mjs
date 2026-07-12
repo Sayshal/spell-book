@@ -1,7 +1,6 @@
 import { TEMPLATES } from '../constants.mjs';
 import { compareListVersions, createNewSpellList, getValidCustomListMappings, removeCustomSpellList } from '../data/custom-lists.mjs';
 import { detachedRenderOptions } from '../ui/dialogs.mjs';
-import { log } from '../utils/logger.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -78,7 +77,7 @@ export class CustomSpellList extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!name) return;
     const identifier = name.toLowerCase().replace(/\s+/g, '-');
     await createNewSpellList(name, identifier, 'other');
-    log(3, 'Created custom spell list.', { name, identifier });
+    ATLAS.log(3, 'Created custom spell list.', { name, identifier });
     this.render({ force: true });
   }
 
@@ -97,7 +96,7 @@ export class CustomSpellList extends HandlebarsApplicationMixin(ApplicationV2) {
     });
     if (!confirmed) return;
     await removeCustomSpellList(uuid);
-    log(3, 'Removed custom spell list.', { uuid });
+    ATLAS.log(3, 'Removed custom spell list.', { uuid });
     this.render({ force: true });
   }
 

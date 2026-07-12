@@ -1,5 +1,5 @@
 /** @type {object} Module identification */
-export const MODULE = { ID: 'spell-book', NAME: 'Spell Book', LOG_LEVEL: 0, TEMPLATES_PATH: 'modules/spell-book/templates' };
+export const MODULE = { ID: 'spell-book', NAME: 'Spell Book', TEMPLATES_PATH: 'modules/spell-book/templates' };
 
 /** @type {object} Compendium pack IDs */
 export const PACK = { SPELLS: 'spell-book.custom-spell-lists', MACROS: 'spell-book.spell-book-macros', USERDATA: 'spell-book.user-spell-data' };
@@ -55,7 +55,6 @@ export const SETTINGS = {
   GM_UI_SCHOOL: 'gmUISchool',
   GM_UI_SPELL_LEVEL: 'gmUISpellLevel',
   HIDDEN_SPELL_LISTS: 'hiddenSpellLists',
-  LOGGING_LEVEL: 'loggingLevel',
   PARTY_MODE_TOKEN_LIMIT: 'partyModeTokenLimit',
   PLAYER_UI_CASTING_TIME: 'playerUICastingTime',
   PLAYER_UI_COMPARE: 'playerUICompare',
@@ -77,7 +76,6 @@ export const SETTINGS = {
   SPELL_NOTES_DESC_INJECTION: 'injectNotesIntoDescriptions',
   SPELL_NOTES_LENGTH: 'spellNotesMaxLength',
   SPELLCASTING_RULE_SET: 'spellcastingRuleSet',
-  TROUBLESHOOTER_INCLUDE_ACTORS: 'troubleshooterIncludeActors',
   WIZARD_BOOK_ICON_COLOR: 'wizardBookIconColor'
 };
 
@@ -122,9 +120,6 @@ export const SEARCH_DEBOUNCE_DELAY = 800;
 
 /** @type {object} Template path constants */
 export const TEMPLATES = {
-  CHAT: {
-    RELEASE_MESSAGE: `${MODULE.TEMPLATES_PATH}/chat/release-message.hbs`
-  },
   COMPONENTS: {
     CANTRIP_NOTIFICATION: `${MODULE.TEMPLATES_PATH}/components/cantrip-notification.hbs`,
     SPELLCASTING_NOTICE: `${MODULE.TEMPLATES_PATH}/components/spellcasting-notice.hbs`,
@@ -158,8 +153,7 @@ export const TEMPLATES = {
     PARTY: {
       MAIN: `${MODULE.TEMPLATES_PATH}/apps/party/main.hbs`,
       SYNERGY_ANALYSIS: `${MODULE.TEMPLATES_PATH}/apps/party/synergy-analysis.hbs`
-    },
-    TROUBLESHOOTER: `${MODULE.TEMPLATES_PATH}/apps/troubleshooter.hbs`
+    }
   },
   DIALOGS: {
     CLASS_RULES: `${MODULE.TEMPLATES_PATH}/dialogs/class-rules.hbs`,

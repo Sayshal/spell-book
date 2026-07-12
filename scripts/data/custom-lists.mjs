@@ -1,5 +1,4 @@
 import { MODULE, PACK, SETTINGS } from '../constants.mjs';
-import { log } from '../utils/logger.mjs';
 
 /**
  * Create a new spell list in the custom pack.
@@ -80,7 +79,7 @@ export async function findDuplicateSpellList(originalUuid) {
   try {
     journals = await customPack.getDocuments();
   } catch (err) {
-    log(2, `Error loading custom pack documents: ${err.message}`);
+    ATLAS.log(2, `Error loading custom pack documents: ${err.message}`);
     return null;
   }
   for (const journal of journals) for (const page of journal.pages) if (page.flags?.[MODULE.ID]?.originalUuid === originalUuid) return page;
@@ -124,7 +123,7 @@ export async function getValidCustomListMappings() {
   try {
     journals = await customPack.getDocuments();
   } catch (err) {
-    log(2, `Skipping mapping prune; custom pack unavailable: ${err.message}`);
+    ATLAS.log(2, `Skipping mapping prune; custom pack unavailable: ${err.message}`);
     return mappings;
   }
   const livePageUuids = new Set();
@@ -346,7 +345,7 @@ export async function getJournalDocumentsFromPack(pack) {
     try {
       return await pack.getDocuments();
     } catch (err) {
-      log(2, `Error loading documents from pack "${pack.collection}": ${err.message}`);
+      ATLAS.log(2, `Error loading documents from pack "${pack.collection}": ${err.message}`);
       return [];
     }
   }
@@ -361,12 +360,12 @@ export async function getJournalDocumentsFromPack(pack) {
         const journal = await pack.getDocument(journalData._id);
         journals.push(journal);
       } catch (err) {
-        log(2, `Error loading journal "${journalData.name}" from pack "${pack.collection}": ${err.message}`);
+        ATLAS.log(2, `Error loading journal "${journalData.name}" from pack "${pack.collection}": ${err.message}`);
       }
     }
     return journals;
   } catch (err) {
-    log(2, `Error indexing pack "${pack.collection}": ${err.message}`);
+    ATLAS.log(2, `Error indexing pack "${pack.collection}": ${err.message}`);
     return [];
   }
 }

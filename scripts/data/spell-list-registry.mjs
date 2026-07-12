@@ -5,7 +5,6 @@
  */
 
 import { MODULE, SETTINGS } from '../constants.mjs';
-import { log } from '../utils/logger.mjs';
 
 /**
  * Register custom spell lists with the D&D 5e SpellListRegistry.
@@ -21,28 +20,28 @@ export async function registerCustomSpellLists() {
     try {
       const page = await fromUuid(uuid);
       if (!page || page.type !== 'spells') {
-        log(2, `Invalid spell list (will be removed from settings): ${uuid}`);
+        ATLAS.log(2, `Invalid spell list (will be removed from settings): ${uuid}`);
         result.skipped++;
         continue;
       }
       if (!page.system?.type || !page.system?.identifier) {
-        log(2, `Missing required fields (will be removed from settings): ${page.name}`);
+        ATLAS.log(2, `Missing required fields (will be removed from settings): ${page.name}`);
         result.skipped++;
         continue;
       }
       await dnd5e.registry.spellLists.register(uuid);
       validUuids.push(uuid);
       result.registered++;
-      log(3, `Registered: ${page.name} (${page.system.type}:${page.system.identifier})`);
+      ATLAS.log(3, `Registered: ${page.name} (${page.system.type}:${page.system.identifier})`);
     } catch (error) {
-      log(2, `Failed to register ${uuid} (will be removed from settings):`, error);
+      ATLAS.log(2, `Failed to register ${uuid} (will be removed from settings):`, error);
       result.failed++;
       result.errors.push({ uuid, error: error.message });
     }
   }
   if (validUuids.length !== enabledUuids.length) {
     const removedCount = enabledUuids.length - validUuids.length;
-    log(3, `Removing ${removedCount} invalid spell list(s) from settings`);
+    ATLAS.log(3, `Removing ${removedCount} invalid spell list(s) from settings`);
     await game.settings.set(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS, validUuids);
   }
   return result;
@@ -76,7 +75,7 @@ export async function toggleListForRegistry(uuid) {
   try {
     await dnd5e.registry.spellLists.register(uuid);
   } catch (err) {
-    log(1, 'Failed to live-register spell list, will apply on next reload.', err);
+    ATLAS.log(1, 'Failed to live-register spell list, will apply on next reload.', err);
   }
   return true;
 }
@@ -96,6 +95,6 @@ export async function ensureListRegistered(uuid) {
   try {
     await dnd5e.registry.spellLists.register(uuid);
   } catch (err) {
-    log(1, 'ensureListRegistered failed.', err);
+    ATLAS.log(1, 'ensureListRegistered failed.', err);
   }
 }

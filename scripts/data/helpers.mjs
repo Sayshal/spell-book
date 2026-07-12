@@ -1,4 +1,3 @@
-import { log } from '../utils/logger.mjs';
 import { buildClassSourceItem } from '../managers/spell-manager.mjs';
 
 /** @type {Map<string, string>} Cache for target user ID lookups keyed by actor ID */
@@ -43,13 +42,13 @@ export function isGrantingItemActive(item) {
   if (!item) return false;
   const isEquipped = item.system?.equipped ?? false;
   if (!isEquipped) {
-    log(3, `Granting item ${item.name} is not equipped.`, { item });
+    ATLAS.log(3, `Granting item ${item.name} is not equipped.`, { item });
     return false;
   }
   const requiresAttunement = item.system?.attunement === 'required';
   const isAttuned = item.system?.attuned ?? false;
   if (requiresAttunement && !isAttuned) {
-    log(3, `Granting item ${item.name} requires attunement but is not attuned.`, { item });
+    ATLAS.log(3, `Granting item ${item.name} requires attunement but is not attuned.`, { item });
     return false;
   }
   return true;

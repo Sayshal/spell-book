@@ -5,7 +5,6 @@ import { RuleSet } from '../managers/rule-set.mjs';
 import { SpellDataManager } from '../managers/spell-data-manager.mjs';
 import { SpellManager } from '../managers/spell-manager.mjs';
 import { detachedRenderOptions } from '../ui/dialogs.mjs';
-import { log } from '../utils/logger.mjs';
 import { DetailsCustomization } from './details-customization.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -70,7 +69,7 @@ async function loadSpellListOptions(assignedUuids = new Set()) {
         }
       }
     } catch (error) {
-      log(2, `Skipping pack "${pack?.metadata?.label ?? pack?.metadata?.id}" while building spell list options.`, error);
+      ATLAS.log(2, `Skipping pack "${pack?.metadata?.label ?? pack?.metadata?.id}" while building spell list options.`, error);
     }
   }
   options.sort((a, b) => a.label.localeCompare(b.label));
@@ -319,7 +318,7 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     this._saved = true;
     await this._onSave?.();
-    log(3, 'Class rules saved.', { actorName: actor.name });
+    ATLAS.log(3, 'Class rules saved.', { actorName: actor.name });
   }
 
   /**

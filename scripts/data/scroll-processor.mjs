@@ -4,7 +4,6 @@
  * @author Tyler
  */
 
-import { log } from '../utils/logger.mjs';
 
 /**
  * Scan an actor's inventory for spell scrolls and extract learnable spell data.
@@ -19,7 +18,7 @@ export async function scanForScrollSpells(actor, maxSpellLevel) {
     const spellData = await extractSpellFromScroll(scroll, maxSpellLevel);
     if (spellData) results.push(spellData);
   }
-  log(3, `Found ${results.length} scroll spells on ${actor.name}.`);
+  ATLAS.log(3, `Found ${results.length} scroll spells on ${actor.name}.`);
   return results;
 }
 

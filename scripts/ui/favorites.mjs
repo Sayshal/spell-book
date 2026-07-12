@@ -1,4 +1,3 @@
-import { log } from '../utils/logger.mjs';
 
 /**
  * Add a spell to actor.system.favorites.
@@ -13,7 +12,7 @@ export async function addSpellToActorFavorites(spellUuid, actor) {
   const favoriteId = `.Item.${actorSpell.id}`;
   if (currentFavorites.some((fav) => fav.id === favoriteId)) return true;
   await actor.update({ 'system.favorites': [...currentFavorites, { type: 'item', id: favoriteId, sort: 100000 + currentFavorites.length }] });
-  log(3, 'Added spell to actor favorites.', { spell: actorSpell.name, actor: actor.name });
+  ATLAS.log(3, 'Added spell to actor favorites.', { spell: actorSpell.name, actor: actor.name });
   return true;
 }
 
@@ -31,7 +30,7 @@ export async function removeSpellFromActorFavorites(spellUuid, actor) {
   const updatedFavorites = currentFavorites.filter((fav) => fav.id !== favoriteId);
   if (updatedFavorites.length !== currentFavorites.length) {
     await actor.update({ 'system.favorites': updatedFavorites });
-    log(3, 'Removed spell from actor favorites.', { spell: actorSpell.name, actor: actor.name });
+    ATLAS.log(3, 'Removed spell from actor favorites.', { spell: actorSpell.name, actor: actor.name });
   }
   return true;
 }

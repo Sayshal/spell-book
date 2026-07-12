@@ -5,7 +5,6 @@ import { fetchAllSpells } from './data/spell-fetcher.mjs';
 import { ClassRules } from './dialogs/class-rules.mjs';
 import { SpellManager } from './managers/spell-manager.mjs';
 import { extractSpellFilterData } from './ui/formatting.mjs';
-import { log } from './utils/logger.mjs';
 
 const { DialogV2 } = foundry.applications.api;
 
@@ -44,7 +43,7 @@ export async function flagPurge() {
       if (itemIds.length) await actor.deleteEmbeddedDocuments('Item', itemIds);
       purged++;
     } catch (error) {
-      log(1, `Flag purge failed for actor "${actor.name}".`, error);
+      ATLAS.log(1, `Flag purge failed for actor "${actor.name}".`, error);
     }
   }
   ui.notifications.info(_loc('SPELLBOOK.API.FlagPurge.Success', { count: purged }));
@@ -170,11 +169,11 @@ export async function scrollScanner() {
           const doc = await fromUuid(consumable.uuid);
           if (doc?.system?.type?.value === 'scroll') scrolls.push({ name: doc.name, uuid: consumable.uuid, source: pack.metadata.label || pack.collection });
         } catch (error) {
-          log(2, `Scroll scanner: failed to load consumable ${consumable.uuid}.`, error);
+          ATLAS.log(2, `Scroll scanner: failed to load consumable ${consumable.uuid}.`, error);
         }
       }
     } catch (error) {
-      log(2, `Scroll scanner: failed to process pack ${pack.collection}.`, error);
+      ATLAS.log(2, `Scroll scanner: failed to process pack ${pack.collection}.`, error);
     }
   }
   scrolls.sort((a, b) => a.name.localeCompare(b.name));
@@ -227,7 +226,7 @@ export async function spellsNotInLists() {
       if (spells instanceof Set) for (const uuid of spells) inLists.add(uuid);
       else if (Array.isArray(spells)) for (const uuid of spells) inLists.add(uuid);
     } catch (error) {
-      log(2, `Spells-not-in-lists: failed to process spell list ${list.name}.`, error);
+      ATLAS.log(2, `Spells-not-in-lists: failed to process spell list ${list.name}.`, error);
     }
   }
   const missing = [];
@@ -237,7 +236,7 @@ export async function spellsNotInLists() {
       const spell = await fromUuid(uuid);
       if (spell) missing.push({ name: spell.name, uuid, source: spell.pack || _loc('SPELLBOOK.API.SpellsNotInLists.UnknownSource') });
     } catch (error) {
-      log(2, `Spells-not-in-lists: failed to load spell ${uuid}.`, error);
+      ATLAS.log(2, `Spells-not-in-lists: failed to load spell ${uuid}.`, error);
     }
   }
   missing.sort((a, b) => a.name.localeCompare(b.name));
@@ -300,5 +299,5 @@ export function createAPI() {
   const api = { flagPurge, hasConfiguredCompendiums, openClassRulesForActor, openSpellBookForActor, spellBookQuickAccess, spellSlotTracker, scrollScanner, spellsNotInLists, debugSpell };
   globalThis.SPELLBOOK = { api };
   game.modules.get(MODULE.ID).api = api;
-  log(3, 'Module API registered.');
+  ATLAS.log(3, 'Module API registered.');
 }

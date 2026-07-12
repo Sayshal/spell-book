@@ -279,7 +279,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!this.element || this.element.querySelector(':scope > .spell-book-resize-handle')) return;
     const handle = document.createElement('div');
     handle.className = 'spell-book-resize-handle';
-    handle.setAttribute('aria-label', game.i18n.localize('SPELLBOOK.UI.Resize'));
+    handle.setAttribute('aria-label', _loc('SPELLBOOK.UI.Resize'));
     this.element.appendChild(handle);
   }
 
