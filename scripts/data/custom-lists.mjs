@@ -353,8 +353,8 @@ export async function getJournalDocumentsFromPack(pack) {
     const index = await pack.getIndex({ fields: ['name', 'pages.type'] });
     const journals = [];
     for (const journalData of index) {
-      const pages = Array.isArray(journalData.pages) ? journalData.pages : [];
-      const hasSpellPages = pages.some((page) => page.type === 'spells');
+      const pages = Array.isArray(journalData.pages) ? journalData.pages : null;
+      const hasSpellPages = pages ? pages.some((page) => page.type === 'spells') : true;
       if (!hasSpellPages) continue;
       try {
         const journal = await pack.getDocument(journalData._id);
