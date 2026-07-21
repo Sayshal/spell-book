@@ -9,7 +9,7 @@ export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
     id: 'spellbook-synergy-analysis',
     tag: 'div',
     classes: ['spell-book', 'synergy-analysis-dialog'],
-    position: { width: 700, height: 800 },
+    position: { width: 700, height: 'auto' },
     window: { icon: 'fas fa-chart-pie', resizable: true, title: 'SPELLBOOK.Party.SynergyAnalysisTitle' }
   };
 
@@ -25,25 +25,41 @@ export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
     this.synergyData = synergyData;
   }
 
+  /** @type {number} Members listed before the tooltip truncates. */
+  static #MAX_MEMBERS = 8;
+
+  /** @type {number} Spells listed per member before that line truncates. */
+  static #MAX_SPELLS = 6;
+
   /** @override */
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     foundry.utils.mergeObject(context, this.synergyData);
-    context.componentTooltips = this.#buildComponentTooltips(this.synergyData);
-    for (const item of context.spellSchoolDistribution || []) item.tooltipHtml = SynergyAnalysis.#groupMembersTooltip(item.localizedSchool, item.members);
-    for (const item of context.damageDistribution || []) item.tooltipHtml = SynergyAnalysis.#groupMembersTooltip(item.localizedType, item.members);
-    for (const item of context.duplicateSpells || []) item.tooltipHtml = SynergyAnalysis.#groupMembersTooltip(item.name, item.actors);
+    const tip = SynergyAnalysis.#groupMembersTooltip;
+    for (const item of context.spellSchoolDistribution || []) item.tooltipHtml = tip(item.localizedSchool, item.members);
+    for (const item of context.damageDistribution || []) item.tooltipHtml = tip(item.localizedType, item.members);
+    for (const item of context.savingThrowDistribution || []) item.tooltipHtml = tip(item.localizedSave, item.members);
+    for (const item of context.spellLevelDistribution || []) item.tooltipHtml = tip(item.localizedLevel, item.members);
+    for (const item of context.duplicateSpells || []) item.tooltipHtml = tip(item.name, item.actors);
+    const components = this.synergyData.memberContributions?.components || {};
+    context.componentTooltips = {
+      verbal: tip(_loc('DND5E.ComponentVerbal'), components.verbal),
+      somatic: tip(_loc('DND5E.ComponentSomatic'), components.somatic),
+      material: tip(_loc('DND5E.ComponentMaterial'), components.material),
+      materialCost: tip(_loc('SPELLBOOK.Party.Analysis.MaterialCostly'), components.materialCost)
+    };
     return context;
   }
 
   /**
-   * Group "Name: Spell" entries by name and build an HTML tooltip.
+   * Group "Name: Spell" entries by member and build a truncated HTML tooltip.
    * @param {string} title - Tooltip heading
    * @param {string[]} entries - Flat list like ["Akra: Light", "Akra: Sacred Flame", "Zanna: Fire Bolt"]
    * @returns {string} HTML with one line per member
    */
   static #groupMembersTooltip(title, entries) {
-    if (!entries?.length) return title;
+    const esc = Handlebars.escapeExpression;
+    if (!entries?.length) return `<strong>${esc(title)}</strong>`;
     const grouped = new Map();
     for (const entry of entries) {
       const sep = entry.indexOf(':');
@@ -52,36 +68,15 @@ export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
       if (!grouped.has(name)) grouped.set(name, []);
       if (spell) grouped.get(name).push(spell);
     }
-    const lines = [...grouped.entries()].map(([name, spells]) => (spells.length ? `<div><strong>${name}:</strong> ${spells.join(', ')}</div>` : `<div>${name}</div>`)).join('');
-    return `<strong>${title}</strong><hr>${lines}`;
-  }
-
-  /**
-   * Build truncated component spell-list tooltips for hover details.
-   * @param {object} synergy - The synergy analysis data
-   * @returns {object} Tooltip strings keyed by component type
-   */
-  #buildComponentTooltips(synergy) {
-    const max = 25;
-    const components = synergy.memberContributions?.components || {};
-    return {
-      verbal: this.#formatSpellList(components.verbal, max),
-      somatic: this.#formatSpellList(components.somatic, max),
-      material: this.#formatSpellList(components.material, max),
-      materialCost: this.#formatSpellList(components.materialCost, max)
-    };
-  }
-
-  /**
-   * Format a list of spell names into a truncated tooltip string.
-   * @param {string[]} spells - Spell names
-   * @param {number} max - Maximum spells to include before truncating
-   * @returns {string} Formatted comma-separated list
-   */
-  #formatSpellList(spells, max) {
-    if (!spells?.length) return '';
-    let tooltip = spells.slice(0, max).join(', ');
-    if (spells.length > max) tooltip += _loc('SPELLBOOK.Party.AndMoreSpells', { count: spells.length - max });
-    return tooltip;
+    const sorted = [...grouped.entries()].sort(([a], [b]) => a.localeCompare(b));
+    const lines = sorted.slice(0, SynergyAnalysis.#MAX_MEMBERS).map(([name, spells]) => {
+      if (!spells.length) return `<div>${esc(name)}</div>`;
+      spells.sort((a, b) => a.localeCompare(b));
+      const shown = spells.slice(0, SynergyAnalysis.#MAX_SPELLS).map(esc).join(', ');
+      const rest = spells.length > SynergyAnalysis.#MAX_SPELLS ? esc(_loc('SPELLBOOK.Party.AndMoreSpells', { count: spells.length - SynergyAnalysis.#MAX_SPELLS })) : '';
+      return `<div><strong>${esc(name)}</strong> (${spells.length}): ${shown}${rest}</div>`;
+    });
+    if (grouped.size > SynergyAnalysis.#MAX_MEMBERS) lines.push(`<div>${esc(_loc('SPELLBOOK.Party.AndMoreMembers', { count: grouped.size - SynergyAnalysis.#MAX_MEMBERS }))}</div>`);
+    return `<strong>${esc(title)}</strong><hr>${lines.join('')}`;
   }
 }

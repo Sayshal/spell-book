@@ -166,7 +166,7 @@ export function addSpellbookButton(_app, html, data) {
 export function onGroupActorRender(_sheet, element, data) {
   const actor = data.actor;
   if (actor?.type !== 'group') return;
-  const spellcasters = (actor.system?.creatures || []).filter(hasSpellcastingClasses);
+  const spellcasters = (actor.system?.creatures || []).filter((a) => PartyMode.isSpellcaster(a));
   if (!spellcasters.length) return;
   tryAddButton({
     html: element,
@@ -273,7 +273,7 @@ export function onTidy5eQuadroneRender(_sheet, element, data) {
 export function onTidy5eGroupSheetRender(_sheet, element, data) {
   const groupActor = data.actor;
   if (groupActor?.type !== 'group') return;
-  const spellcasters = PartyMode.getPartyActors(groupActor).filter(hasSpellcastingClasses);
+  const spellcasters = PartyMode.getPartyActors(groupActor);
   if (!spellcasters.length) return;
   tryAddButton({
     html: element,

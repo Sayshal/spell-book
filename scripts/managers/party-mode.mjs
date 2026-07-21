@@ -4,9 +4,21 @@
  * @author Tyler
  */
 
-import { FLAGS, MODULE } from '../constants.mjs';
+import { FLAGS, MODULE, SPELL_MODE } from '../constants.mjs';
 import { extractDamageTypes, extractSaveAbilities } from '../ui/formatting.mjs';
 import { ClassManager } from './class-manager.mjs';
+
+/**
+ * Non-class spell sources surfaced in the party view.
+ * @type {Array<{id: string, prefix: string, labelKey: string}>}
+ */
+const NON_CLASS_SOURCES = [
+  { id: 'feat', prefix: 'feat:', labelKey: 'SPELLBOOK.SpellSource.Feat' },
+  { id: 'race', prefix: 'race:', labelKey: 'SPELLBOOK.SpellSource.Species' }
+];
+
+/** @type {string[]} Casting methods that make a spell available without preparation. */
+const ALWAYS_AVAILABLE_METHODS = [SPELL_MODE.ALWAYS, SPELL_MODE.INNATE, SPELL_MODE.AT_WILL];
 
 /** Party Mode Manager — analysis-only, no UI helpers. */
 export class PartyMode {
@@ -19,6 +31,7 @@ export class PartyMode {
     ATLAS.log(3, 'Analyzing party spells.', { count: partyActors.length });
     const actors = [];
     for (const actor of partyActors) actors.push(this._getActorSpellData(actor));
+    actors.sort((a, b) => a.name.localeCompare(b.name));
     const spellsByLevel = this._organizeByLevel(actors);
     const synergy = this.getSpellSynergyAnalysis(partyActors);
     return { actors, spellsByLevel, synergy };
@@ -51,9 +64,8 @@ export class PartyMode {
     const spellActors = new Map();
     for (const actor of partyActors) {
       if (!actor.testUserPermission(game.user, 'OBSERVER')) continue;
-      for (const classId of Object.keys(actor.spellcastingClasses || {})) {
-        const spells = this._getClassSpells(actor, classId);
-        for (const spell of spells.prepared) {
+      for (const bucket of this._getSpellBuckets(actor)) {
+        for (const spell of bucket.spells.prepared) {
           const doc = fromUuidSync(spell.uuid);
           if (!doc) continue;
           if (!spellActors.has(doc.name)) spellActors.set(doc.name, []);
@@ -62,7 +74,8 @@ export class PartyMode {
       }
     }
     const duplicates = [];
-    for (const [name, actors] of spellActors) if (actors.length > 1) duplicates.push({ name, actors: [...actors], count: actors.length });
+    for (const [name, actors] of spellActors) if (actors.length > 1) duplicates.push({ name, actors: [...actors].sort((a, b) => a.localeCompare(b)), count: actors.length });
+    duplicates.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
     return duplicates;
   }
 
@@ -143,12 +156,13 @@ export class PartyMode {
   }
 
   /**
+   * Whether an actor belongs in the party view.
    * @param {object} actor - The actor to check
-   * @todo this seems unnecessary?
-   * @returns {boolean} Whether the actor has spellcasting classes
+   * @returns {boolean} Whether the actor contributes spells to the party
    */
   static isSpellcaster(actor) {
-    return Object.keys(actor.spellcastingClasses || {}).length > 0;
+    if (Object.keys(actor?.spellcastingClasses || {}).length > 0) return true;
+    return !!actor?.itemTypes?.spell?.some((s) => NON_CLASS_SOURCES.some((src) => s.system?.sourceItem?.startsWith(src.prefix)));
   }
 
   /**
@@ -181,22 +195,20 @@ export class PartyMode {
     const hasPermission = actor.testUserPermission(game.user, 'OBSERVER');
     const data = { id: actor.id, name: actor.name, hasPermission, token: actor.img, spellcasters: [], totalSpellsKnown: 0, totalSpellsPrepared: 0 };
     if (!hasPermission) return data;
-    for (const [classId, classData] of Object.entries(actor.spellcastingClasses || {})) {
-      const spells = this._getClassSpells(actor, classId);
-      const subclass = classData._classLink?.name;
-      const className = classData.name || classId;
+    for (const bucket of this._getSpellBuckets(actor)) {
+      const { known, prepared } = bucket.spells;
       data.spellcasters.push({
-        classId,
-        className,
-        enhancedClassName: subclass ? `${subclass} ${className}` : className,
-        icon: classData.img,
-        knownSpells: spells.known,
-        preparedSpells: spells.prepared,
-        totalKnown: spells.known.length,
-        totalPrepared: spells.prepared.length
+        classId: bucket.id,
+        className: bucket.name,
+        enhancedClassName: bucket.enhancedName,
+        icon: bucket.icon,
+        knownSpells: known,
+        preparedSpells: prepared,
+        totalKnown: known.length,
+        totalPrepared: prepared.length
       });
-      data.totalSpellsKnown += spells.known.length;
-      data.totalSpellsPrepared += spells.prepared.length;
+      data.totalSpellsKnown += known.length;
+      data.totalSpellsPrepared += prepared.length;
     }
     return data;
   }
@@ -209,16 +221,67 @@ export class PartyMode {
    * @private
    */
   static _getClassSpells(actor, classId) {
+    return this._collectSpells(actor, (s) => ClassManager.getSpellClassIdentifier(s) === classId);
+  }
+
+  /**
+   * Get known and prepared spells granted by a non-class source (feat, species).
+   * @param {object} actor - The actor document
+   * @param {string} prefix - The `system.sourceItem` prefix, e.g. `'feat:'`
+   * @returns {object} { known, prepared } arrays of spell data
+   * @private
+   */
+  static _getSourceSpells(actor, prefix) {
+    return this._collectSpells(actor, (s) => !!s.system?.sourceItem?.startsWith(prefix), true);
+  }
+
+  /**
+   * Build known/prepared spell entries for the actor spells matching a filter.
+   * @param {object} actor - The actor document
+   * @param {Function} filter - Predicate applied to each spell item
+   * @param {boolean} [alwaysAvailable] - Also count always/innate/at-will methods as prepared
+   * @returns {object} { known, prepared } arrays of spell data
+   * @private
+   */
+  static _collectSpells(actor, filter, alwaysAvailable = false) {
     const known = [];
     const prepared = [];
-    const classSpells = actor.itemTypes.spell.filter((s) => ClassManager.getSpellClassIdentifier(s) === classId);
-    for (const spell of classSpells) {
+    for (const spell of actor.itemTypes.spell.filter(filter)) {
       const sourceUuid = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
-      const entry = { uuid: spell.uuid, sourceUuid, name: spell.name, level: spell.system?.level, prepared: spell.system?.prepared === 1 };
+      const isPrepared = spell.system?.prepared === 1 || (alwaysAvailable && ALWAYS_AVAILABLE_METHODS.includes(spell.system?.method));
+      const entry = { uuid: spell.uuid, sourceUuid, name: spell.name, level: spell.system?.level, prepared: isPrepared };
       known.push(entry);
-      if (entry.prepared) prepared.push(entry);
+      if (isPrepared) prepared.push(entry);
     }
     return { known, prepared };
+  }
+
+  /**
+   * Build every spell bucket for an actor.
+   * @param {object} actor - The actor document
+   * @returns {object[]} Array of { id, name, enhancedName, icon, spells }
+   * @private
+   */
+  static _getSpellBuckets(actor) {
+    const buckets = [];
+    for (const [classId, classData] of Object.entries(actor.spellcastingClasses || {})) {
+      const subclass = classData._classLink?.name;
+      const className = classData.name || classId;
+      buckets.push({
+        id: classId,
+        name: className,
+        enhancedName: subclass ? `${subclass} ${className}` : className,
+        icon: classData.img,
+        spells: this._getClassSpells(actor, classId)
+      });
+    }
+    for (const source of NON_CLASS_SOURCES) {
+      const spells = this._getSourceSpells(actor, source.prefix);
+      if (!spells.known.length) continue;
+      const label = _loc(source.labelKey);
+      buckets.push({ id: source.id, name: label, enhancedName: label, icon: null, spells });
+    }
+    return buckets;
   }
 
   /**
@@ -247,6 +310,7 @@ export class PartyMode {
         }
       }
     }
+    for (const spells of Object.values(byLevel)) for (const spell of Object.values(spells)) spell.actorStatuses.sort((a, b) => a.name.localeCompare(b.name));
     return byLevel;
   }
 
@@ -276,6 +340,8 @@ export class PartyMode {
         damageTypes: new Map(),
         schools: new Map(),
         components: { verbal: [], somatic: [], material: [], materialCost: [] },
+        spellLevels: new Map(),
+        savingThrows: new Map(),
         duplicateSpells: new Map(),
         highConcentration: [],
         lowRitual: [],
@@ -317,9 +383,8 @@ export class PartyMode {
    */
   static _analyzeActorSpells(actor, analysis, collectors) {
     const actorStats = { concentrationCount: 0, ritualCount: 0, damageTypes: new Set(), preparedCount: 0 };
-    for (const classId of Object.keys(actor.spellcastingClasses || {})) {
-      const spells = this._getClassSpells(actor, classId);
-      for (const spell of spells.known) {
+    for (const bucket of this._getSpellBuckets(actor)) {
+      for (const spell of bucket.spells.known) {
         collectors.allSpells.add(spell.uuid);
         if (spell.prepared) {
           actorStats.preparedCount++;
@@ -399,7 +464,13 @@ export class PartyMode {
       }
     }
     collectors.spellLevels[props.level]++;
-    for (const save of props.saves) collectors.savingThrows[save] = (collectors.savingThrows[save] || 0) + 1;
+    if (!analysis.memberContributions.spellLevels.has(props.level)) analysis.memberContributions.spellLevels.set(props.level, []);
+    analysis.memberContributions.spellLevels.get(props.level).push(spellRef);
+    for (const save of props.saves) {
+      collectors.savingThrows[save] = (collectors.savingThrows[save] || 0) + 1;
+      if (!analysis.memberContributions.savingThrows.has(save)) analysis.memberContributions.savingThrows.set(save, []);
+      analysis.memberContributions.savingThrows.get(save).push(spellRef);
+    }
     const rangeUnits = props.range?.units;
     if (rangeUnits === 'self') collectors.ranges.self++;
     else if (rangeUnits === 'touch') collectors.ranges.touch++;
@@ -460,31 +531,40 @@ export class PartyMode {
       percentage: Math.round((count / analysis.totalPreparedSpells) * 100),
       members: analysis.memberContributions.schools.get(school) || []
     }));
+    game.i18n.sortObjects(analysis.spellSchoolDistribution, 'localizedSchool');
     analysis.spellLevelDistribution = collectors.spellLevels
       .map((count, level) => ({
         level,
         count,
         percentage: analysis.totalPreparedSpells > 0 ? Math.round((count / analysis.totalPreparedSpells) * 100) : 0,
-        localizedLevel: level === 0 ? _loc('DND5E.SpellLevel0') : _loc(`DND5E.SpellLevel${level}`)
+        localizedLevel: level === 0 ? _loc('DND5E.SpellLevel0') : _loc(`DND5E.SpellLevel${level}`),
+        members: analysis.memberContributions.spellLevels.get(level) || []
       }))
       .filter((l) => l.count > 0);
     analysis.savingThrowDistribution = Object.entries(collectors.savingThrows).map(([save, count]) => ({
       save,
       localizedSave: _loc(`DND5E.Ability${save.charAt(0).toUpperCase()}${save.slice(1).toLowerCase()}`) || save,
-      count
+      count,
+      members: analysis.memberContributions.savingThrows.get(save) || []
     }));
     game.i18n.sortObjects(analysis.savingThrowDistribution, 'localizedSave');
     for (const [name, actors] of collectors.preparedSpellsByName) {
       if (actors.length > 1) {
-        analysis.duplicateSpells.push({ name, actors: [...actors] });
-        analysis.memberContributions.duplicateSpells.set(name, [...actors]);
+        const sortedActors = [...actors].sort((a, b) => a.localeCompare(b));
+        analysis.duplicateSpells.push({ name, actors: sortedActors });
+        analysis.memberContributions.duplicateSpells.set(name, sortedActors);
       }
     }
+    analysis.duplicateSpells.sort((a, b) => b.actors.length - a.actors.length || a.name.localeCompare(b.name));
     analysis.componentAnalysis = collectors.components;
     analysis.rangeAnalysis = collectors.ranges;
     analysis.durationAnalysis = collectors.durations;
-    analysis.concentrationMembers = Array.from(analysis.memberContributions.concentration.entries()).map(([name, spells]) => ({ name, spells, count: spells.length }));
-    analysis.ritualMembers = Array.from(analysis.memberContributions.ritual.entries()).map(([name, spells]) => ({ name, spells, count: spells.length }));
+    const toSortedMembers = (map) =>
+      Array.from(map.entries())
+        .map(([name, spells]) => ({ name, spells: [...spells].sort((a, b) => a.localeCompare(b)), count: spells.length }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    analysis.concentrationMembers = toSortedMembers(analysis.memberContributions.concentration);
+    analysis.ritualMembers = toSortedMembers(analysis.memberContributions.ritual);
   }
 
   /**

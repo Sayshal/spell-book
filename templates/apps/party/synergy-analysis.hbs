@@ -30,7 +30,7 @@
             <h4>{{localize "SPELLBOOK.Party.Analysis.SaveSpread"}}</h4>
             <div class="damage-types">
               {{#each savingThrowDistribution as |saveData|}}
-                <div class="damage-type-item">
+                <div class="damage-type-item" data-tooltip-html="{{{saveData.tooltipHtml}}}">
                   <span class="damage-type">{{saveData.localizedSave}}</span>
                   <span class="damage-count">{{saveData.count}}</span>
                 </div>
@@ -43,8 +43,7 @@
             <h4>{{localize "DND5E.SpellLevels"}} {{localize "SPELLBOOK.Party.Analysis.Distribution"}}</h4>
             <div class="level-types">
               {{#each spellLevelDistribution as |level|}}
-                <div class="level-type-item"
-                  data-tooltip="{{level.localizedLevel}}: {{level.count}} prepared ({{level.percentage}}%)">
+                <div class="level-type-item" data-tooltip-html="{{{level.tooltipHtml}}}">
                   <span class="level-type">{{level.localizedLevel}}</span>
                   <span class="level-count">{{level.count}} ({{level.percentage}}%)</span>
                 </div>
@@ -93,21 +92,19 @@
         <div class="component-analysis">
           <h4>{{localize "DND5E.Components"}}</h4>
           <div class="component-grid">
-            <div class="component-item" data-tooltip-html="<strong>Verbal</strong><hr>{{{componentTooltips.verbal}}}">
+            <div class="component-item" data-tooltip-html="{{{componentTooltips.verbal}}}">
               <span class="component-type">{{localize "DND5E.ComponentVerbalAbbr"}}</span>
               <span class="component-count">{{componentAnalysis.verbal}}</span>
             </div>
-            <div class="component-item" data-tooltip-html="<strong>Somatic</strong><hr>{{{componentTooltips.somatic}}}">
+            <div class="component-item" data-tooltip-html="{{{componentTooltips.somatic}}}">
               <span class="component-type">{{localize "DND5E.ComponentSomaticAbbr"}}</span>
               <span class="component-count">{{componentAnalysis.somatic}}</span>
             </div>
-            <div class="component-item"
-              data-tooltip-html="<strong>Material</strong><hr>{{{componentTooltips.material}}}">
+            <div class="component-item" data-tooltip-html="{{{componentTooltips.material}}}">
               <span class="component-type">{{localize "DND5E.ComponentMaterialAbbr"}}</span>
               <span class="component-count">{{componentAnalysis.material}}</span>
             </div>
-            <div class="component-item"
-              data-tooltip-html="<strong>Material (costly)</strong><hr>{{{componentTooltips.materialCost}}}">
+            <div class="component-item" data-tooltip-html="{{{componentTooltips.materialCost}}}">
               <span class="component-type">{{localize "DND5E.ComponentMaterialAbbr"}}*</span>
               <span class="component-count">{{componentAnalysis.materialCost}}</span>
             </div>
