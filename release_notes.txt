@@ -1,20 +1,9 @@
-## Breaking Changes
+## New Features
 
-- Spell Book now requires the 3DS:ATLAS module, which provides shared theming, logging, localization, and update notices.
-- Theming now runs through ATLAS: the spell book palette maps to ATLAS theme variables and defaults to the spellbook preset; the in-module logging-level and troubleshooter settings are gone.
-
-## Bug Fixes
-
-- SRD spell lists no longer vanish from the Spell List Manager when it is reopened without reloading the page.
-- The unchecked spell prepare checkbox border is more visible on dark themes.
+- Always, innate, and at-will spells from feat and species sources count as prepared in party totals.
+- Party spell interface now tracks spells granted by feats and species, with dedicated buckets on member cards; characters with only feat or species spells now appear in the party view and synergy analysis.
 
 ## Changes
 
-- Bug reports run through the ATLAS troubleshooter, which attaches the enabled dnd5e compendium sources and every configured spell list for support.
-- Bumped the bug-report template's version placeholders to Foundry 14.364 and dnd5e 6.0.0.
-- Release and update notices are posted through ATLAS instead of an in-module chat card.
-- Removed the bundled localization files; translations now come from the required 3DS:ATLAS module.
-- Removed the redundant Game System field from the bug report template.
-- Sidebar, filter checkbox, and property-toggle colors now follow the active ATLAS theme instead of fixed values.
-- Standardized the GitHub issue templates on canonical type labels and added a Discord contact link to the issue chooser.
-- Verified compatibility raised to Foundry 14.364.
+- Party and synergy windows size themselves to their content, and party lists sort alphabetically.
+- Synergy tooltips are grouped by party member, and the spell level and saving throw distributions list which members contribute to each entry.
