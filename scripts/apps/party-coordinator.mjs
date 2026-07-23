@@ -12,7 +12,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
     tag: 'div',
     classes: ['spell-book', 'party-spell-manager'],
     window: { icon: 'spell-book-module-icon', resizable: true, minimizable: true, positioned: true },
-    position: { height: 1200, width: 750 },
+    position: { height: 'auto', width: 750 },
     actions: {
       openSynergy: PartyCoordinator.#onOpenSynergy,
       refreshData: PartyCoordinator.#onRefreshData,
