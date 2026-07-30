@@ -941,7 +941,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         tags.push({ cssClass: 'pact', icon: 'fas fa-handshake-simple', tooltip: _loc('DND5E.PactMagic') });
       }
       if (!status.prepared) {
-        const regularlyPrepared = owned.find((o) => o.prepared === 1);
+        const regularlyPrepared = owned.find((o) => o.prepared === 1 && (o.classIdentifier === baseClass || !o.classIdentifier));
         if (regularlyPrepared) status.prepared = true;
       }
     }
