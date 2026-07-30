@@ -1,9 +1,3 @@
-## New Features
+## Bug Fixes
 
-- Always, innate, and at-will spells from feat and species sources count as prepared in party totals.
-- Party spell interface now tracks spells granted by feats and species, with dedicated buckets on member cards; characters with only feat or species spells now appear in the party view and synergy analysis.
-
-## Changes
-
-- Party and synergy windows size themselves to their content, and party lists sort alphabetically.
-- Synergy tooltips are grouped by party member, and the spell level and saving throw distributions list which members contribute to each entry.
+- Fixed spells prepared under one class incorrectly showing as prepared on other class tabs for multiclass characters, which inflated preparation counts and could save duplicate spell entries.
