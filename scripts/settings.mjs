@@ -77,6 +77,13 @@ export function registerSettings() {
     config: true,
     type: new BooleanField({ initial: true })
   });
+  register(SETTINGS.CHARGE_SCROLL_LEARNING_COST, {
+    name: 'SPELLBOOK.Settings.ChargeScrollLearningCost.Name',
+    hint: 'SPELLBOOK.Settings.ChargeScrollLearningCost.Hint',
+    scope: 'world',
+    config: true,
+    type: new BooleanField({ initial: false })
+  });
   register(SETTINGS.DEDUCT_SPELL_LEARNING_COST, {
     name: 'SPELLBOOK.Settings.DeductSpellLearningCost.Name',
     hint: 'SPELLBOOK.Settings.DeductSpellLearningCost.Hint',

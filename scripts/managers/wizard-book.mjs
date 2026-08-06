@@ -5,6 +5,7 @@
  */
 
 import { FLAGS, MODULE, PACK, SETTINGS, WIZARD_DEFAULTS, WIZARD_SPELL_SOURCE } from '../constants.mjs';
+import { resolveLinkedScrollSpell } from '../data/scroll-processor.mjs';
 import { RuleSet } from './rule-set.mjs';
 
 /** Wizard Spellbook Manager — journal-based wizard spell management. */
@@ -121,12 +122,37 @@ export class WizardBook {
     ATLAS.log(3, 'Copying spell to spellbook.', { actorName: actor.name, classId, spellUuid, cost, time, source });
     const costs = { cost, time };
     if (Hooks.call('preLearnSpell', { actor, classId, spellUuid, source, costs }) === false) return false;
-    if (source === WIZARD_SPELL_SOURCE.COPIED && game.settings.get(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST) && costs.cost > 0) {
+    if (source !== WIZARD_SPELL_SOURCE.FREE && game.settings.get(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST) && costs.cost > 0) {
       const success = await this._deductCurrency(actor, costs.cost);
       if (!success) return false;
     }
     const metadata = source === WIZARD_SPELL_SOURCE.FREE ? null : { cost: costs.cost, timeSpent: costs.time };
     return this.addSpellToSpellbook(actor, classId, spellUuid, source, metadata);
+  }
+
+  /**
+   * Learn the spell a scroll is linked to, then optionally consume the scroll.
+   * @param {object} actor - The actor document
+   * @param {string} classId - The class identifier
+   * @param {object} scroll - The scroll item owned by the actor
+   * @param {object} [options] - Learn options
+   * @param {boolean} [options.consume] - Override the consume-scrolls setting
+   * @returns {Promise<boolean>} Success state
+   */
+  static async learnFromScroll(actor, classId, scroll, { consume } = {}) {
+    const linked = await resolveLinkedScrollSpell(scroll);
+    if (!linked) return false;
+    const charge = game.settings.get(MODULE.ID, SETTINGS.CHARGE_SCROLL_LEARNING_COST);
+    const cost = charge ? (await this.getCopyingCost(actor, classId, linked.spell)).cost : 0;
+    const time = this.getCopyingTime(actor, classId, linked.spell);
+    const learned = await this.copySpell(actor, classId, linked.spellUuid, cost, time, WIZARD_SPELL_SOURCE.SCROLL);
+    if (!learned) return false;
+    if (consume ?? game.settings.get(MODULE.ID, SETTINGS.CONSUME_SCROLLS_WHEN_LEARNING)) {
+      const qty = scroll.system?.quantity ?? 1;
+      if (qty <= 1) await scroll.delete();
+      else await scroll.update({ 'system.quantity': qty - 1 });
+    }
+    return true;
   }
 
   /**
@@ -154,7 +180,8 @@ export class WizardBook {
   static getCopyingTime(actor, classId, spell) {
     const multiplier = RuleSet.getClassRule(actor, classId, 'spellLearningTimeMultiplier', WIZARD_DEFAULTS.SPELL_LEARNING_TIME_MULTIPLIER);
     const totalMinutes = spell.system.level === 0 ? 1 : spell.system.level * multiplier;
-    return dnd5e.utils.formatTime(totalMinutes, 'minute');
+    const { value, unit } = dnd5e.utils.convertTime(totalMinutes, 'minute');
+    return dnd5e.utils.formatTime(value, unit);
   }
 
   /**

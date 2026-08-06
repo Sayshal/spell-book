@@ -37,6 +37,7 @@ export const FLAGS = {
 export const SETTINGS = {
   AUTO_DELETE_UNPREPARED_SPELLS: 'autoDeleteUnpreparedSpells',
   CANTRIP_SCALE_VALUES: 'cantripScaleValues',
+  CHARGE_SCROLL_LEARNING_COST: 'chargeScrollLearningCost',
   CONSUME_SCROLLS_WHEN_LEARNING: 'consumeScrollsWhenLearning',
   CPR_COMPATIBILITY: 'cprCompatibility',
   CUSTOM_SPELL_MAPPINGS: 'customSpellListMappings',
@@ -130,6 +131,7 @@ export const TEMPLATES = {
     FOLDER_SECTION: `${MODULE.TEMPLATES_PATH}/components/folder-section.hbs`,
     LOADING: `${MODULE.TEMPLATES_PATH}/components/loading-spinner.hbs`,
     PREPARATION_CHECKBOX: `${MODULE.TEMPLATES_PATH}/components/preparation-checkbox.hbs`,
+    SCROLL_PURCHASE: `${MODULE.TEMPLATES_PATH}/components/scroll-purchase.hbs`,
     SEARCH_ADVANCED_DROPDOWN: `${MODULE.TEMPLATES_PATH}/components/search-advanced-dropdown.hbs`,
     SETTING_ITEM: `${MODULE.TEMPLATES_PATH}/components/setting-item.hbs`,
     SPELL_ITEM: `${MODULE.TEMPLATES_PATH}/components/spell-item.hbs`,

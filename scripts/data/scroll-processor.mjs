@@ -4,7 +4,6 @@
  * @author Tyler
  */
 
-
 /**
  * Scan an actor's inventory for spell scrolls and extract learnable spell data.
  * @param {object} actor - The actor to scan
@@ -23,31 +22,38 @@ export async function scanForScrollSpells(actor, maxSpellLevel) {
 }
 
 /**
+ * Resolve the spell a scroll is explicitly linked to, without the scroll-name fallback.
+ * @param {object} scroll - The scroll item
+ * @returns {Promise<object|null>} { spell, spellUuid } or null
+ */
+export async function resolveLinkedScrollSpell(scroll) {
+  if (!scroll?.system?.activities) return null;
+  for (const activity of scroll.system.activities.values()) {
+    const candidates = [];
+    if (activity?.spell?.uuid) candidates.push(activity.spell.uuid);
+    for (const effectRef of activity?.effects ?? []) {
+      const match = effectRef._id ? scroll.effects?.find((e) => e._id === effectRef._id) : null;
+      if (match?.origin) candidates.push(match.origin);
+    }
+    for (const spellUuid of candidates) {
+      const spell = await fromUuid(spellUuid);
+      if (spell?.type === 'spell') return { spell, spellUuid };
+    }
+  }
+  return null;
+}
+
+/**
  * Extract spell data from a scroll item.
  * @param {object} scroll - The scroll item
  * @param {number} maxSpellLevel - Maximum learnable spell level
  * @returns {Promise<object|null>} Spell data or null if no valid spell found
  */
 async function extractSpellFromScroll(scroll, maxSpellLevel) {
-  if (scroll.system?.activities) {
-    const activities = Array.from(scroll.system.activities.values());
-    for (const activity of activities) {
-      if (activity?.spell?.uuid) {
-        const result = await processScrollSpell(scroll, activity.spell.uuid, maxSpellLevel);
-        if (result) return result;
-      }
-      if (activity?.effects && Array.isArray(activity.effects)) {
-        for (const effectRef of activity.effects) {
-          if (effectRef._id && scroll.effects) {
-            const match = scroll.effects.find((e) => e._id === effectRef._id);
-            if (match?.origin) {
-              const result = await processScrollSpell(scroll, match.origin, maxSpellLevel);
-              if (result) return result;
-            }
-          }
-        }
-      }
-    }
+  const linked = await resolveLinkedScrollSpell(scroll);
+  if (linked) {
+    const result = await processScrollSpell(scroll, linked.spellUuid, maxSpellLevel);
+    if (result) return result;
   }
   const spellLevel = scroll.flags?.dnd5e?.spellLevel;
   if (spellLevel) {

@@ -1,0 +1,17 @@
+<div class="spell-book-chat-message spell-book-update-report">
+  <header class="sb-report-header">
+    <img class="sb-report-icon" src="modules/spell-book/assets/icon_colored.png" alt="" />
+    <div class="sb-report-titles">
+      <span class="sb-report-eyebrow">{{actorName}}</span>
+      <span class="sb-report-title">{{localize 'SPELLBOOK.ScrollPurchase.Title'}}</span>
+    </div>
+  </header>
+  <p class="sb-notice-body">{{localize 'SPELLBOOK.ScrollPurchase.Body' scroll=scrollName}}</p>
+  <ul class="sb-notice-classes">
+    <li>{{spellName}}</li>
+  </ul>
+  <button type="button" class="spellbook-learn-scroll sb-notice-button" data-actor-uuid="{{actorUuid}}" data-scroll-id="{{scrollId}}" data-spell-uuid="{{spellUuid}}">
+    <i class="fas fa-book" aria-hidden="true"></i>
+    <span class="label">{{localize 'SPELLBOOK.ScrollPurchase.LearnButton'}}</span>
+  </button>
+</div>

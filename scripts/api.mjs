@@ -4,6 +4,7 @@ import { findAllSpellLists } from './data/custom-lists.mjs';
 import { fetchAllSpells } from './data/spell-fetcher.mjs';
 import { ClassRules } from './dialogs/class-rules.mjs';
 import { SpellManager } from './managers/spell-manager.mjs';
+import { WizardBook } from './managers/wizard-book.mjs';
 import { extractSpellFilterData } from './ui/formatting.mjs';
 
 const { DialogV2 } = foundry.applications.api;
@@ -294,9 +295,47 @@ export async function debugSpell(name) {
   return summary;
 }
 
+/**
+ * Learn the spell a scroll is linked to and add it to the actor's wizard spellbook.
+ * @param {object} actor - The actor owning the scroll
+ * @param {string} classId - The wizard-enabled class identifier
+ * @param {object} scrollItem - The scroll item on the actor
+ * @param {object} [options] - Learn options
+ * @param {boolean} [options.consume] - Override the consume-scrolls setting
+ * @returns {Promise<boolean>} Whether the spell was learned
+ */
+export async function learnFromScroll(actor, classId, scrollItem, options = {}) {
+  if (!actor || !classId || !scrollItem) return false;
+  return WizardBook.learnFromScroll(actor, classId, scrollItem, options);
+}
+
+/**
+ * Get the cost to learn a spell for an actor, accounting for the remaining free-spell pool.
+ * @param {object} actor - The actor document
+ * @param {string} classId - The wizard-enabled class identifier
+ * @param {object} spell - The spell document
+ * @returns {Promise<object|null>} { cost, isFree } or null on invalid input
+ */
+export async function getSpellLearningCost(actor, classId, spell) {
+  if (!actor || !classId || !spell) return null;
+  return WizardBook.getCopyingCost(actor, classId, spell);
+}
+
 /** Wire up the public API surface and expose it on the SPELLBOOK global. */
 export function createAPI() {
-  const api = { flagPurge, hasConfiguredCompendiums, openClassRulesForActor, openSpellBookForActor, spellBookQuickAccess, spellSlotTracker, scrollScanner, spellsNotInLists, debugSpell };
+  const api = {
+    flagPurge,
+    getSpellLearningCost,
+    hasConfiguredCompendiums,
+    learnFromScroll,
+    openClassRulesForActor,
+    openSpellBookForActor,
+    spellBookQuickAccess,
+    spellSlotTracker,
+    scrollScanner,
+    spellsNotInLists,
+    debugSpell
+  };
   globalThis.SPELLBOOK = { api };
   game.modules.get(MODULE.ID).api = api;
   ATLAS.log(3, 'Module API registered.');

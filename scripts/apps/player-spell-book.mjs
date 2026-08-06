@@ -504,20 +504,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {HTMLElement} target - The scroll learn button element
    */
   static async #onLearnSpellFromScroll(_event, target) {
-    const uuid = target.dataset.uuid;
     const scrollId = target.dataset.scrollId;
     const baseClass = this._resolveClassId(this.tabGroups.primary);
-    if (!uuid || !scrollId || !baseClass) return;
-    const learned = await WizardBook.copySpell(this.actor, baseClass, uuid, 0, 0, WIZARD_SPELL_SOURCE.SCROLL);
+    if (!scrollId || !baseClass) return;
+    const scrollItem = this.actor.items.get(scrollId);
+    if (!scrollItem) return;
+    const learned = await WizardBook.learnFromScroll(this.actor, baseClass, scrollItem);
     if (!learned) return;
-    if (game.settings.get(MODULE.ID, SETTINGS.CONSUME_SCROLLS_WHEN_LEARNING)) {
-      const scrollItem = this.actor.items.get(scrollId);
-      if (scrollItem) {
-        const qty = scrollItem.system.quantity ?? 1;
-        if (qty <= 1) await scrollItem.delete();
-        else await scrollItem.update({ 'system.quantity': qty - 1 });
-      }
-    }
     this.#state.delete(baseClass);
     this._invalidateAndReload(this.tabGroups.primary);
   }

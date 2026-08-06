@@ -311,6 +311,7 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     await actor.update(flagUpdates);
     RuleSet._classRules?.delete?.(actor);
+    ClassManager.invalidateCache(actor);
     SpellDataManager.invalidateCache(actor);
     SpellManager.invalidateCache(actor);
     for (const app of foundry.applications.instances.values()) {
