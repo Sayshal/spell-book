@@ -1,8 +1,9 @@
-import { SpellBook } from './apps/_module.mjs';
+import { PartyCoordinator, SpellBook } from './apps/_module.mjs';
 import { MODULE } from './constants.mjs';
 import { findAllSpellLists } from './data/custom-lists.mjs';
 import { fetchAllSpells } from './data/spell-fetcher.mjs';
 import { ClassRules } from './dialogs/class-rules.mjs';
+import { PartyMode } from './managers/party-mode.mjs';
 import { SpellManager } from './managers/spell-manager.mjs';
 import { WizardBook } from './managers/wizard-book.mjs';
 import { extractSpellFilterData } from './ui/formatting.mjs';
@@ -87,6 +88,22 @@ export async function openSpellBookForActor(actor) {
   if (!actor) return null;
   await SpellManager.handleSpellbookOpen(actor);
   const app = new SpellBook({ actor });
+  app.render({ force: true });
+  return app;
+}
+
+/**
+ * Open the Party Coordinator for an explicit roster.
+ * @param {object[]|object} actors Spellcaster actors, or a group actor whose members are resolved.
+ * @param {object} [options] Open options.
+ * @param {object} [options.groupActor] Group actor supplying the window's title context.
+ * @returns {?PartyCoordinator} Rendered coordinator, or null when no spellcasters resolve.
+ */
+export function openPartyCoordinator(actors, { groupActor = null } = {}) {
+  const group = actors?.type === 'group' ? actors : null;
+  const roster = group ? PartyMode.getPartyActors(group) : Array.isArray(actors) ? actors.filter((actor) => PartyMode.isSpellcaster(actor)) : [];
+  if (!roster.length) return null;
+  const app = new PartyCoordinator({ groupActor: groupActor || group, partyActors: roster });
   app.render({ force: true });
   return app;
 }
@@ -329,6 +346,7 @@ export function createAPI() {
     hasConfiguredCompendiums,
     learnFromScroll,
     openClassRulesForActor,
+    openPartyCoordinator,
     openSpellBookForActor,
     spellBookQuickAccess,
     spellSlotTracker,
