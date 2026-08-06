@@ -464,10 +464,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const spell = fromUuidSync(uuid);
     if (!spell) return;
     const { cost, isFree } = await WizardBook.getCopyingCost(this.actor, baseClass, spell);
-    if (isFree) {
-      await WizardBook.addSpellToSpellbook(this.actor, baseClass, uuid, WIZARD_SPELL_SOURCE.FREE);
-    } else {
-      const time = WizardBook.getCopyingTime(this.actor, baseClass, spell);
+    const time = WizardBook.getCopyingTime(this.actor, baseClass, spell);
+    if (!isFree) {
       const costText = `${cost} GP`;
       const content = await foundry.applications.handlebars.renderTemplate(TEMPLATES.DIALOGS.WIZARD_LEARN_SPELL, { spell, costText, time });
       const confirmed = await foundry.applications.api.DialogV2.confirm({
@@ -477,9 +475,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         renderOptions: detachedRenderOptions(this)
       });
       if (!confirmed) return;
-      await WizardBook.addSpellToSpellbook(this.actor, baseClass, uuid, WIZARD_SPELL_SOURCE.COPIED, { cost, timeSpent: time });
-      if (game.settings.get(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST)) await WizardBook._deductCurrency(this.actor, cost);
     }
+    const source = isFree ? WIZARD_SPELL_SOURCE.FREE : WIZARD_SPELL_SOURCE.COPIED;
+    const learned = await WizardBook.copySpell(this.actor, baseClass, uuid, cost, time, source);
+    if (!learned) return;
     this.#state.delete(baseClass);
     this._invalidateAndReload(this.tabGroups.primary);
   }
@@ -509,7 +508,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const scrollId = target.dataset.scrollId;
     const baseClass = this._resolveClassId(this.tabGroups.primary);
     if (!uuid || !scrollId || !baseClass) return;
-    await WizardBook.addSpellToSpellbook(this.actor, baseClass, uuid, WIZARD_SPELL_SOURCE.SCROLL, { fromScroll: true });
+    const learned = await WizardBook.copySpell(this.actor, baseClass, uuid, 0, 0, WIZARD_SPELL_SOURCE.SCROLL);
+    if (!learned) return;
     if (game.settings.get(MODULE.ID, SETTINGS.CONSUME_SCROLLS_WHEN_LEARNING)) {
       const scrollItem = this.actor.items.get(scrollId);
       if (scrollItem) {
@@ -547,7 +547,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
               name: l.name,
               icon: '<i class="fas fa-check"></i>',
               onClick: async () => {
-                await LoadoutSelector.applySpellConfiguration(this.actor, classId, l.spellConfiguration || []);
+                await LoadoutSelector.applySpellConfiguration(this.actor, classId, l.spellConfiguration || [], l);
                 await this.refreshClassTab(classId);
               }
             }))

@@ -99,8 +99,9 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {object} actor - The actor document
    * @param {string} classIdentifier - The class identifier
    * @param {string[]} loadoutUuids - UUIDs to mark prepared
+   * @param {object} [loadout] - The loadout being applied, for hook identity
    */
-  static async applySpellConfiguration(actor, classIdentifier, loadoutUuids) {
+  static async applySpellConfiguration(actor, classIdentifier, loadoutUuids, loadout = null) {
     const flag = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     const currentKeys = Array.isArray(flag) ? [] : flag[classIdentifier] || [];
     const current = new Set(currentKeys.map((k) => k.split(':').slice(1).join(':')));
@@ -121,6 +122,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
       };
     }
     await SpellManager.saveClassSpecificPreparedSpells(actor, classIdentifier, classSpellData);
+    Hooks.callAll('loadoutApplied', { actor, classIdentifier, spellUuids: loadoutUuids, loadoutId: loadout?.id ?? null, loadoutName: loadout?.name ?? null });
   }
 
   /**
@@ -198,7 +200,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!loadoutId) return;
     const loadout = Loadouts.getLoadout(this.actor, loadoutId);
     if (!loadout?.spellConfiguration) return;
-    await LoadoutSelector.applySpellConfiguration(this.actor, this.classIdentifier, loadout.spellConfiguration);
+    await LoadoutSelector.applySpellConfiguration(this.actor, this.classIdentifier, loadout.spellConfiguration, loadout);
     await this.parentApp?.refreshClassTab?.(this.classIdentifier);
     this.close();
   }

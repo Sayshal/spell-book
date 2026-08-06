@@ -347,6 +347,7 @@ export class SpellManager {
     await this._updateFlags(actor, classIdentifier, updates.preparedSpellKeys);
     this._cantripCountCache.delete(actor);
     ATLAS.log(3, 'Class-specific prepared spells saved.', { actorName: actor.name, classIdentifier });
+    Hooks.callAll('preparationSaved', { actor, classIdentifier, changes });
     return changes;
   }
 

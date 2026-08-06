@@ -75,6 +75,8 @@ export class WizardBook {
       await actor.setFlag(MODULE.ID, flag, copiedSpells);
     }
     this._invalidateSpellbookCache(actor, classId);
+    const spell = fromUuidSync(spellUuid);
+    Hooks.callAll('spellLearned', { actor, classId, spellUuid, source, name: spell?.name ?? null, school: spell?.system?.school ?? null, level: spell?.system?.level ?? null });
     return true;
   }
 
@@ -105,23 +107,25 @@ export class WizardBook {
   }
 
   /**
-   * Copy a spell to the spellbook, optionally deducting currency.
+   * Learn a spell: fires the cancellable `preLearnSpell` hook, deducts currency for paid copies, then adds the spell.
+   * This is the single learn pipeline; every learn path routes through it.
    * @param {object} actor - The actor document
    * @param {string} classId - The class identifier
    * @param {string} spellUuid - UUID of the spell to copy
    * @param {number} cost - Cost in base currency
-   * @param {number} time - Time in hours
-   * @param {boolean} [isFree] - Whether this is a free spell
+   * @param {number|string} time - Time spent copying
+   * @param {string} [source] - Source type (free, copied, scroll)
    * @returns {Promise<boolean>} Success state
    */
-  static async copySpell(actor, classId, spellUuid, cost, time, isFree = false) {
-    ATLAS.log(3, 'Copying spell to spellbook.', { actorName: actor.name, classId, spellUuid, cost, time, isFree });
-    if (!isFree && game.settings.get(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST) && cost > 0) {
-      const success = await this._deductCurrency(actor, cost);
+  static async copySpell(actor, classId, spellUuid, cost, time, source = WIZARD_SPELL_SOURCE.COPIED) {
+    ATLAS.log(3, 'Copying spell to spellbook.', { actorName: actor.name, classId, spellUuid, cost, time, source });
+    const costs = { cost, time };
+    if (Hooks.call('preLearnSpell', { actor, classId, spellUuid, source, costs }) === false) return false;
+    if (source === WIZARD_SPELL_SOURCE.COPIED && game.settings.get(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST) && costs.cost > 0) {
+      const success = await this._deductCurrency(actor, costs.cost);
       if (!success) return false;
     }
-    const source = isFree ? WIZARD_SPELL_SOURCE.FREE : WIZARD_SPELL_SOURCE.COPIED;
-    const metadata = isFree ? null : { cost, timeSpent: time };
+    const metadata = source === WIZARD_SPELL_SOURCE.FREE ? null : { cost: costs.cost, timeSpent: costs.time };
     return this.addSpellToSpellbook(actor, classId, spellUuid, source, metadata);
   }
 

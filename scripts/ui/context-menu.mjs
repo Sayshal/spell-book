@@ -1,4 +1,5 @@
 import { FLAGS, MODULE, TEMPLATES } from '../constants.mjs';
+import { LoadoutSelector } from '../dialogs/loadout-selector.mjs';
 import { Loadouts } from '../managers/loadouts.mjs';
 import { PartyMode } from '../managers/party-mode.mjs';
 
@@ -50,8 +51,10 @@ export class SpellBookContextMenu {
       const itemEl = e.target.closest('.context-menu-item');
       if (!itemEl) return;
       const loadoutId = itemEl.dataset.itemId;
-      if (loadoutId) {
-        await Loadouts.applyLoadout(this.actor, classIdentifier, loadoutId);
+      const loadout = availableLoadouts.find((l) => l.id === loadoutId);
+      if (loadout) {
+        await LoadoutSelector.applySpellConfiguration(this.actor, classIdentifier, loadout.spellConfiguration || [], loadout);
+        await this.app.refreshClassTab?.(classIdentifier);
         this.hide();
       }
     });
