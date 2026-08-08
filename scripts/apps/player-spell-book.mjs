@@ -17,6 +17,7 @@ import { addSpellToActorFavorites, removeSpellFromActorFavorites } from '../ui/f
 import { bindFilterListeners, clearFilterState, getFilterState, unbindFilterListeners } from '../ui/filter-state.mjs';
 import { createSpellIconLink, extractSpellFilterData } from '../ui/formatting.mjs';
 import { enrichSingleSpell } from '../ui/spell-render.mjs';
+import { requestCopyApproval } from '../utils/copy-approval.mjs';
 import { PartyCoordinator } from './party-coordinator.mjs';
 import { SpellListManager } from './spell-list-manager.mjs';
 
@@ -464,10 +465,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const spell = fromUuidSync(uuid);
     if (!spell) return;
     const { cost, isFree } = await WizardBook.getCopyingCost(this.actor, baseClass, spell);
-    const time = WizardBook.getCopyingTime(this.actor, baseClass, spell);
+    const time = WizardBook.getCopyingMinutes(this.actor, baseClass, spell);
     if (!isFree) {
       const costText = `${cost} GP`;
-      const content = await foundry.applications.handlebars.renderTemplate(TEMPLATES.DIALOGS.WIZARD_LEARN_SPELL, { spell, costText, time });
+      const content = await foundry.applications.handlebars.renderTemplate(TEMPLATES.DIALOGS.WIZARD_LEARN_SPELL, { spell, costText, time: WizardBook.formatCopyingTime(time) });
       const confirmed = await foundry.applications.api.DialogV2.confirm({
         window: { title: _loc('SPELLBOOK.Wizard.LearnSpellTitle', { name: spell.name }) },
         content,
@@ -475,6 +476,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         renderOptions: detachedRenderOptions(this)
       });
       if (!confirmed) return;
+      if (game.settings.get(MODULE.ID, SETTINGS.GM_APPROVE_SPELL_COPY) && !game.user.isGM) {
+        await requestCopyApproval(this.actor, baseClass, uuid, cost, time);
+        return;
+      }
     }
     const source = isFree ? WIZARD_SPELL_SOURCE.FREE : WIZARD_SPELL_SOURCE.COPIED;
     const learned = await WizardBook.copySpell(this.actor, baseClass, uuid, cost, time, source);

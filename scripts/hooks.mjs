@@ -4,6 +4,8 @@ import { SpellDataManager } from './managers/_module.mjs';
 import { onRenderScrollPurchase, registerPeddlerIntegration } from './integrations/peddler.mjs';
 import { onAdvancementComplete, onRenderSpellcastingNotice, onSpellcastingItemCreate } from './managers/spellcasting-notice.mjs';
 import { DescriptionInjector } from './ui/description-injector.mjs';
+import { onUpdateActor } from './utils/copy-approval.mjs';
+import { onSpellLearned, registerDowntimeNote } from './utils/downtime-note.mjs';
 import { addJournalSpellBookButton, addSpellbookButton, handleRestCompleted, onGroupActorRender, onTidy5eGroupSheetRender, onTidy5eQuadroneRender, onTidy5eRender } from './utils/sheets.mjs';
 
 /** Register all hooks for the Spell Book module. */
@@ -33,6 +35,9 @@ export function registerAllHooks() {
   Hooks.on('createItem', onSpellcastingItemCreate);
   Hooks.on('dnd5e.advancementManagerComplete', onAdvancementComplete);
   Hooks.on('renderChatMessageHTML', onRenderSpellcastingNotice);
+  Hooks.on('updateActor', onUpdateActor);
+  Hooks.on('spellLearned', onSpellLearned);
+  registerDowntimeNote();
   if (game.modules.get('peddler')?.active) {
     registerPeddlerIntegration();
     Hooks.on('renderChatMessageHTML', onRenderScrollPurchase);

@@ -4,6 +4,8 @@ import { findAllSpellLists, registerCustomSpellLists } from './scripts/data/_mod
 import { registerAllHooks } from './scripts/hooks.mjs';
 import { initializeMacros } from './scripts/managers/_module.mjs';
 import { registerSettings } from './scripts/settings.mjs';
+import { sweepPendingRequests } from './scripts/utils/copy-approval.mjs';
+import { COPY_LOGGED } from './scripts/utils/downtime-note.mjs';
 import { SocketHandler } from './scripts/utils/sockets.mjs';
 
 /**
@@ -23,12 +25,19 @@ async function troubleshooterDebug() {
 }
 
 Hooks.once('init', async () => {
-  ATLAS.register(MODULE.ID, { title: MODULE.NAME, github: 'Sayshal/spell-book', theme: { scope: '.spell-book', default: 'spellbook' }, debug: troubleshooterDebug });
+  const atlas = ATLAS.register(MODULE.ID, {
+    title: MODULE.NAME,
+    github: 'Sayshal/spell-book',
+    theme: { scope: '.spell-book', default: 'spellbook' },
+    debug: troubleshooterDebug,
+    events: [{ name: COPY_LOGGED, gmAuthoritative: true }]
+  });
   CONFIG.DND5E.spellListTypes['actor-spellbook'] = _loc('SPELLBOOK.Registry.ActorSpellBooksGroup');
   registerSettings();
   registerAllHooks();
   createAPI();
   const module = game.modules.get(MODULE.ID);
+  module.atlas = atlas;
   module.socketHandler = new SocketHandler();
   const flattenTemplates = (obj) => Object.values(obj).flatMap((v) => (typeof v === 'string' ? v : flattenTemplates(v)));
   await foundry.applications.handlebars.loadTemplates(flattenTemplates(TEMPLATES));
@@ -42,6 +51,7 @@ Hooks.once('ready', async () => {
   if (game.user.isGM) {
     await registerCustomSpellLists();
     await initializeMacros();
+    sweepPendingRequests();
   }
   ATLAS.log(3, 'Module ready.');
 });

@@ -135,7 +135,7 @@ export function onRenderScrollPurchase(message, html) {
     const confirmed = await showLearnFromScrollDialog({
       spell: linked.spell,
       cost,
-      time: WizardBook.getCopyingTime(actor, classId, linked.spell),
+      time: WizardBook.formatCopyingTime(WizardBook.getCopyingMinutes(actor, classId, linked.spell)),
       isFree,
       isAlreadyInSpellbook: await WizardBook.isSpellInSpellbook(actor, classId, linked.spellUuid)
     });

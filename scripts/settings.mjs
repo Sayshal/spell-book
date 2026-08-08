@@ -91,6 +91,20 @@ export function registerSettings() {
     config: true,
     type: new BooleanField({ initial: false })
   });
+  register(SETTINGS.GM_APPROVE_SPELL_COPY, {
+    name: 'SPELLBOOK.Settings.GmApproveSpellCopy.Name',
+    hint: 'SPELLBOOK.Settings.GmApproveSpellCopy.Hint',
+    scope: 'world',
+    config: true,
+    type: new BooleanField({ initial: false })
+  });
+  register(SETTINGS.SPELL_COPY_DOWNTIME_NOTE, {
+    name: 'SPELLBOOK.Settings.SpellCopyDowntimeNote.Name',
+    hint: 'SPELLBOOK.Settings.SpellCopyDowntimeNote.Hint',
+    scope: 'world',
+    config: true,
+    type: new BooleanField({ initial: false })
+  });
   register(SETTINGS.DISABLE_LONG_REST_SWAP_PROMPT, {
     name: 'SPELLBOOK.Settings.DisableLongRestSwapPrompt.Name',
     hint: 'SPELLBOOK.Settings.DisableLongRestSwapPrompt.Hint',

@@ -144,7 +144,7 @@ export class WizardBook {
     if (!linked) return false;
     const charge = game.settings.get(MODULE.ID, SETTINGS.CHARGE_SCROLL_LEARNING_COST);
     const cost = charge ? (await this.getCopyingCost(actor, classId, linked.spell)).cost : 0;
-    const time = this.getCopyingTime(actor, classId, linked.spell);
+    const time = this.getCopyingMinutes(actor, classId, linked.spell);
     const learned = await this.copySpell(actor, classId, linked.spellUuid, cost, time, WIZARD_SPELL_SOURCE.SCROLL);
     if (!learned) return false;
     if (consume ?? game.settings.get(MODULE.ID, SETTINGS.CONSUME_SCROLLS_WHEN_LEARNING)) {
@@ -171,16 +171,25 @@ export class WizardBook {
   }
 
   /**
-   * Calculate and format time to copy a spell.
+   * Calculate the time to copy a spell, in minutes.
    * @param {object} actor - The actor document
    * @param {string} classId - The class identifier
    * @param {object} spell - The spell document
+   * @returns {number} Copy duration in minutes
+   */
+  static getCopyingMinutes(actor, classId, spell) {
+    const multiplier = RuleSet.getClassRule(actor, classId, 'spellLearningTimeMultiplier', WIZARD_DEFAULTS.SPELL_LEARNING_TIME_MULTIPLIER);
+    return spell.system.level === 0 ? 1 : spell.system.level * multiplier;
+  }
+
+  /**
+   * Format a copy duration for display. Legacy copy records store a pre-formatted string, which passes through unchanged.
+   * @param {number|string} minutes - Copy duration in minutes
    * @returns {string} Formatted time string
    */
-  static getCopyingTime(actor, classId, spell) {
-    const multiplier = RuleSet.getClassRule(actor, classId, 'spellLearningTimeMultiplier', WIZARD_DEFAULTS.SPELL_LEARNING_TIME_MULTIPLIER);
-    const totalMinutes = spell.system.level === 0 ? 1 : spell.system.level * multiplier;
-    const { value, unit } = dnd5e.utils.convertTime(totalMinutes, 'minute');
+  static formatCopyingTime(minutes) {
+    if (typeof minutes !== 'number') return minutes ?? '';
+    const { value, unit } = dnd5e.utils.convertTime(minutes, 'minute');
     return dnd5e.utils.formatTime(value, unit);
   }
 
