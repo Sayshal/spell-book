@@ -1,4 +1,3 @@
-
 /** @type {object} Default filter state used when DOM is unavailable. */
 export const DEFAULT_FILTER_STATE = Object.freeze({
   name: '',
@@ -13,6 +12,7 @@ export const DEFAULT_FILTER_STATE = Object.freeze({
   requiresSave: '',
   prepared: false,
   favorited: false,
+  affordable: false,
   properties: {},
   materialCostly: false,
   preparedByParty: false,
@@ -53,6 +53,7 @@ export function getFilterState(formElement) {
     requiresSave: formElement.querySelector('[name="filter-requiresSave"]')?.value || '',
     prepared: formElement.querySelector('[name="filter-prepared"]')?.checked || false,
     favorited: formElement.querySelector('[name="filter-favorited"]')?.checked || false,
+    affordable: formElement.querySelector('[name="filter-affordable"]')?.checked || false,
     properties,
     materialCostly: formElement.querySelector('[name="filter-material-costly"]')?.checked || false,
     target: formElement.querySelector('[name="filter-target"]')?.value || '',

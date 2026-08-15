@@ -1,4 +1,4 @@
-import { ASSETS, FLAGS, MODULE, SEARCH_DEBOUNCE_DELAY, SETTINGS, TEMPLATES, WIZARD_SPELL_SOURCE } from '../constants.mjs';
+import { ASSETS, FLAGS, MODULE, SEARCH_DEBOUNCE_DELAY, SETTINGS, TEMPLATES, WIZARD_DEFAULTS, WIZARD_SPELL_SOURCE } from '../constants.mjs';
 import { getConfigLabel, getSpellSourceDocument, getTargetUserId } from '../data/helpers.mjs';
 import { scanForScrollSpells } from '../data/scroll-processor.mjs';
 import { fetchAllSpells } from '../data/spell-fetcher.mjs';
@@ -459,6 +459,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {HTMLElement} target - The learn button element
    */
   static async #onLearnSpell(_event, target) {
+    if (target.getAttribute('aria-disabled') === 'true') return;
     const uuid = target.dataset.uuid;
     const baseClass = this._resolveClassId(this.tabGroups.primary);
     if (!uuid || !baseClass) return;
@@ -868,9 +869,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const wizardSpellbook = isLearn ? await WizardBook.getWizardSpellbook(this.actor, baseClass) : null;
     const wizardbookCache = new Map();
     if (wizardSpellbook) wizardbookCache.set(baseClass, wizardSpellbook);
+    const showCost = isLearn && !!baseClass && game.settings.get(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST);
+    const costData = showCost ? await this._buildCostData(baseClass) : null;
+    const state = this.#state.get(tabId);
+    if (state) state.costData = costData;
     return {
       classId: baseClass,
       isLearn,
+      costData,
       batchData: baseClass ? SpellManager.prepareBatchData(this.actor, baseClass) : null,
       userData: await loadUserSpellData(getTargetUserId(this.actor)),
       wizardSpellbook,
@@ -885,13 +891,40 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
+   * Compute the batch-level affordability numbers shared by every spell in a learn tab.
+   * @param {string} classId - The class identifier
+   * @returns {Promise<object>} Wealth, remaining free spells, and the class cost multiplier
+   */
+  async _buildCostData(classId) {
+    return {
+      wealth: WizardBook.getTotalWealth(this.actor),
+      freeRemaining: await WizardBook.getRemainingFreeSpells(this.actor, classId),
+      multiplier: RuleSet.getClassRule(this.actor, classId, 'spellLearningCostMultiplier', WIZARD_DEFAULTS.SPELL_LEARNING_COST_MULTIPLIER)
+    };
+  }
+
+  /**
+   * Derive one spell's copying cost and affordability from batch cost data.
+   * @param {object} spell - The spell document
+   * @param {object} costData - Batch data from `_buildCostData`
+   * @returns {{ cost: number, isFree: boolean, affordable: boolean, shortfall: number }} Cost state for the spell
+   */
+  _getSpellCost(spell, costData) {
+    const level = spell.system?.level ?? 0;
+    const isFree = level === 0 || costData.freeRemaining > 0;
+    const cost = isFree ? 0 : level * costData.multiplier;
+    const affordable = isFree || WizardBook.canAfford(this.actor, cost);
+    return { cost, isFree, affordable, shortfall: affordable ? 0 : Math.ceil(cost - costData.wealth) };
+  }
+
+  /**
    * Render a single spell item as a DOM element using the spell-item partial.
    * @param {object} spell - Spell document from the class spell list
    * @param {object} rc - Shared render context from `_buildRenderContext`
    * @returns {Promise<HTMLElement>} The rendered `<li>` spell item element
    */
   async _renderResult(spell, rc) {
-    const { batchData, userData, wizardSpellbook, scrollSpellMap, classId: baseClass, isLearn, enabledElements, appState } = rc;
+    const { batchData, userData, wizardSpellbook, scrollSpellMap, classId: baseClass, isLearn, enabledElements, appState, costData } = rc;
     const spellUuid = spell.uuid;
 
     // Attach user data so enrichSingleSpell can read favorites/notes state
@@ -967,6 +1000,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         learningSource: source,
         learningSourceLabel: labelKey ? _loc(labelKey) : ''
       };
+      if (costData && wizardAction.canLearn) {
+        const { cost, isFree, affordable, shortfall } = this._getSpellCost(spell, costData);
+        wizardAction.isFree = isFree;
+        wizardAction.unaffordable = !affordable;
+        wizardAction.costLabel = isFree ? _loc('SPELLBOOK.Wizard.SpellCopyFree') : _loc('SPELLBOOK.Wizard.SpellCopyCost', { cost });
+        wizardAction.costTooltip = affordable ? '' : _loc('SPELLBOOK.Wizard.CannotAfford', { shortfall });
+      }
     }
 
     const context = {
@@ -1102,11 +1142,15 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         ${prop('concentration', _loc('DND5E.Concentration'))}
         ${prop('ritual', _loc('DND5E.Ritual'))}
       </fieldset>`;
+    const affordableHtml = game.settings.get(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST)
+      ? `<label><input type="checkbox" name="filter-affordable"> ${_loc('SPELLBOOK.Filters.AffordableOnly')}</label>`
+      : '';
     const togglesHtml = `
       <div class="filter-toggles">
         <label><input type="checkbox" name="filter-material-costly"> ${_loc('SPELLBOOK.Filters.MaterialCostly')}</label>
         <label><input type="checkbox" name="filter-prepared"> ${_loc('SPELLBOOK.Filters.PreparedOnly')}</label>
         <label><input type="checkbox" name="filter-favorited"> ${_loc('SPELLBOOK.Filters.FavoritesOnly')}</label>
+        ${affordableHtml}
       </div>`;
     container.innerHTML = levelRangeHtml + selectsHtml + rangeHtml + propHtml + togglesHtml;
     for (const btn of container.querySelectorAll('.prop-toggle')) {
@@ -1186,6 +1230,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       }
       if (filterState.prepared && !spell.preparation?.prepared) return false;
       if (filterState.favorited && !spell.favorited) return false;
+      if (filterState.affordable && state.costData && !this._getSpellCost(spell, state.costData).affordable) return false;
       return true;
     });
     state.resultIndex = 0;
@@ -1391,7 +1436,12 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const counters = await SpellDataManager.getWizardCounters(this.actor, baseClass);
     const totalEl = panel.querySelector('.wizard-total-count');
     const freeEl = panel.querySelector('.wizard-free-count');
+    const walletEl = panel.querySelector('.wizard-wallet');
     if (totalEl) totalEl.textContent = `${counters.total}/${counters.max} Spells`;
     if (freeEl) freeEl.textContent = `${counters.freeRemaining} Free`;
+    if (walletEl) {
+      const showWallet = game.settings.get(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST);
+      walletEl.textContent = showWallet ? _loc('SPELLBOOK.Wizard.WalletTotal', { amount: WizardBook.getTotalWealth(this.actor).toFixed(2) }) : '';
+    }
   }
 }

@@ -557,7 +557,24 @@
   }
 
   .wizard-spell-status {
+    gap: var(--sb-space-sm);
+    display: flex;
+    align-items: center;
     margin-left: auto;
+  }
+
+  .spell-cost-tag {
+    color: var(--sb-text-secondary);
+    font-size: 0.8em;
+    white-space: nowrap;
+
+    &.free {
+      color: var(--sb-success);
+    }
+
+    &.unaffordable {
+      color: var(--color-level-error, rgb(198 40 40));
+    }
   }
 
   .copy-spell-btn {
@@ -577,6 +594,14 @@
 
     &:hover {
       background: rgb(255 255 255 / 10%);
+    }
+
+    &[aria-disabled='true'] {
+      opacity: 0.5;
+
+      &:hover {
+        background: rgb(255 255 255 / 5%);
+      }
     }
   }
 
@@ -1050,6 +1075,10 @@
       align-self: stretch;
       width: 0.0625rem;
       background: var(--sb-border-medium);
+    }
+
+    .wizard-wallet {
+      white-space: nowrap;
     }
 
     .cantrip-count,

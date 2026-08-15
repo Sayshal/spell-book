@@ -87,8 +87,15 @@
           </span>
         </div>
       {{else if spell.wizardAction.canLearn}}
+        {{#if spell.wizardAction.costLabel}}
+          <span
+            class="spell-cost-tag{{#if spell.wizardAction.isFree}} free{{/if}}{{#if spell.wizardAction.unaffordable}} unaffordable{{/if}}">
+            {{spell.wizardAction.costLabel}}
+          </span>
+        {{/if}}
         <button class="copy-spell-btn" data-action="learnSpell" data-uuid="{{spell.wizardAction.uuid}}" type="button"
-          aria-label="{{localize 'SPELLBOOK.Wizard.LearnSpell'}}">
+          aria-label="{{localize 'SPELLBOOK.Wizard.LearnSpell'}}" {{#if spell.wizardAction.unaffordable}}aria-disabled="true"
+          data-tooltip="{{spell.wizardAction.costTooltip}}" {{/if}}>
           <i class="fas fa-book"></i> {{localize "SPELLBOOK.Wizard.LearnSpell"}}
         </button>
       {{/if}}

@@ -386,44 +386,42 @@ export class WizardBook {
   }
 
   /**
+   * Sum an actor's currency, converted to base currency units.
+   * @param {object} actor - The actor document
+   * @returns {number} Total wealth in base currency units
+   */
+  static getTotalWealth(actor) {
+    const actorCurrency = actor?.system?.currency || {};
+    let total = 0;
+    for (const [type, config] of Object.entries(CONFIG.DND5E.currencies)) if (config.conversion) total += (actorCurrency[type] || 0) / config.conversion;
+    return total;
+  }
+
+  /**
+   * Check whether an actor can pay a cost in the default currency, accounting for change-making.
+   * @param {object} actor - The actor document
+   * @param {number} cost - Cost in default currency units
+   * @returns {boolean} Whether the actor can pay
+   */
+  static canAfford(actor, cost) {
+    if (cost <= 0) return true;
+    return !dnd5e.applications.CurrencyManager.getActorCurrencyUpdates(actor, cost, CONFIG.DND5E.defaultCurrency).remainder;
+  }
+
+  /**
    * Deduct currency from the actor for spell copying costs.
    * @param {object} actor - The actor document
-   * @param {number} cost - Cost in base currency units
+   * @param {number} cost - Cost in default currency units
    * @returns {Promise<boolean>} Whether deduction succeeded
    * @private
    */
   static async _deductCurrency(actor, cost) {
-    const currencies = CONFIG.DND5E.currencies;
-    const actorCurrency = actor.system.currency || {};
-    let baseCurrency = null;
-    const otherCurrencies = [];
-    for (const [type, config] of Object.entries(currencies)) {
-      if (config.conversion === 1) baseCurrency = type;
-      else otherCurrencies.push({ type, conversion: config.conversion });
-    }
-    otherCurrencies.sort((a, b) => a.conversion - b.conversion);
-    const deductionOrder = baseCurrency ? [baseCurrency, ...otherCurrencies.map((c) => c.type)] : otherCurrencies.map((c) => c.type);
-    let totalWealth = 0;
-    for (const [type, config] of Object.entries(currencies)) totalWealth += (actorCurrency[type] || 0) / config.conversion;
-    if (totalWealth < cost) {
-      ui.notifications.warn(_loc('SPELLBOOK.Wizard.InsufficientGold', { cost, current: totalWealth.toFixed(2) }));
+    const { remainder, system } = dnd5e.applications.CurrencyManager.getActorCurrencyUpdates(actor, cost, CONFIG.DND5E.defaultCurrency);
+    if (remainder) {
+      ATLAS.log(2, `Insufficient currency to copy a spell: ${actor.name} needs ${cost} but holds ${this.getTotalWealth(actor).toFixed(2)}.`);
       return false;
     }
-    let remaining = cost;
-    const updateData = {};
-    for (const type of deductionOrder) {
-      if (remaining <= 0.001) break;
-      const available = actorCurrency[type] || 0;
-      if (available <= 0) continue;
-      const basePerUnit = 1 / currencies[type].conversion;
-      const needed = Math.ceil(remaining / basePerUnit);
-      const toDeduct = Math.min(available, needed);
-      if (toDeduct > 0) {
-        updateData[`system.currency.${type}`] = available - toDeduct;
-        remaining -= toDeduct * basePerUnit;
-      }
-    }
-    await actor.update(updateData);
+    await actor.update({ system });
     return true;
   }
 
