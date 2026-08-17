@@ -460,7 +460,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const merged = this.availableLists.filter((l) => !l.isActorOwned && l.isMerged && !hiddenLists.includes(l.uuid));
     const custom = this.availableLists.filter((l) => !l.isActorOwned && !l.isMerged && !l.isModified && (l.isCustom || l.document?.flags?.[MODULE.ID]?.isNewList) && !hiddenLists.includes(l.uuid));
     const sourceConfig = game.settings.get('dnd5e', 'packSourceConfiguration') ?? {};
-    const allStandard = this.availableLists.filter((l) => !l.isActorOwned && !l.isCustom && !l.isMerged && !l.isModified && !l.document?.flags?.[MODULE.ID]?.isNewList && !hiddenLists.includes(l.uuid));
+    const allStandard = this.availableLists.filter(
+      (l) => !l.isActorOwned && !l.isCustom && !l.isMerged && !l.isModified && !l.document?.flags?.[MODULE.ID]?.isNewList && !hiddenLists.includes(l.uuid)
+    );
     const standard = allStandard.filter((l) => !isSourceHiddenSpellList(l.system?.spells, false, sourceConfig));
     const sourceHiddenCount = allStandard.length - standard.length;
     const byActor = (a, b) => (a.actorName && b.actorName ? a.actorName.localeCompare(b.actorName) : a.actorName ? -1 : b.actorName ? 1 : a.name.localeCompare(b.name));

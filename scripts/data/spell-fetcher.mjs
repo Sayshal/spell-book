@@ -4,7 +4,6 @@
  * @author Tyler
  */
 
-
 /** @type {object} dnd5e CompendiumBrowser class reference */
 const CompendiumBrowser = dnd5e.applications.CompendiumBrowser;
 

@@ -1,4 +1,3 @@
-
 /**
  * Add a spell to actor.system.favorites.
  * @param {string} spellUuid - The spell UUID
