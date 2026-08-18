@@ -1,0 +1,24 @@
+{
+  "name": "spell-book",
+  "version": "1.0.0",
+  "description": "Spell preparation, loadouts and wizard spellbooks for FoundryVTT",
+  "scripts": {
+    "build": "rollup -c rollup.config.mjs",
+    "build:watch": "rollup -c rollup.config.mjs --watch",
+    "dev": "rollup -c rollup.config.mjs --environment BUILD:development",
+    "clean": "node -e \"import('fs').then(f=>{if(!f.existsSync('dist'))return;for(const e of f.readdirSync('dist')) if(e!=='storage'&&e!=='packs') f.rmSync('dist/'+e,{recursive:true,force:true})})\""
+  },
+  "author": "Tyler",
+  "license": "MIT",
+  "private": true,
+  "bugs": {
+    "url": "https://github.com/Sayshal/spell-book/issues"
+  },
+  "homepage": "https://github.com/Sayshal/spell-book#readme",
+  "devDependencies": {
+    "@rollup/plugin-terser": "^1.0.0",
+    "rollup": "^4.59.0",
+    "rollup-plugin-copy": "^3.5.0",
+    "rollup-plugin-postcss": "^4.0.2"
+  }
+}

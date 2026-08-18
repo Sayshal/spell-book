@@ -4,3 +4,5 @@
 *.lock
 /todo
 README.html
+/dist
+/node_modules

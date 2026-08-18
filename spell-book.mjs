@@ -7,6 +7,7 @@ import { registerSettings } from './scripts/settings.mjs';
 import { sweepPendingRequests } from './scripts/utils/copy-approval.mjs';
 import { COPY_LOGGED } from './scripts/utils/downtime-note.mjs';
 import { SocketHandler } from './scripts/utils/sockets.mjs';
+import './styles/spell-book.css';
 
 /**
  * Extra troubleshooter lines: dnd5e enabled compendium sources, plus every spell list and its spells.

@@ -17,6 +17,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install dependencies
+        run: npm ci
+
       # Read module ID from module.json
       - name: Get module ID
         id: module_id
@@ -41,11 +44,15 @@ jobs:
           echo "Version: $VERSION"
           echo "Module ID: $MODULE_ID"
 
+      # Build the module
+      - name: Build
+        run: npm run build
+
       # Update module.json with version and download URLs
       - name: Update module.json
         uses: microsoft/variable-substitution@v1
         with:
-          files: 'module.json'
+          files: 'dist/module.json'
         env:
           version: ${{ env.VERSION }}
           download: ${{ env.RELEASE_DOWNLOAD_URL }}
@@ -55,7 +62,7 @@ jobs:
       # Verify the version in module.json matches the tag
       - name: Verify version
         run: |
-          MODULE_VERSION=$(jq -r '.version' module.json)
+          MODULE_VERSION=$(jq -r '.version' dist/module.json)
           if [[ ! "$MODULE_VERSION" == "${{ env.VERSION }}" ]]; then
             echo "Error: module.json version ($MODULE_VERSION) does not match tag version (${{ env.VERSION }})"
             exit 1
@@ -64,21 +71,8 @@ jobs:
 
       # Create zip with module files
       - name: Zip Files
-        run: |
-          zip -r ${{ env.ZIP_NAME }} \
-            lang/ \
-            assets/ \
-            scripts/ \
-            styles/ \
-            templates/ \
-            LICENSE \
-            module.json \
-            release_notes.txt \
-            README.md \
-            spell-book.mjs \
-            -x "*.lock" \
-            -x "package*.json" \
-            -x "node_modules/*"
+        working-directory: dist
+        run: zip -r ../${{ env.ZIP_NAME }} .
 
       # Fetch existing release body if it exists
       - name: Fetch Release Body
@@ -102,7 +96,7 @@ jobs:
           omitDraftDuringUpdate: true
           omitPrereleaseDuringUpdate: true
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: './module.json, ./${{ env.ZIP_NAME }}'
+          artifacts: './dist/module.json, ./${{ env.ZIP_NAME }}'
           tag: ${{ env.TAG_NAME }}
           body: |
             ${{ steps.release.outputs.body }}
@@ -113,10 +107,10 @@ jobs:
       - name: Read module metadata
         id: module
         run: |
-          echo "title=$(jq -r '.title' module.json)" >> $GITHUB_OUTPUT
-          echo "compat_min=$(jq -r '.compatibility.minimum' module.json)" >> $GITHUB_OUTPUT
-          echo "compat_verified=$(jq -r '.compatibility.verified' module.json)" >> $GITHUB_OUTPUT
-          echo "compat_max=$(jq -r '.compatibility.maximum' module.json)" >> $GITHUB_OUTPUT
+          echo "title=$(jq -r '.title' dist/module.json)" >> $GITHUB_OUTPUT
+          echo "compat_min=$(jq -r '.compatibility.minimum' dist/module.json)" >> $GITHUB_OUTPUT
+          echo "compat_verified=$(jq -r '.compatibility.verified' dist/module.json)" >> $GITHUB_OUTPUT
+          echo "compat_max=$(jq -r '.compatibility.maximum' dist/module.json)" >> $GITHUB_OUTPUT
 
       # Release to Foundry Package API
       - name: Release Foundry Package
