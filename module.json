@@ -96,7 +96,6 @@
       }
     ]
   },
-  "socket": true,
   "styles": ["styles/spell-book.css"],
   "title": "Spell Book",
   "url": "https://github.com/Sayshal/spell-book",

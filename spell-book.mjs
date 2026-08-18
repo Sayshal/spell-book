@@ -6,7 +6,6 @@ import { initializeMacros } from './scripts/managers/_module.mjs';
 import { registerSettings } from './scripts/settings.mjs';
 import { sweepPendingRequests } from './scripts/utils/copy-approval.mjs';
 import { COPY_LOGGED } from './scripts/utils/downtime-note.mjs';
-import { SocketHandler } from './scripts/utils/sockets.mjs';
 import './styles/spell-book.css';
 
 /**
@@ -39,7 +38,6 @@ Hooks.once('init', async () => {
   createAPI();
   const module = game.modules.get(MODULE.ID);
   module.atlas = atlas;
-  module.socketHandler = new SocketHandler();
   const flattenTemplates = (obj) => Object.values(obj).flatMap((v) => (typeof v === 'string' ? v : flattenTemplates(v)));
   await foundry.applications.handlebars.loadTemplates(flattenTemplates(TEMPLATES));
   ATLAS.log(3, 'Module initialized.');
