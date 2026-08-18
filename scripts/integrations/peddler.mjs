@@ -150,7 +150,7 @@ export function onRenderScrollPurchase(message, html) {
 /** Register the Peddler trade listener; GM clients only, since Peddler commits trades GM-side. */
 export function registerPeddlerIntegration() {
   Hooks.on(PEDDLER_TRADE, (data) => {
-    if (game.user === game.users.activeGM) onPeddlerTrade(data);
+    if (ATLAS.isPrimaryGM) onPeddlerTrade(data);
   });
   ATLAS.log(3, 'Peddler integration registered.');
 }

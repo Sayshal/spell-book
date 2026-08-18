@@ -91,7 +91,7 @@ async function appendLine(api, date, line) {
  * @returns {void}
  */
 function onCopyLogged({ actorName, spellName, minutes }) {
-  if (!game.users?.activeGM?.isSelf || !game.settings.get(MODULE.ID, SETTINGS.SPELL_COPY_DOWNTIME_NOTE)) return;
+  if (!ATLAS.isPrimaryGM || !game.settings.get(MODULE.ID, SETTINGS.SPELL_COPY_DOWNTIME_NOTE)) return;
   const api = globalThis.CALENDARIA?.api;
   const date = currentDate();
   if (!api?.createNote || !api?.getNotesForDate || !date) return;
@@ -115,7 +115,7 @@ export function onSpellLearned({ actor, classId, spellUuid, source, name }) {
   const records = actor.getFlag(MODULE.ID, `${FLAGS.WIZARD_COPIED_SPELLS}_${classId}`) || [];
   const minutes = records.findLast((record) => record.spellUuid === spellUuid)?.timeSpent ?? 0;
   const payload = { actorName: actor.name, spellName: name ?? spellUuid, minutes };
-  if (game.users?.activeGM?.isSelf) onCopyLogged(payload);
+  if (ATLAS.isPrimaryGM) onCopyLogged(payload);
   game.modules.get(MODULE.ID).atlas?.broadcast(COPY_LOGGED, payload);
 }
 

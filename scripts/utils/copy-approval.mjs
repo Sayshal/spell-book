@@ -32,7 +32,7 @@ export async function requestCopyApproval(actor, classId, spellUuid, cost, minut
     return false;
   }
   await actor.setFlag(MODULE.ID, FLAGS.PENDING_SPELL_COPY, { classId, spellUuid, cost, minutes, userId: game.user.id });
-  ui.notifications.info(game.users.activeGM ? 'SPELLBOOK.Approval.Sent' : 'SPELLBOOK.Approval.Queued', { localize: true });
+  ui.notifications.info(ATLAS.primaryGM ? 'SPELLBOOK.Approval.Sent' : 'SPELLBOOK.Approval.Queued', { localize: true });
   return true;
 }
 
@@ -104,7 +104,7 @@ export function onUpdateActor(actor, changes, _options, userId) {
   const flagChanges = changes.flags?.[MODULE.ID];
   if (!flagChanges) return;
   if (FLAGS.PENDING_SPELL_COPY in flagChanges) {
-    if (game.users.activeGM?.isSelf) resolveRequest(actor);
+    if (ATLAS.isPrimaryGM) resolveRequest(actor);
     return;
   }
   if (userId === game.userId || !actor.isOwner) return;
@@ -115,6 +115,6 @@ export function onUpdateActor(actor, changes, _options, userId) {
 
 /** Surface requests that were queued while no GM was connected. */
 export function sweepPendingRequests() {
-  if (!game.users.activeGM?.isSelf) return;
+  if (!ATLAS.isPrimaryGM) return;
   for (const actor of game.actors) if (actor.getFlag(MODULE.ID, FLAGS.PENDING_SPELL_COPY)) resolveRequest(actor);
 }

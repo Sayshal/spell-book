@@ -14,7 +14,7 @@ const _debouncers = new WeakMap();
  * @param {object} actor - The actor document
  */
 function scheduleCheck(actor) {
-  if (game.user !== game.users.activeGM) return;
+  if (!ATLAS.isPrimaryGM) return;
   let debounced = _debouncers.get(actor);
   if (!debounced) {
     debounced = foundry.utils.debounce(() => checkSpellcastingLists(actor), 500);
