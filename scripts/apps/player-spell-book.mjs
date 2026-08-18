@@ -471,6 +471,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const costText = `${cost} GP`;
       const content = await foundry.applications.handlebars.renderTemplate(TEMPLATES.DIALOGS.WIZARD_LEARN_SPELL, { spell, costText, time: WizardBook.formatCopyingTime(time) });
       const confirmed = await foundry.applications.api.DialogV2.confirm({
+        classes: ['spell-book'],
         window: { title: _loc('SPELLBOOK.Wizard.LearnSpellTitle', { name: spell.name }) },
         content,
         rejectClose: false,

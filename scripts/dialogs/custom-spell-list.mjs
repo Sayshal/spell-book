@@ -69,6 +69,7 @@ export class CustomSpellList extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static async #onCreate(_event, _target) {
     const name = await foundry.applications.api.DialogV2.prompt({
+      classes: ['spell-book'],
       title: _loc('SPELLBOOK.CustomSpellList.CreateTitle'),
       content: `<div class="form-group"><label>${_loc('SPELLBOOK.CustomSpellList.NameLabel')}</label><input type="text" name="name" autofocus></div>`,
       ok: { label: _loc('SPELLBOOK.CustomSpellList.Create'), callback: (_event, button) => button.form.elements.name.value.trim() },
@@ -90,6 +91,7 @@ export class CustomSpellList extends HandlebarsApplicationMixin(ApplicationV2) {
     const uuid = target.dataset.uuid;
     if (!uuid) return;
     const confirmed = await foundry.applications.api.DialogV2.confirm({
+      classes: ['spell-book'],
       title: _loc('SPELLBOOK.CustomSpellList.RemoveTitle'),
       content: `<p>${_loc('SPELLBOOK.CustomSpellList.RemoveConfirm')}</p>`,
       renderOptions: detachedRenderOptions(this)

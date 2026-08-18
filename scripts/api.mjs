@@ -23,7 +23,7 @@ export async function flagPurge() {
   const options = ['<option value="all">All Eligible Actors</option>', ...eligible.map((a) => `<option value="${a.id}">${a.name}</option>`)].join('');
   const content = `<form class="flag-purge-dialog"><p><strong>${_loc('SPELLBOOK.API.FlagPurge.Warning')}</strong></p><div class="form-group"><label for="flag-purge-actor">${_loc('SPELLBOOK.API.FlagPurge.SelectActor')}</label><select id="flag-purge-actor" name="actorId">${options}</select></div><p class="warning-text">${_loc('SPELLBOOK.API.FlagPurge.Irreversible')}</p></form>`;
   const actorId = await DialogV2.wait({
-    classes: ['dnd5e2'],
+    classes: ['spell-book'],
     window: { icon: 'fas fa-trash', title: _loc('SPELLBOOK.API.FlagPurge.Title'), resizable: false },
     position: { width: 'auto', height: 'auto' },
     content,
@@ -66,7 +66,7 @@ export function hasConfiguredCompendiums() {
 
 /**
  * Open the per-actor Class Rules configuration dialog.
- * @param {Actor} actor Target actor whose class rules will be configured.
+ * @param {foundry.documents.Actor} actor Target actor whose class rules will be configured.
  * @param {object} [options] Callback configuration.
  * @param {Function} [options.onSave] Invoked after the dialog's save submit completes.
  * @param {Function} [options.onCancel] Invoked when the dialog closes without saving.
@@ -81,7 +81,7 @@ export function openClassRulesForActor(actor, { onSave, onCancel } = {}) {
 
 /**
  * Open the Spell Book directly for the given actor.
- * @param {Actor} actor Target spellcasting actor.
+ * @param {foundry.documents.Actor} actor Target spellcasting actor.
  * @returns {Promise<?SpellBook>} Rendered Spell Book app, or null when the actor is invalid.
  */
 export async function openSpellBookForActor(actor) {
@@ -206,7 +206,7 @@ export async function scrollScanner() {
   const uuidCol = _loc('SPELLBOOK.API.ScrollScanner.UuidColumn');
   const content = `<div class="scroll-scanner"><p>${header}</p><table><thead><tr><th>${nameCol}</th><th>${uuidCol}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   const result = await DialogV2.wait({
-    classes: ['dnd5e2'],
+    classes: ['spell-book'],
     window: { icon: 'fas fa-scroll', title: _loc('SPELLBOOK.API.ScrollScanner.Title'), resizable: true },
     position: { width: 800, height: 600 },
     content,
@@ -269,7 +269,7 @@ export async function spellsNotInLists() {
   const sourceCol = _loc('SPELLBOOK.API.SpellsNotInLists.SourceColumn');
   const content = `<div class="spells-not-in-lists"><p>${header}</p><table><thead><tr><th>${nameCol}</th><th>${sourceCol}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   const result = await DialogV2.wait({
-    classes: ['dnd5e2'],
+    classes: ['spell-book'],
     window: { icon: 'fas fa-search', title: _loc('SPELLBOOK.API.SpellsNotInLists.Title'), resizable: true },
     position: { width: 800, height: 600 },
     content,

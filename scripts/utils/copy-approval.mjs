@@ -70,6 +70,7 @@ async function resolveRequest(actor) {
       time: WizardBook.formatCopyingTime(request.minutes)
     });
     const result = await DialogV2.wait({
+      classes: ['spell-book'],
       window: { icon: 'fas fa-hourglass-half', title: _loc('SPELLBOOK.Approval.Title', { name: actor.name }) },
       content,
       buttons: [

@@ -29,6 +29,7 @@ export async function confirmDialog({
   parent = null
 }) {
   const result = await DialogV2.wait({
+    classes: ['spell-book'],
     window: { title: title },
     content: `<p>${content}</p>`,
     buttons: [

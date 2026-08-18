@@ -56,6 +56,7 @@ async function promptForClass(classes) {
   if (classes.length === 1) return classes[0].identifier;
   const options = classes.map((c) => `<option value="${c.identifier}">${c.classItem.name}</option>`).join('');
   const result = await DialogV2.wait({
+    classes: ['spell-book'],
     window: { icon: 'fas fa-book', title: _loc('SPELLBOOK.ScrollPurchase.ChooseClassTitle') },
     content: `<p>${_loc('SPELLBOOK.ScrollPurchase.ChooseClassBody')}</p><select name="classId">${options}</select>`,
     buttons: [

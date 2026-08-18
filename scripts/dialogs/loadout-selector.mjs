@@ -180,6 +180,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
     const loadoutId = target.dataset.loadoutId;
     if (!loadoutId) return;
     const confirmed = await foundry.applications.api.DialogV2.confirm({
+      classes: ['spell-book'],
       title: _loc('SPELLBOOK.Loadouts.ConfirmDelete'),
       content: _loc('SPELLBOOK.Loadouts.ConfirmDeleteContent', { name: target.dataset.loadoutName }),
       renderOptions: detachedRenderOptions(this)

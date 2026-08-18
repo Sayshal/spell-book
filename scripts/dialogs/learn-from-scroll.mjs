@@ -19,6 +19,7 @@ export async function showLearnFromScrollDialog({ spell, cost, time, isFree, isA
   const content = await renderTemplate(TEMPLATES.DIALOGS.LEARN_FROM_SCROLL, { spell, costText, time, isAlreadyInSpellbook, shouldConsume });
   try {
     const result = await DialogV2.wait({
+      classes: ['spell-book'],
       window: { icon: 'fas fa-scroll', title: _loc('SPELLBOOK.Wizard.LearnSpellTitle', { name: spell.name }) },
       content,
       buttons: [

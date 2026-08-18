@@ -387,6 +387,7 @@ export class RuleSet {
     const context = { className, totalAffected: affectedSpells.length, cantripCount, spellCount, affectedSpells };
     const content = await renderTemplate(TEMPLATES.DIALOGS.SPELL_LIST_CHANGE_CONFIRMATION, context);
     const result = await foundry.applications.api.DialogV2.wait({
+      classes: ['spell-book'],
       title: _loc('SPELLBOOK.SpellListChange.Title'),
       content: content,
       buttons: [

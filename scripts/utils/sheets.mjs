@@ -120,6 +120,7 @@ async function promptLongRestSwap(actor, longRestClasses) {
   }
   const content = await renderTemplate(TEMPLATES.DIALOGS.LONG_REST_SWAP, { longRestClasses });
   const result = await DialogV2.wait({
+    classes: ['spell-book'],
     content,
     window: { icon: 'fas fa-bed', title: _loc('SPELLBOOK.LongRest.SwapTitle'), resizable: false },
     position: { width: 450, height: 'auto' },
