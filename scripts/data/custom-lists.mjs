@@ -21,7 +21,7 @@ export async function createNewSpellList(name, identifier, type) {
           type: 'spells',
           ownership,
           flags: { [MODULE.ID]: { isCustom: true, isNewList: true, isDuplicate: false, creationDate: Date.now() } },
-          system: { identifier: identifier.toLowerCase(), type, description: _loc('SPELLMANAGER.CreateList.CustomDescription', { identifier }), spells: [] }
+          system: { identifier: identifier.toLowerCase(), type, description: _loc('SPELLBOOK.Manager.CreateList.CustomDescription', { identifier }), spells: [] }
         }
       ]
     },
@@ -214,7 +214,7 @@ export async function createMergedSpellList(spellListUuids, mergedListName) {
           flags: { [MODULE.ID]: { isCustom: true, isMerged: true, isDuplicate: false, creationDate: Date.now(), sourceListUuids: spellListUuids } },
           system: {
             identifier: identifier.toLowerCase(),
-            description: _loc('SPELLMANAGER.CreateList.MultiMergedDescription', { listNames, count: lists.length }),
+            description: _loc('SPELLBOOK.Manager.CreateList.MultiMergedDescription', { listNames, count: lists.length }),
             spells: mergedSpells
           }
         }
@@ -231,7 +231,11 @@ export async function createMergedSpellList(spellListUuids, mergedListName) {
  * @returns {Promise<object|null>} The folder document or null
  */
 export async function getOrCreateSpellListFolder(folderType) {
-  const locKeys = { custom: 'SPELLMANAGER.Folders.CustomSpellListsFolder', merged: 'SPELLMANAGER.Folders.MergedSpellListsFolder', modified: 'SPELLMANAGER.Folders.ModifiedSpellListsFolder' };
+  const locKeys = {
+    custom: 'SPELLBOOK.Manager.Folders.CustomSpellListsFolder',
+    merged: 'SPELLBOOK.Manager.Folders.MergedSpellListsFolder',
+    modified: 'SPELLBOOK.Manager.Folders.ModifiedSpellListsFolder'
+  };
   const folderName = _loc(locKeys[folderType]);
   const customPack = game.packs.get(PACK.SPELLS);
   const existing = customPack.folders.find((f) => f.name === folderName);

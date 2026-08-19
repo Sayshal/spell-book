@@ -14,41 +14,41 @@
         </div>
         {{#if selectedList.isRenameable}}
           <button type="button" class="action-button" data-action="renameList" data-uuid="{{selectedList.uuid}}"
-            data-tooltip="{{localize 'SPELLMANAGER.Tooltips.Rename'}}">
+            data-tooltip="{{localize 'SPELLBOOK.Manager.Tooltips.Rename'}}">
             <i class="fas fa-pen" aria-hidden="true"></i>
           </button>
         {{/if}}
         {{#if selectedList.isPlayerSpellbook}}
           <button type="button" class="action-button" data-action="openActor"
-            data-tooltip="{{localize 'SPELLMANAGER.Buttons.OpenActor'}}">
+            data-tooltip="{{localize 'SPELLBOOK.Manager.Buttons.OpenActor'}}">
             <i class="fas fa-user" aria-hidden="true"></i>
           </button>
         {{/if}}
         {{#if selectedList.isClassSpellList}}
           <button type="button" class="action-button" data-action="openClass"
-            data-tooltip="{{localize 'SPELLMANAGER.Buttons.Open' type=selectedList.classType}}">
+            data-tooltip="{{localize 'SPELLBOOK.Manager.Buttons.Open' type=selectedList.classType}}">
             <i class="fas fa-scroll" aria-hidden="true"></i>
           </button>
         {{/if}}
         {{#if selectedList.canRestore}}
           <button type="button" class="action-button" data-action="restoreList" data-uuid="{{selectedList.uuid}}"
-            data-tooltip="{{localize 'SPELLMANAGER.Buttons.Restore'}}">
+            data-tooltip="{{localize 'SPELLBOOK.Manager.Buttons.Restore'}}">
             <i class="fas fa-sync" aria-hidden="true"></i>
           </button>
         {{/if}}
         <button type="button" class="action-button" data-action="deleteList" data-uuid="{{selectedList.uuid}}"
-          data-tooltip="{{localize 'SPELLMANAGER.Buttons.Delete'}}">
+          data-tooltip="{{localize 'SPELLBOOK.Manager.Buttons.Delete'}}">
           <i class="fas fa-trash" aria-hidden="true"></i>
         </button>
         <button type="button" class="action-button save-btn" data-action="saveList" data-uuid="{{selectedList.uuid}}"
-          data-tooltip="{{localize 'SPELLMANAGER.Buttons.Save'}}">
+          data-tooltip="{{localize 'SPELLBOOK.Manager.Buttons.Save'}}">
           <i class="fas fa-save" aria-hidden="true"></i>
         </button>
       </div>
     </div>
     <div class="split-view">
       <div class="available-spells-panel">
-        <h3 class="panel-header">{{localize "SPELLMANAGER.Sidebar.AvailableSpells"}}
+        <h3 class="panel-header">{{localize "SPELLBOOK.Manager.Sidebar.AvailableSpells"}}
           {{#if filteredSpells}}({{filteredSpells.totalFiltered}}){{/if}}
         </h3>
         <div class="panel-scroll">
@@ -73,7 +73,7 @@
                   {{/if}}
                   <button type="button" class="add-spell{{#if ../selectionMode}} select-toggle{{/if}}"
                     data-action="addSpell" data-uuid="{{spell.uuid}}"
-                    data-tooltip="{{localize 'SPELLMANAGER.Buttons.AddSpell' name=spell.name}}">
+                    data-tooltip="{{localize 'SPELLBOOK.Manager.Buttons.AddSpell' name=spell.name}}">
                     {{#if ../selectionMode}}
                       <i class="fas fa-{{#if spell.isSelectedForAdd}}check-square{{else}}square{{/if}}"
                         aria-hidden="true"></i>
@@ -85,7 +85,7 @@
               {{/each}}
             </ul>
           {{else}}
-            {{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize "SPELLMANAGER.Columns.NoMatchingSpells")}}
+            {{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize "SPELLBOOK.Manager.Columns.NoMatchingSpells")}}
           {{/if}}
         </div>
       </div>
@@ -120,7 +120,7 @@
                       {{/if}}
                       <button type="button" class="remove-spell{{#if @root.selectionMode}} select-toggle{{/if}}"
                         data-action="removeSpell" data-uuid="{{spell.uuid}}"
-                        data-tooltip="{{localize 'SPELLMANAGER.Buttons.RemoveSpell' name=spell.name}}">
+                        data-tooltip="{{localize 'SPELLBOOK.Manager.Buttons.RemoveSpell' name=spell.name}}">
                         {{#if @root.selectionMode}}
                           <i class="fas fa-{{#if spell.isSelectedForRemoval}}check-square{{else}}square{{/if}}"
                             aria-hidden="true"></i>
@@ -134,14 +134,14 @@
               </div>
             {{/each}}
           {{else}}
-            {{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize "SPELLMANAGER.Columns.NoSpells")}}
+            {{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize "SPELLBOOK.Manager.Columns.NoSpells")}}
           {{/if}}
         </div>
       </div>
     </div>
   {{else}}
     <div class="no-selection">
-      <p>{{localize "SPELLMANAGER.Columns.NoListSelected"}}</p>
+      <p>{{localize "SPELLBOOK.Manager.Columns.NoListSelected"}}</p>
     </div>
   {{/if}}
 </section>

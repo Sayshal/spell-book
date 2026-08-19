@@ -1,31 +1,31 @@
 <div class="merge-spell-lists">
   <div class="form-group">
-    <label for="spell-lists-to-merge">{{localize "SPELLMANAGER.MergeLists.SpellListsLabel"}}</label>
+    <label for="spell-lists-to-merge">{{localize "SPELLBOOK.Manager.MergeLists.SpellListsLabel"}}</label>
     <div class="form-fields">
       <multi-select id="spell-lists-to-merge" name="spellListsToMerge">
         {{#if lists.standard.length}}
-          <optgroup label="{{localize 'SPELLMANAGER.Folders.SpellLists'}}">
+          <optgroup label="{{localize 'SPELLBOOK.Manager.Folders.SpellLists'}}">
             {{#each lists.standard}}
               <option value="{{this.uuid}}">{{this.name}}</option>
             {{/each}}
           </optgroup>
         {{/if}}
         {{#if lists.custom.length}}
-          <optgroup label="{{localize 'SPELLMANAGER.Folders.CustomLists'}}">
+          <optgroup label="{{localize 'SPELLBOOK.Manager.Folders.CustomLists'}}">
             {{#each lists.custom}}
               <option value="{{this.uuid}}">{{this.name}}</option>
             {{/each}}
           </optgroup>
         {{/if}}
         {{#if lists.merged.length}}
-          <optgroup label="{{localize 'SPELLMANAGER.Folders.MergedLists'}}">
+          <optgroup label="{{localize 'SPELLBOOK.Manager.Folders.MergedLists'}}">
             {{#each lists.merged}}
               <option value="{{this.uuid}}">{{this.name}}</option>
             {{/each}}
           </optgroup>
         {{/if}}
         {{#if lists.actorOwned.length}}
-          <optgroup label="{{localize 'SPELLMANAGER.Folders.PlayerSpellbooks'}}">
+          <optgroup label="{{localize 'SPELLBOOK.Manager.Folders.PlayerSpellbooks'}}">
             {{#each lists.actorOwned}}
               <option value="{{this.uuid}}">{{this.name}}</option>
             {{/each}}
@@ -33,21 +33,21 @@
         {{/if}}
       </multi-select>
     </div>
-    <p class="hint">{{localize "SPELLMANAGER.MergeLists.SpellListsHint"}}</p>
+    <p class="hint">{{localize "SPELLBOOK.Manager.MergeLists.SpellListsHint"}}</p>
   </div>
   <div class="form-group">
-    <label for="merged-list-name">{{localize "SPELLMANAGER.MergeLists.MergedListNameLabel"}}</label>
+    <label for="merged-list-name">{{localize "SPELLBOOK.Manager.MergeLists.MergedListNameLabel"}}</label>
     <div class="form-fields">
       <input type="text" id="merged-list-name" name="mergedListName"
-        placeholder="{{localize 'SPELLMANAGER.MergeLists.MergedListNameLabel'}}" maxlength="100">
+        placeholder="{{localize 'SPELLBOOK.Manager.MergeLists.MergedListNameLabel'}}" maxlength="100">
     </div>
-    <p class="hint">{{localize "SPELLMANAGER.MergeLists.MergedListNameRequired"}}</p>
+    <p class="hint">{{localize "SPELLBOOK.Manager.MergeLists.MergedListNameRequired"}}</p>
   </div>
   <div class="form-group">
-    <label for="hide-source-lists">{{localize "SPELLMANAGER.MergeLists.HideSourceListsLabel"}}</label>
+    <label for="hide-source-lists">{{localize "SPELLBOOK.Manager.MergeLists.HideSourceListsLabel"}}</label>
     <div class="form-fields">
       <input type="checkbox" id="hide-source-lists" name="hideSourceLists">
     </div>
-    <p class="hint">{{localize "SPELLMANAGER.MergeLists.HideSourceListsHint"}}</p>
+    <p class="hint">{{localize "SPELLBOOK.Manager.MergeLists.HideSourceListsHint"}}</p>
   </div>
 </div>

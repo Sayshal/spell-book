@@ -63,7 +63,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     id: `spell-list-manager-${MODULE.ID}`,
     tag: 'div',
     classes: ['spell-book', 'spell-list-manager'],
-    window: { frame: false, positioned: true, title: 'SPELLMANAGER.Application.Title' },
+    window: { frame: false, positioned: true, title: 'SPELLBOOK.Manager.Application.Title' },
     position: { width: 1100, height: 800 },
     actions: {
       switchSidebarMode: SpellListManager.#onSwitchSidebarMode,
@@ -315,7 +315,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     if (this.selectionMode) classes.push('selectable');
     if (spell.isSelectedForAdd) classes.push('selected');
     const nameEscaped = foundry.utils.escapeHTML(spell.name);
-    const addTooltip = foundry.utils.escapeHTML(_loc('SPELLMANAGER.Buttons.AddSpell', { name: spell.name }));
+    const addTooltip = foundry.utils.escapeHTML(_loc('SPELLBOOK.Manager.Buttons.AddSpell', { name: spell.name }));
     let compareIcon = '';
     if (spell.showCompare) {
       const compareTooltip = foundry.utils.escapeHTML(_loc('SPELLBOOK.Comparison.CompareSpell', { name: spell.name }));
@@ -354,7 +354,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   /** Load all spell lists and available spells on first render. */
   async _loadData() {
     this.enabledElements = getEnabledGMElements();
-    const progress = ui.notifications.info('SPELLMANAGER.Loading.Spells', { localize: true, progress: true, console: false });
+    const progress = ui.notifications.info('SPELLBOOK.Manager.Loading.Spells', { localize: true, progress: true, console: false });
     const ESTIMATE = 1500;
     try {
       this.availableLists = await findAllSpellLists();
@@ -371,7 +371,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       ATLAS.log(3, `SpellListManager loaded ${this.availableLists.length} lists, ${this.availableSpells.length} spells`);
     } catch (err) {
       ATLAS.log(1, 'SpellListManager load failed:', err);
-      progress.update({ pct: 1, message: 'SPELLMANAGER.Loading.Failed', localize: true });
+      progress.update({ pct: 1, message: 'SPELLBOOK.Manager.Loading.Failed', localize: true });
     } finally {
       this.isLoading = false;
     }
@@ -581,8 +581,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         id: 'spell-search',
         type: 'text',
         value: f.name || '',
-        placeholder: 'SPELLMANAGER.Filters.SearchPlaceholder',
-        ariaLabel: 'SPELLMANAGER.Filters.SearchPlaceholder',
+        placeholder: 'SPELLBOOK.Manager.Filters.SearchPlaceholder',
+        ariaLabel: 'SPELLBOOK.Manager.Filters.SearchPlaceholder',
         disabled
       },
       level: { name: 'spell-level', id: 'spell-level', type: 'select', label: 'DND5E.SpellLevel', ariaLabel: 'DND5E.SpellLevel', options: this._buildLevelOptions(f.level), disabled },
@@ -672,8 +672,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         name: 'spell-compendium-source',
         id: 'spell-compendium-source',
         type: 'select',
-        label: 'SPELLMANAGER.Filters.CompendiumSource',
-        ariaLabel: 'SPELLMANAGER.Filters.CompendiumSource',
+        label: 'SPELLBOOK.Manager.Filters.CompendiumSource',
+        ariaLabel: 'SPELLBOOK.Manager.Filters.CompendiumSource',
         options: this._buildCompendiumSourceOptions(f.source),
         disabled
       },
@@ -681,8 +681,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         name: 'spell-source',
         id: 'spell-source',
         type: 'select',
-        label: 'SPELLMANAGER.Filters.SpellSource',
-        ariaLabel: 'SPELLMANAGER.Filters.SpellSource',
+        label: 'SPELLBOOK.Manager.Filters.SpellSource',
+        ariaLabel: 'SPELLBOOK.Manager.Filters.SpellSource',
         options: this._buildSpellSourceOptions(f.spellSource),
         disabled
       }
@@ -696,7 +696,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _buildLevelOptions(selected) {
-    const options = [{ value: '', label: _loc('SPELLMANAGER.Filters.AllLevels'), selected: !selected }];
+    const options = [{ value: '', label: _loc('SPELLBOOK.Manager.Filters.AllLevels'), selected: !selected }];
     for (const [level, label] of Object.entries(CONFIG.DND5E.spellLevels)) {
       options.push({ value: level, label, selected: selected === level });
     }
@@ -710,7 +710,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _buildSchoolOptions(selected) {
-    const options = [{ value: '', label: _loc('SPELLMANAGER.Filters.AllSchools'), selected: !selected }];
+    const options = [{ value: '', label: _loc('SPELLBOOK.Manager.Filters.AllSchools'), selected: !selected }];
     for (const [key, school] of Object.entries(CONFIG.DND5E.spellSchools)) {
       const label = school?.label ?? school?.name ?? String(school);
       options.push({ value: key, label, selected: selected === key });
@@ -818,7 +818,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   _buildCompendiumSourceOptions(selected) {
     const sourceMap = new Map();
-    sourceMap.set('all', { id: 'all', label: _loc('SPELLMANAGER.Filters.AllSources') });
+    sourceMap.set('all', { id: 'all', label: _loc('SPELLBOOK.Manager.Filters.AllSources') });
     for (const spell of this.availableSpells) {
       const parts = spell.uuid?.split('.');
       if (parts?.[0] !== 'Compendium' || parts.length < 3) continue;
@@ -845,8 +845,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   _buildSpellSourceOptions(selected) {
     const sourceMap = new Map();
-    sourceMap.set('all', { id: 'all', label: _loc('SPELLMANAGER.Filters.AllSpellSources') });
-    const noSourceLabel = _loc('SPELLMANAGER.Filters.NoSource');
+    sourceMap.set('all', { id: 'all', label: _loc('SPELLBOOK.Manager.Filters.AllSpellSources') });
+    const noSourceLabel = _loc('SPELLBOOK.Manager.Filters.NoSource');
     for (const spell of this.availableSpells) {
       const resolved = SpellListManager._resolveSpellSource(spell);
       const label = resolved || noSourceLabel;
@@ -1224,7 +1224,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   static async #onShowDocs() {
     const content = await renderTemplate(TEMPLATES.DIALOGS.MANAGER_DOCUMENTATION, {});
     await DialogV2.wait({
-      window: { title: 'SPELLMANAGER.Documentation.Title', icon: 'fas fa-question-circle' },
+      window: { title: 'SPELLBOOK.Manager.Documentation.Title', icon: 'fas fa-question-circle' },
       content,
       classes: ['spell-book', 'spell-manager-documentation'],
       buttons: [{ icon: 'fas fa-check', label: 'Close', action: 'close' }],
@@ -1525,9 +1525,9 @@ class EditingController {
     const originalUuid = app.selectedList.document.flags?.[MODULE.ID]?.originalUuid;
     if (!originalUuid) return;
     const confirmed = await confirmDialog({
-      title: _loc('SPELLMANAGER.Confirm.RestoreTitle'),
-      content: _loc('SPELLMANAGER.Confirm.RestoreContent', { name: `<strong>${app.selectedList.name}</strong>` }),
-      confirmLabel: _loc('SPELLMANAGER.Confirm.RestoreButton'),
+      title: _loc('SPELLBOOK.Manager.Confirm.RestoreTitle'),
+      content: _loc('SPELLBOOK.Manager.Confirm.RestoreContent', { name: `<strong>${app.selectedList.name}</strong>` }),
+      confirmLabel: _loc('SPELLBOOK.Manager.Confirm.RestoreButton'),
       confirmIcon: 'fas fa-sync',
       confirmCssClass: 'dialog-button-warning',
       parent: app
@@ -1558,14 +1558,14 @@ class EditingController {
     const content = await renderTemplate(TEMPLATES.DIALOGS.RENAME_SPELL_LIST, { currentName });
     let newName = null;
     const result = await DialogV2.wait({
-      window: { title: _loc('SPELLMANAGER.Rename.Title', { currentName }), icon: 'fas fa-pen' },
+      window: { title: _loc('SPELLBOOK.Manager.Rename.Title', { currentName }), icon: 'fas fa-pen' },
       classes: ['spell-book', 'rename-spell-list-dialog'],
       content,
       position: { width: 'auto', height: 'auto' },
       renderOptions: detachedRenderOptions(app),
       buttons: [
         {
-          label: 'SPELLMANAGER.Buttons.Rename',
+          label: 'SPELLBOOK.Manager.Buttons.Rename',
           icon: 'fas fa-check',
           action: 'rename',
           callback: (_event, _target, form) => {
@@ -1740,13 +1740,13 @@ class EditingController {
     const total = addCount + removeCount;
     if (total === 0 || !app.selectedList || !app.selectedList) return;
     let msg = '';
-    if (addCount > 0 && removeCount > 0) msg = _loc('SPELLMANAGER.BulkOps.ConfirmAddAndRemove', { addCount, removeCount });
-    else if (addCount > 0) msg = _loc('SPELLMANAGER.BulkOps.ConfirmAdd', { count: addCount });
-    else msg = _loc('SPELLMANAGER.BulkOps.ConfirmRemove', { count: removeCount });
+    if (addCount > 0 && removeCount > 0) msg = _loc('SPELLBOOK.Manager.BulkOps.ConfirmAddAndRemove', { addCount, removeCount });
+    else if (addCount > 0) msg = _loc('SPELLBOOK.Manager.BulkOps.ConfirmAdd', { count: addCount });
+    else msg = _loc('SPELLBOOK.Manager.BulkOps.ConfirmRemove', { count: removeCount });
     const confirmed = await confirmDialog({
-      title: _loc('SPELLMANAGER.BulkOps.ConfirmSave'),
+      title: _loc('SPELLBOOK.Manager.BulkOps.ConfirmSave'),
       content: msg,
-      confirmLabel: _loc('SPELLMANAGER.BulkOps.SaveChanges'),
+      confirmLabel: _loc('SPELLBOOK.Manager.BulkOps.SaveChanges'),
       confirmIcon: 'fas fa-save',
       confirmCssClass: 'dialog-button-success',
       parent: app
@@ -1771,7 +1771,7 @@ class EditingController {
     }
     app.selectedList.spellsByLevel = app._organizeSpellsByLevel(app.selectedList.spells);
     app._clearSelections();
-    ui.notifications.info(_loc('SPELLMANAGER.BulkOps.Completed', { count: total }));
+    ui.notifications.info(_loc('SPELLBOOK.Manager.BulkOps.Completed', { count: total }));
     app.render(false, { parts: ['content', 'footer'] });
   }
 
@@ -1812,7 +1812,7 @@ class CreationController {
     const content = await renderTemplate(TEMPLATES.DIALOGS.CREATE_SPELL_LIST, { identifierOptions });
     let formData = null;
     const result = await DialogV2.wait({
-      window: { title: 'SPELLMANAGER.Buttons.CreateNew', icon: 'fas fa-plus', resizable: false, minimizable: false },
+      window: { title: 'SPELLBOOK.Manager.Buttons.CreateNew', icon: 'fas fa-plus', resizable: false, minimizable: false },
       classes: ['spell-book', 'create-spell-list-dialog'],
       position: { width: 650, height: 'auto' },
       content,
@@ -1829,7 +1829,7 @@ class CreationController {
       },
       buttons: [
         {
-          label: 'SPELLMANAGER.Buttons.CreateNew',
+          label: 'SPELLBOOK.Manager.Buttons.CreateNew',
           icon: 'fas fa-check',
           action: 'create',
           callback: (_event, _target, form) => {
@@ -1876,14 +1876,14 @@ class CreationController {
     const content = await renderTemplate(TEMPLATES.DIALOGS.MERGE_SPELL_LISTS, { lists: this._getMergeCandidates(app) });
     let formData = null;
     const result = await DialogV2.wait({
-      window: { title: 'SPELLMANAGER.MergeLists.DialogTitle', icon: 'fas fa-code-merge', resizable: false, minimizable: false },
+      window: { title: 'SPELLBOOK.Manager.MergeLists.DialogTitle', icon: 'fas fa-code-merge', resizable: false, minimizable: false },
       classes: ['spell-book', 'merge-spell-lists-dialog'],
       position: { width: 650, height: 'auto' },
       content,
       renderOptions: detachedRenderOptions(app),
       buttons: [
         {
-          label: 'SPELLMANAGER.Buttons.MergeLists',
+          label: 'SPELLBOOK.Manager.Buttons.MergeLists',
           icon: 'fas fa-code-merge',
           action: 'merge',
           callback: (_event, _target, form) => {
@@ -1980,9 +1980,9 @@ class DeletionController {
     const uuid = app.selectedList.uuid;
     const name = app.selectedList.name;
     const confirmed = await confirmDialog({
-      title: _loc('SPELLMANAGER.Confirm.DeleteTitle'),
-      content: _loc('SPELLMANAGER.Confirm.DeleteContent', { name: `<strong>${name}</strong>` }),
-      confirmLabel: _loc('SPELLMANAGER.Confirm.DeleteButton'),
+      title: _loc('SPELLBOOK.Manager.Confirm.DeleteTitle'),
+      content: _loc('SPELLBOOK.Manager.Confirm.DeleteContent', { name: `<strong>${name}</strong>` }),
+      confirmLabel: _loc('SPELLBOOK.Manager.Confirm.DeleteButton'),
       confirmIcon: 'fas fa-trash',
       confirmCssClass: 'dialog-button-danger',
       parent: app

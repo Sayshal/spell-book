@@ -322,7 +322,7 @@ export function extractSpellConditions(spell) {
  */
 function extractSpellSource(spell) {
   let spellSource = spell.system?.source?.custom || spell.system?.source?.book;
-  const noSourceLabel = _loc('SPELLMANAGER.Filters.NoSource');
+  const noSourceLabel = _loc('SPELLBOOK.Manager.Filters.NoSource');
   if (!spellSource || spellSource.trim() === '') spellSource = noSourceLabel;
   return { label: spellSource, id: spellSource === noSourceLabel ? 'no-source' : spellSource };
 }

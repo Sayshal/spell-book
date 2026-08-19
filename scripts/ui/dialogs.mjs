@@ -19,9 +19,9 @@ const { DialogV2 } = foundry.applications.api;
  * @returns {Promise<boolean>} Whether the user confirmed
  */
 export async function confirmDialog({
-  title = _loc('SPELLMANAGER.Confirm.Title'),
-  content = _loc('SPELLMANAGER.Confirm.Content'),
-  confirmLabel = _loc('SPELLMANAGER.Confirm.Confirm'),
+  title = _loc('SPELLBOOK.Manager.Confirm.Title'),
+  content = _loc('SPELLBOOK.Manager.Confirm.Content'),
+  confirmLabel = _loc('SPELLBOOK.Manager.Confirm.Confirm'),
   confirmIcon = 'fas fa-check',
   cancelLabel = _loc('COMMON.Cancel'),
   cancelIcon = 'fas fa-times',

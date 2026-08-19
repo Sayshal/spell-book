@@ -57,7 +57,7 @@ async function loadSpellListOptions(assignedUuids = new Set()) {
           let label = page.name;
           if (isActorOwned && flags.actorId) {
             const owner = game.actors.get(flags.actorId);
-            label = `${page.name} (${owner?.name ?? _loc('SPELLMANAGER.ListSource.Character')})`;
+            label = `${page.name} (${owner?.name ?? _loc('SPELLBOOK.Manager.ListSource.Character')})`;
           } else if (!isActorOwned && !flags.isCustom && !flags.isMerged) {
             label = `${page.name} (${folderName})`;
           }
