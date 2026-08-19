@@ -57,11 +57,11 @@ async function promptForClass(classes) {
   const options = classes.map((c) => `<option value="${c.identifier}">${c.classItem.name}</option>`).join('');
   const result = await DialogV2.wait({
     classes: ['spell-book'],
-    window: { icon: 'fas fa-book', title: _loc('SPELLBOOK.ScrollPurchase.ChooseClassTitle') },
+    window: { icon: 'fas fa-book', title: 'SPELLBOOK.ScrollPurchase.ChooseClassTitle' },
     content: `<p>${_loc('SPELLBOOK.ScrollPurchase.ChooseClassBody')}</p><select name="classId">${options}</select>`,
     buttons: [
-      { icon: 'fas fa-check', label: _loc('SPELLBOOK.Wizard.LearnSpellButton'), action: 'confirm', className: 'dialog-button', callback: (_e, button) => button.form.elements.classId.value },
-      { icon: 'fas fa-times', label: _loc('COMMON.Cancel'), action: 'cancel', className: 'dialog-button' }
+      { icon: 'fas fa-check', label: 'SPELLBOOK.Wizard.LearnSpellButton', action: 'confirm', className: 'dialog-button', callback: (_e, button) => button.form.elements.classId.value },
+      { icon: 'fas fa-times', label: 'COMMON.Cancel', action: 'cancel', className: 'dialog-button' }
     ],
     default: 'confirm',
     rejectClose: false

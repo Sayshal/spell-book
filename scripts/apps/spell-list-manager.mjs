@@ -1224,10 +1224,10 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   static async #onShowDocs() {
     const content = await renderTemplate(TEMPLATES.DIALOGS.MANAGER_DOCUMENTATION, {});
     await DialogV2.wait({
-      window: { title: _loc('SPELLMANAGER.Documentation.Title'), icon: 'fas fa-question-circle' },
+      window: { title: 'SPELLMANAGER.Documentation.Title', icon: 'fas fa-question-circle' },
       content,
       classes: ['spell-book', 'spell-manager-documentation'],
-      buttons: [{ icon: 'fas fa-check', label: _loc('Close'), action: 'close' }],
+      buttons: [{ icon: 'fas fa-check', label: 'Close', action: 'close' }],
       position: { width: 600, height: 700 },
       default: 'close',
       rejectClose: false,
@@ -1565,7 +1565,7 @@ class EditingController {
       renderOptions: detachedRenderOptions(app),
       buttons: [
         {
-          label: _loc('SPELLMANAGER.Buttons.Rename'),
+          label: 'SPELLMANAGER.Buttons.Rename',
           icon: 'fas fa-check',
           action: 'rename',
           callback: (_event, _target, form) => {
@@ -1576,7 +1576,7 @@ class EditingController {
             return 'rename';
           }
         },
-        { label: _loc('COMMON.Cancel'), icon: 'fas fa-times', action: 'cancel' }
+        { label: 'COMMON.Cancel', icon: 'fas fa-times', action: 'cancel' }
       ],
       default: 'cancel',
       rejectClose: false
@@ -1812,7 +1812,7 @@ class CreationController {
     const content = await renderTemplate(TEMPLATES.DIALOGS.CREATE_SPELL_LIST, { identifierOptions });
     let formData = null;
     const result = await DialogV2.wait({
-      window: { title: _loc('SPELLMANAGER.Buttons.CreateNew'), icon: 'fas fa-plus', resizable: false, minimizable: false },
+      window: { title: 'SPELLMANAGER.Buttons.CreateNew', icon: 'fas fa-plus', resizable: false, minimizable: false },
       classes: ['spell-book', 'create-spell-list-dialog'],
       position: { width: 650, height: 'auto' },
       content,
@@ -1829,7 +1829,7 @@ class CreationController {
       },
       buttons: [
         {
-          label: _loc('SPELLMANAGER.Buttons.CreateNew'),
+          label: 'SPELLMANAGER.Buttons.CreateNew',
           icon: 'fas fa-check',
           action: 'create',
           callback: (_event, _target, form) => {
@@ -1855,7 +1855,7 @@ class CreationController {
             return 'create';
           }
         },
-        { label: _loc('COMMON.Cancel'), icon: 'fas fa-times', action: 'cancel' }
+        { label: 'COMMON.Cancel', icon: 'fas fa-times', action: 'cancel' }
       ],
       default: 'cancel',
       rejectClose: false
@@ -1876,14 +1876,14 @@ class CreationController {
     const content = await renderTemplate(TEMPLATES.DIALOGS.MERGE_SPELL_LISTS, { lists: this._getMergeCandidates(app) });
     let formData = null;
     const result = await DialogV2.wait({
-      window: { title: _loc('SPELLMANAGER.MergeLists.DialogTitle'), icon: 'fas fa-code-merge', resizable: false, minimizable: false },
+      window: { title: 'SPELLMANAGER.MergeLists.DialogTitle', icon: 'fas fa-code-merge', resizable: false, minimizable: false },
       classes: ['spell-book', 'merge-spell-lists-dialog'],
       position: { width: 650, height: 'auto' },
       content,
       renderOptions: detachedRenderOptions(app),
       buttons: [
         {
-          label: _loc('SPELLMANAGER.Buttons.MergeLists'),
+          label: 'SPELLMANAGER.Buttons.MergeLists',
           icon: 'fas fa-code-merge',
           action: 'merge',
           callback: (_event, _target, form) => {
@@ -1898,7 +1898,7 @@ class CreationController {
             return 'merge';
           }
         },
-        { label: _loc('COMMON.Cancel'), icon: 'fas fa-times', action: 'cancel' }
+        { label: 'COMMON.Cancel', icon: 'fas fa-times', action: 'cancel' }
       ],
       default: 'cancel',
       rejectClose: false

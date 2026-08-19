@@ -72,7 +72,7 @@ export class CustomSpellList extends HandlebarsApplicationMixin(ApplicationV2) {
       classes: ['spell-book'],
       title: _loc('SPELLBOOK.CustomSpellList.CreateTitle'),
       content: `<div class="form-group"><label>${_loc('SPELLBOOK.CustomSpellList.NameLabel')}</label><input type="text" name="name" autofocus></div>`,
-      ok: { label: _loc('SPELLBOOK.CustomSpellList.Create'), callback: (_event, button) => button.form.elements.name.value.trim() },
+      ok: { label: 'SPELLBOOK.CustomSpellList.Create', callback: (_event, button) => button.form.elements.name.value.trim() },
       renderOptions: detachedRenderOptions(this)
     });
     if (!name) return;

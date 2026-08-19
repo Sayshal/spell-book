@@ -24,12 +24,12 @@ export async function flagPurge() {
   const content = `<form class="flag-purge-dialog"><p><strong>${_loc('SPELLBOOK.API.FlagPurge.Warning')}</strong></p><div class="form-group"><label for="flag-purge-actor">${_loc('SPELLBOOK.API.FlagPurge.SelectActor')}</label><select id="flag-purge-actor" name="actorId">${options}</select></div><p class="warning-text">${_loc('SPELLBOOK.API.FlagPurge.Irreversible')}</p></form>`;
   const actorId = await DialogV2.wait({
     classes: ['spell-book'],
-    window: { icon: 'fas fa-trash', title: _loc('SPELLBOOK.API.FlagPurge.Title'), resizable: false },
+    window: { icon: 'fas fa-trash', title: 'SPELLBOOK.API.FlagPurge.Title', resizable: false },
     position: { width: 'auto', height: 'auto' },
     content,
     buttons: [
-      { icon: 'fas fa-trash', label: _loc('COMMON.Confirm'), action: 'confirm', callback: (_event, button) => new FormData(button.form).get('actorId') },
-      { icon: 'fas fa-times', label: _loc('COMMON.Cancel'), action: 'cancel' }
+      { icon: 'fas fa-trash', label: 'COMMON.Confirm', action: 'confirm', callback: (_event, button) => new FormData(button.form).get('actorId') },
+      { icon: 'fas fa-times', label: 'COMMON.Cancel', action: 'cancel' }
     ],
     default: 'cancel',
     rejectClose: false
@@ -207,12 +207,12 @@ export async function scrollScanner() {
   const content = `<div class="scroll-scanner"><p>${header}</p><table><thead><tr><th>${nameCol}</th><th>${uuidCol}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   const result = await DialogV2.wait({
     classes: ['spell-book'],
-    window: { icon: 'fas fa-scroll', title: _loc('SPELLBOOK.API.ScrollScanner.Title'), resizable: true },
+    window: { icon: 'fas fa-scroll', title: 'SPELLBOOK.API.ScrollScanner.Title', resizable: true },
     position: { width: 800, height: 600 },
     content,
     buttons: [
-      { icon: 'fas fa-copy', label: _loc('SPELLBOOK.API.ScrollScanner.CopyToConsole'), action: 'copy' },
-      { icon: 'fas fa-times', label: _loc('APPLICATION.ACTIONS.Close'), action: 'close' }
+      { icon: 'fas fa-copy', label: 'SPELLBOOK.API.ScrollScanner.CopyToConsole', action: 'copy' },
+      { icon: 'fas fa-times', label: 'APPLICATION.ACTIONS.Close', action: 'close' }
     ],
     default: 'close',
     rejectClose: false
@@ -270,12 +270,12 @@ export async function spellsNotInLists() {
   const content = `<div class="spells-not-in-lists"><p>${header}</p><table><thead><tr><th>${nameCol}</th><th>${sourceCol}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   const result = await DialogV2.wait({
     classes: ['spell-book'],
-    window: { icon: 'fas fa-search', title: _loc('SPELLBOOK.API.SpellsNotInLists.Title'), resizable: true },
+    window: { icon: 'fas fa-search', title: 'SPELLBOOK.API.SpellsNotInLists.Title', resizable: true },
     position: { width: 800, height: 600 },
     content,
     buttons: [
-      { icon: 'fas fa-copy', label: _loc('SPELLBOOK.API.SpellsNotInLists.CopyToConsole'), action: 'copy' },
-      { icon: 'fas fa-times', label: _loc('APPLICATION.ACTIONS.Close'), action: 'close' }
+      { icon: 'fas fa-copy', label: 'SPELLBOOK.API.SpellsNotInLists.CopyToConsole', action: 'copy' },
+      { icon: 'fas fa-times', label: 'APPLICATION.ACTIONS.Close', action: 'close' }
     ],
     default: 'close',
     rejectClose: false

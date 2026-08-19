@@ -122,11 +122,11 @@ async function promptLongRestSwap(actor, longRestClasses) {
   const result = await DialogV2.wait({
     classes: ['spell-book'],
     content,
-    window: { icon: 'fas fa-bed', title: _loc('SPELLBOOK.LongRest.SwapTitle'), resizable: false },
+    window: { icon: 'fas fa-bed', title: 'SPELLBOOK.LongRest.SwapTitle', resizable: false },
     position: { width: 450, height: 'auto' },
     buttons: [
-      { icon: 'fas fa-book', label: _loc('SPELLBOOK.LongRest.SwapConfirm'), action: 'confirm' },
-      { icon: 'fas fa-times', label: _loc('SPELLBOOK.LongRest.SwapCancel'), action: 'cancel' }
+      { icon: 'fas fa-book', label: 'SPELLBOOK.LongRest.SwapConfirm', action: 'confirm' },
+      { icon: 'fas fa-times', label: 'SPELLBOOK.LongRest.SwapCancel', action: 'cancel' }
     ],
     default: 'cancel',
     rejectClose: false

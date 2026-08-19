@@ -23,8 +23,8 @@ export async function showLearnFromScrollDialog({ spell, cost, time, isFree, isA
       window: { icon: 'fas fa-scroll', title: _loc('SPELLBOOK.Wizard.LearnSpellTitle', { name: spell.name }) },
       content,
       buttons: [
-        { icon: 'fas fa-book', label: _loc('SPELLBOOK.Wizard.LearnSpellButton'), action: 'confirm', className: 'dialog-button' },
-        { icon: 'fas fa-times', label: _loc('COMMON.Cancel'), action: 'cancel', className: 'dialog-button' }
+        { icon: 'fas fa-book', label: 'SPELLBOOK.Wizard.LearnSpellButton', action: 'confirm', className: 'dialog-button' },
+        { icon: 'fas fa-times', label: 'COMMON.Cancel', action: 'cancel', className: 'dialog-button' }
       ],
       default: 'confirm',
       rejectClose: false

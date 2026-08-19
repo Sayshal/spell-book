@@ -611,11 +611,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     );
     const content = `<div class="standard-form"><div class="form-group"><label for="spellbook-list-picker">${_loc('SPELLBOOK.UI.PickListLabel')}</label><div class="form-fields"><select id="spellbook-list-picker" name="uuid">${options.join('')}</select></div></div></div>`;
     const chosen = await foundry.applications.api.DialogV2.prompt({
-      window: { title: _loc('SPELLBOOK.UI.OpenManager'), icon: 'fas fa-bars-progress' },
+      window: { title: 'SPELLBOOK.UI.OpenManager', icon: 'fas fa-bars-progress' },
       classes: ['spell-book'],
       position: { width: 420 },
       content,
-      ok: { label: _loc('Open'), callback: (_event, button) => button.form.elements.uuid.value },
+      ok: { label: 'Open', callback: (_event, button) => button.form.elements.uuid.value },
       renderOptions: detachedRenderOptions(this)
     });
     if (chosen) await openWith(chosen);
