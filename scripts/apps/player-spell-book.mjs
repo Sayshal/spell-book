@@ -591,7 +591,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const subclassUuids = toArray(rules.customSubclassSpellList);
     const all = [...classUuids, ...subclassUuids].filter(Boolean);
     if (!all.length) {
-      ui.notifications.warn('SPELLBOOK.Settings.NoListAssigned.Title', { localize: true });
+      ui.notifications.warn('SPELLBOOK.NoListAssigned.Title', { localize: true });
       return;
     }
     const openWith = async (uuid) => {
