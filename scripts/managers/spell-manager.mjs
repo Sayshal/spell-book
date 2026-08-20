@@ -142,7 +142,7 @@ export class SpellManager {
       const maxCantrips = this.getMaxCantrips(actor, classIdentifier);
       if (currentCount >= maxCantrips) {
         ui.notifications.clear();
-        ui.notifications.info(_loc('SPELLBOOK.Notifications.OverLimitWarning', { type: 'cantrips', current: currentCount + 1, max: maxCantrips }));
+        ui.notifications.info(_loc('SPELLBOOK.Notifications.OverLimitWarningCantrips', { current: currentCount + 1, max: maxCantrips }));
       }
     }
     return { allowed: true };
@@ -325,7 +325,7 @@ export class SpellManager {
     const settings = this.getSettings(actor, classIdentifier);
     if (settings.notifyGm && isChecked && currentPrepared >= maxPrepared) {
       ui.notifications.clear();
-      ui.notifications.info(_loc('SPELLBOOK.Notifications.OverLimitWarning', { type: 'spells', current: currentPrepared + 1, max: maxPrepared }));
+      ui.notifications.info(_loc('SPELLBOOK.Notifications.OverLimitWarningSpells', { current: currentPrepared + 1, max: maxPrepared }));
     }
     return { allowed: true };
   }
