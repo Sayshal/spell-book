@@ -76,7 +76,7 @@ async function appendLine(api, date, line) {
     await api.updateNote(page.id, { content: `${page.text?.content ?? ''}${line}` });
     return;
   }
-  const created = await api.createNote({ name: _loc('SPELLBOOK.DowntimeNote.Title'), content: line, startDate: date, allDay: true, openSheet: false });
+  const created = await api.createNote({ name: _loc('ATLAS.Common.Downtime'), content: line, startDate: date, allDay: true, openSheet: false });
   if (!created) return;
   await created.setFlag(MODULE.ID, 'downtimeNote', true);
   dayNotes.set(dayKey(date), created.id);

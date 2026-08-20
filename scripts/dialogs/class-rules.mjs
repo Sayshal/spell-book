@@ -57,7 +57,7 @@ async function loadSpellListOptions(assignedUuids = new Set()) {
           let label = page.name;
           if (isActorOwned && flags.actorId) {
             const owner = game.actors.get(flags.actorId);
-            label = `${page.name} (${owner?.name ?? _loc('SPELLBOOK.Manager.ListSource.Character')})`;
+            label = `${page.name} (${owner?.name ?? _loc('ATLAS.Common.Character')})`;
           } else if (!isActorOwned && !flags.isCustom && !flags.isMerged) {
             label = `${page.name} (${folderName})`;
           }
@@ -212,7 +212,7 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
     const globalLabel = _loc(`SPELLBOOK.Settings.SpellcastingRuleSet.${globalValue.charAt(0).toUpperCase() + globalValue.slice(1)}`);
     const current = this.actor.getFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE) ?? 'global';
     return [
-      { value: 'global', label: `${_loc('SPELLBOOK.Settings.RuleSetOverride.Global')} (${globalLabel})`, selected: current === 'global' },
+      { value: 'global', label: `${_loc('ATLAS.Common.UseGlobal')} (${globalLabel})`, selected: current === 'global' },
       { value: RULE_SETS.LEGACY, label: _loc('SPELLBOOK.Settings.SpellcastingRuleSet.Legacy'), selected: current === RULE_SETS.LEGACY },
       { value: RULE_SETS.MODERN, label: _loc('SPELLBOOK.Settings.SpellcastingRuleSet.Modern'), selected: current === RULE_SETS.MODERN }
     ];

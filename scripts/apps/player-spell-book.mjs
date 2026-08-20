@@ -280,7 +280,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!this.element || this.element.querySelector(':scope > .spell-book-resize-handle')) return;
     const handle = document.createElement('div');
     handle.className = 'spell-book-resize-handle';
-    handle.setAttribute('aria-label', _loc('SPELLBOOK.UI.Resize'));
+    handle.setAttribute('aria-label', _loc('ATLAS.Common.Resize'));
     this.element.appendChild(handle);
   }
 
@@ -1085,7 +1085,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   async _renderSidebarFilters() {
     const container = this.element?.querySelector('.sidebar-filter-section');
     if (!container || !this.#filterOptions) return;
-    const allLabel = _loc('SPELLBOOK.Filters.All');
+    const allLabel = _loc('ATLAS.Common.All');
     const yesNo = [
       { value: '', label: allLabel },
       { value: 'yes', label: _loc('COMMON.Yes') },
@@ -1097,7 +1097,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const selects = [
       { name: 'filter-school', id: 'filter-school', label: 'DND5E.School', ariaLabel: 'DND5E.School', type: 'select', options: makeOpts(this.#filterOptions.schools) },
       { name: 'filter-castingTime', id: 'filter-castingTime', label: 'DND5E.SpellCastTime', ariaLabel: 'DND5E.SpellCastTime', type: 'select', options: makeOpts(this.#filterOptions.activationTypes) },
-      { name: 'filter-target', id: 'filter-target', label: 'SPELLBOOK.Filters.Target', ariaLabel: 'SPELLBOOK.Filters.Target', type: 'select', options: makeOpts(this.#filterOptions.targets) },
+      { name: 'filter-target', id: 'filter-target', label: 'ATLAS.Common.Target', ariaLabel: 'ATLAS.Common.Target', type: 'select', options: makeOpts(this.#filterOptions.targets) },
       { name: 'filter-damageType', id: 'filter-damageType', label: 'DND5E.DamageType', ariaLabel: 'DND5E.DamageType', type: 'select', options: makeOpts(this.#filterOptions.damageTypes) },
       {
         name: 'filter-condition',
@@ -1108,11 +1108,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         options: makeOpts(this.#filterOptions.conditions)
       },
       { name: 'filter-requiresSave', id: 'filter-requiresSave', label: 'SPELLBOOK.Filters.RequiresSave', ariaLabel: 'SPELLBOOK.Filters.RequiresSave', type: 'select', options: yesNo },
-      { name: 'filter-source', id: 'filter-source', label: 'SPELLBOOK.Filters.Source', ariaLabel: 'SPELLBOOK.Filters.Source', type: 'select', options: makeOpts(this.#filterOptions.sources) }
+      { name: 'filter-source', id: 'filter-source', label: 'ATLAS.Common.Source', ariaLabel: 'ATLAS.Common.Source', type: 'select', options: makeOpts(this.#filterOptions.sources) }
     ];
     const selectsHtml = (await Promise.all(selects.map((c) => foundry.applications.handlebars.renderTemplate(TEMPLATES.COMPONENTS.FILTER_ITEM, c)))).join('');
-    const levelMin = _loc('SPELLBOOK.Filters.Min');
-    const levelMax = _loc('SPELLBOOK.Filters.Max');
+    const levelMin = _loc('ATLAS.Common.Min');
+    const levelMax = _loc('ATLAS.Common.Max');
     const levelRangeHtml = `
       <div class="filter-range-group">
         <label>${_loc('DND5E.SpellLevel')}</label>
@@ -1136,7 +1136,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       </button>`;
     const propHtml = `
       <fieldset class="filter-properties">
-        <legend>${_loc('SPELLBOOK.Filters.Properties')}</legend>
+        <legend>${_loc('ATLAS.Common.Properties')}</legend>
         ${prop('vocal', _loc('DND5E.ComponentVerbal'))}
         ${prop('somatic', _loc('DND5E.ComponentSomatic'))}
         ${prop('material', _loc('DND5E.ComponentMaterial'))}

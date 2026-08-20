@@ -70,7 +70,7 @@ function createSpellBookButton(actor, { className, classicTooltip = false }) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = className;
-  const label = _loc('SPELLBOOK.UI.OpenSpellBook');
+  const label = _loc('ATLAS.Common.OpenSpellBook');
   if (classicTooltip) {
     button.title = label;
     button.setAttribute('tabindex', '-1');
@@ -125,7 +125,7 @@ async function promptLongRestSwap(actor, longRestClasses) {
     window: { icon: 'fas fa-bed', title: 'SPELLBOOK.LongRest.SwapTitle', resizable: false },
     position: { width: 450, height: 'auto' },
     buttons: [
-      { icon: 'fas fa-book', label: 'SPELLBOOK.LongRest.SwapConfirm', action: 'confirm' },
+      { icon: 'fas fa-book', label: 'ATLAS.Common.OpenSpellBook', action: 'confirm' },
       { icon: 'fas fa-times', label: 'SPELLBOOK.LongRest.SwapCancel', action: 'cancel' }
     ],
     default: 'cancel',

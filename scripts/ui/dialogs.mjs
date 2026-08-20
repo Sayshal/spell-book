@@ -21,7 +21,7 @@ const { DialogV2 } = foundry.applications.api;
 export async function confirmDialog({
   title = _loc('SPELLBOOK.Manager.Confirm.Title'),
   content = _loc('SPELLBOOK.Manager.Confirm.Content'),
-  confirmLabel = _loc('SPELLBOOK.Manager.Confirm.Confirm'),
+  confirmLabel = _loc('ATLAS.Common.Confirm'),
   confirmIcon = 'fas fa-check',
   cancelLabel = _loc('COMMON.Cancel'),
   cancelIcon = 'fas fa-times',

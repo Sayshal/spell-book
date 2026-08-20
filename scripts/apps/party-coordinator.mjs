@@ -56,7 +56,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
     context.comparison = this._comparisonData;
     context.isGM = game.user.isGM;
     context.spellLevels = this._buildSpellLevelGroups(this._comparisonData.spellsByLevel);
-    context.groupName = this.groupActor?.name || _loc('SPELLBOOK.Party.DefaultGroupName');
+    context.groupName = this.groupActor?.name || _loc('ATLAS.Common.Party');
     this._decorateActors(context.comparison?.actors);
     return context;
   }

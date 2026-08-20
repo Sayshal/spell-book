@@ -73,7 +73,7 @@ export function onRenderSpellcastingNotice(message, html) {
   const button = html.querySelector('.spellbook-configure');
   if (!button) return;
   const label = button.querySelector('.label');
-  if (label && !game.user.isGM) label.textContent = _loc('SPELLBOOK.SpellcastingNotice.OpenButton');
+  if (label && !game.user.isGM) label.textContent = _loc('ATLAS.Common.OpenSpellBook');
   button.addEventListener('click', async () => {
     const actor = await fromUuid(button.dataset.actorUuid);
     if (!actor) return;

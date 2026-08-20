@@ -265,7 +265,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     if (!this.element || this.element.querySelector(':scope > .spell-book-resize-handle')) return;
     const handle = document.createElement('div');
     handle.className = 'spell-book-resize-handle';
-    handle.setAttribute('aria-label', _loc('SPELLBOOK.UI.Resize'));
+    handle.setAttribute('aria-label', _loc('ATLAS.Common.Resize'));
     this.element.appendChild(handle);
   }
 
@@ -655,7 +655,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         id: 'spell-min-range',
         type: 'number',
         value: f.minRange || '',
-        placeholder: 'SPELLBOOK.Filters.RangeMin',
+        placeholder: 'ATLAS.Common.Min',
         ariaLabel: 'SPELLBOOK.Filters.RangeMinLabel',
         disabled
       },
@@ -664,7 +664,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         id: 'spell-max-range',
         type: 'number',
         value: f.maxRange || '',
-        placeholder: 'SPELLBOOK.Filters.RangeMax',
+        placeholder: 'ATLAS.Common.Max',
         ariaLabel: 'SPELLBOOK.Filters.RangeMaxLabel',
         disabled
       },
@@ -740,7 +740,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         const pb = typeOrder[b.type] || 999;
         return pa !== pb ? pa - pb : a.value - b.value;
       });
-    const options = [{ value: '', label: _loc('SPELLBOOK.Filters.All'), selected: !selected }];
+    const options = [{ value: '', label: _loc('ATLAS.Common.All'), selected: !selected }];
     for (const entry of sortable) {
       const typeLabel = CONFIG.DND5E.abilityActivationTypes[entry.type] || entry.type;
       const label = entry.value === 1 ? typeLabel : `${entry.value} ${typeLabel}s`;
@@ -756,7 +756,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _buildDamageTypeOptions(selected) {
-    const options = [{ value: '', label: _loc('SPELLBOOK.Filters.All'), selected: !selected }];
+    const options = [{ value: '', label: _loc('ATLAS.Common.All'), selected: !selected }];
     const healingConfig = CONFIG.DND5E.healingTypes?.healing;
     const healingLabel = healingConfig?.labelShort ?? healingConfig?.label ?? 'Healing';
     const entries = Object.entries(CONFIG.DND5E.damageTypes).map(([key, damage]) => ({ key, label: damage?.label ?? damage?.name ?? String(damage) }));
@@ -773,7 +773,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _buildConditionOptions(selected) {
-    const options = [{ value: '', label: _loc('SPELLBOOK.Filters.All'), selected: !selected }];
+    const options = [{ value: '', label: _loc('ATLAS.Common.All'), selected: !selected }];
     const entries = Object.entries(CONFIG.DND5E.conditionTypes)
       .filter(([, condition]) => !condition.pseudo)
       .map(([key, condition]) => ({ key, label: condition?.label ?? condition?.name ?? String(condition) }))
@@ -790,7 +790,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   _buildBinaryOptions(selected) {
     return [
-      { value: '', label: _loc('SPELLBOOK.Filters.All'), selected: !selected },
+      { value: '', label: _loc('ATLAS.Common.All'), selected: !selected },
       { value: 'true', label: _loc('COMMON.Yes'), selected: selected === 'true' },
       { value: 'false', label: _loc('COMMON.No'), selected: selected === 'false' }
     ];
@@ -804,7 +804,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   _buildMaterialOptions(selected) {
     return [
-      { value: '', label: _loc('SPELLBOOK.Filters.All'), selected: !selected },
+      { value: '', label: _loc('ATLAS.Common.All'), selected: !selected },
       { value: 'consumed', label: _loc('SPELLBOOK.Filters.Materials.Consumed'), selected: selected === 'consumed' },
       { value: 'notConsumed', label: _loc('SPELLBOOK.Filters.Materials.NotConsumed'), selected: selected === 'notConsumed' }
     ];
@@ -845,7 +845,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   _buildSpellSourceOptions(selected) {
     const sourceMap = new Map();
-    sourceMap.set('all', { id: 'all', label: _loc('SPELLBOOK.Manager.Filters.AllSpellSources') });
+    sourceMap.set('all', { id: 'all', label: _loc('ATLAS.Common.All') });
     const noSourceLabel = _loc('SPELLBOOK.Manager.Filters.NoSource');
     for (const spell of this.availableSpells) {
       const resolved = SpellListManager._resolveSpellSource(spell);
@@ -1527,7 +1527,7 @@ class EditingController {
     const confirmed = await confirmDialog({
       title: _loc('SPELLBOOK.Manager.Confirm.RestoreTitle'),
       content: _loc('SPELLBOOK.Manager.Confirm.RestoreContent', { name: `<strong>${app.selectedList.name}</strong>` }),
-      confirmLabel: _loc('SPELLBOOK.Manager.Confirm.RestoreButton'),
+      confirmLabel: _loc('ATLAS.Common.Restore'),
       confirmIcon: 'fas fa-sync',
       confirmCssClass: 'dialog-button-warning',
       parent: app
@@ -1565,7 +1565,7 @@ class EditingController {
       renderOptions: detachedRenderOptions(app),
       buttons: [
         {
-          label: 'SPELLBOOK.Manager.Buttons.Rename',
+          label: 'ATLAS.Common.Rename',
           icon: 'fas fa-check',
           action: 'rename',
           callback: (_event, _target, form) => {
@@ -1982,7 +1982,7 @@ class DeletionController {
     const confirmed = await confirmDialog({
       title: _loc('SPELLBOOK.Manager.Confirm.DeleteTitle'),
       content: _loc('SPELLBOOK.Manager.Confirm.DeleteContent', { name: `<strong>${name}</strong>` }),
-      confirmLabel: _loc('SPELLBOOK.Manager.Confirm.DeleteButton'),
+      confirmLabel: _loc('ATLAS.Common.Delete'),
       confirmIcon: 'fas fa-trash',
       confirmCssClass: 'dialog-button-danger',
       parent: app

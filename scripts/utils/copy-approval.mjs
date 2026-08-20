@@ -74,8 +74,8 @@ async function resolveRequest(actor) {
       window: { icon: 'fas fa-hourglass-half', title: _loc('SPELLBOOK.Approval.Title', { name: actor.name }) },
       content,
       buttons: [
-        { icon: 'fas fa-check', label: 'SPELLBOOK.Approval.Approve', action: 'approve', callback: (_event, button) => (new FormData(button.form).get('skipTime') ? 'skip' : 'approve') },
-        { icon: 'fas fa-times', label: 'SPELLBOOK.Approval.Deny', action: 'deny' }
+        { icon: 'fas fa-check', label: 'ATLAS.Common.Approve', action: 'approve', callback: (_event, button) => (new FormData(button.form).get('skipTime') ? 'skip' : 'approve') },
+        { icon: 'fas fa-times', label: 'ATLAS.Common.Deny', action: 'deny' }
       ],
       default: 'approve',
       rejectClose: false

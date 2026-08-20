@@ -140,8 +140,8 @@ export async function formatUserSpellsHTML(spellData, userName, userId) {
     userActors: processedActors,
     notesSpells,
     notesTitle: _loc('SPELLBOOK.UserData.SpellNotes'),
-    spellCol: _loc('SPELLBOOK.UserData.SpellColumn'),
-    notesCol: _loc('SPELLBOOK.UserData.NotesColumn'),
+    spellCol: _loc('ATLAS.Common.Spell'),
+    notesCol: _loc('ATLAS.Common.Notes'),
     favoritesTitle: _loc('SPELLBOOK.UserData.FavoritesTitle'),
     favoritedCol: _loc('SPELLBOOK.UserData.FavoritedColumn')
   });

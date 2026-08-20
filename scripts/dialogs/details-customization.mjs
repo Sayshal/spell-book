@@ -6,7 +6,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const PLAYER_UI = [
   { key: 'favorites', setting: SETTINGS.PLAYER_UI_FAVORITES, label: 'SPELLBOOK.Settings.DetailsCustomization.Favorites', description: 'SPELLBOOK.Settings.DetailsCustomization.FavoritesDesc' },
   { key: 'compare', setting: SETTINGS.PLAYER_UI_COMPARE, label: 'SPELLBOOK.Settings.DetailsCustomization.Compare', description: 'SPELLBOOK.Settings.DetailsCustomization.CompareDesc' },
-  { key: 'notes', setting: SETTINGS.PLAYER_UI_NOTES, label: 'SPELLBOOK.Settings.DetailsCustomization.Notes', description: 'SPELLBOOK.Settings.DetailsCustomization.NotesDesc' },
+  { key: 'notes', setting: SETTINGS.PLAYER_UI_NOTES, label: 'ATLAS.Common.Notes', description: 'SPELLBOOK.Settings.DetailsCustomization.NotesDesc' },
   {
     key: 'sidebarControlsBottom',
     setting: SETTINGS.SIDEBAR_CONTROLS_BOTTOM,
@@ -26,7 +26,7 @@ const PLAYER_METADATA = [
     label: 'SPELLBOOK.Settings.DetailsCustomization.CastingTime',
     description: 'SPELLBOOK.Settings.DetailsCustomization.CastingTimeDesc'
   },
-  { key: 'range', setting: SETTINGS.PLAYER_UI_RANGE, label: 'SPELLBOOK.Settings.DetailsCustomization.Range', description: 'SPELLBOOK.Settings.DetailsCustomization.RangeDesc' },
+  { key: 'range', setting: SETTINGS.PLAYER_UI_RANGE, label: 'ATLAS.Common.Range', description: 'SPELLBOOK.Settings.DetailsCustomization.RangeDesc' },
   {
     key: 'damageTypes',
     setting: SETTINGS.PLAYER_UI_DAMAGE_TYPES,
@@ -58,7 +58,7 @@ const GM_METADATA = [
   { key: 'components', setting: SETTINGS.GM_UI_COMPONENTS, label: 'SPELLBOOK.Settings.DetailsCustomization.Components', description: 'SPELLBOOK.Settings.DetailsCustomization.ComponentsDesc' },
   { key: 'school', setting: SETTINGS.GM_UI_SCHOOL, label: 'SPELLBOOK.Settings.DetailsCustomization.School', description: 'SPELLBOOK.Settings.DetailsCustomization.SchoolDesc' },
   { key: 'castingTime', setting: SETTINGS.GM_UI_CASTING_TIME, label: 'SPELLBOOK.Settings.DetailsCustomization.CastingTime', description: 'SPELLBOOK.Settings.DetailsCustomization.CastingTimeDesc' },
-  { key: 'range', setting: SETTINGS.GM_UI_RANGE, label: 'SPELLBOOK.Settings.DetailsCustomization.Range', description: 'SPELLBOOK.Settings.DetailsCustomization.RangeDesc' },
+  { key: 'range', setting: SETTINGS.GM_UI_RANGE, label: 'ATLAS.Common.Range', description: 'SPELLBOOK.Settings.DetailsCustomization.RangeDesc' },
   { key: 'damageTypes', setting: SETTINGS.GM_UI_DAMAGE_TYPES, label: 'SPELLBOOK.Settings.DetailsCustomization.DamageTypes', description: 'SPELLBOOK.Settings.DetailsCustomization.DamageTypesDesc' },
   { key: 'conditions', setting: SETTINGS.GM_UI_CONDITIONS, label: 'SPELLBOOK.Settings.DetailsCustomization.Conditions', description: 'SPELLBOOK.Settings.DetailsCustomization.ConditionsDesc' },
   { key: 'save', setting: SETTINGS.GM_UI_SAVE, label: 'SPELLBOOK.Settings.DetailsCustomization.Save', description: 'SPELLBOOK.Settings.DetailsCustomization.SaveDesc' },

@@ -21,7 +21,7 @@ export async function flagPurge() {
     return;
   }
   const options = ['<option value="all">All Eligible Actors</option>', ...eligible.map((a) => `<option value="${a.id}">${a.name}</option>`)].join('');
-  const content = `<form class="flag-purge-dialog"><p><strong>${_loc('SPELLBOOK.API.FlagPurge.Warning')}</strong></p><div class="form-group"><label for="flag-purge-actor">${_loc('SPELLBOOK.API.FlagPurge.SelectActor')}</label><select id="flag-purge-actor" name="actorId">${options}</select></div><p class="warning-text">${_loc('SPELLBOOK.API.FlagPurge.Irreversible')}</p></form>`;
+  const content = `<form class="flag-purge-dialog"><p><strong>${_loc('SPELLBOOK.API.FlagPurge.Warning')}</strong></p><div class="form-group"><label for="flag-purge-actor">${_loc('ATLAS.Common.SelectActor')}</label><select id="flag-purge-actor" name="actorId">${options}</select></div><p class="warning-text">${_loc('SPELLBOOK.API.FlagPurge.Irreversible')}</p></form>`;
   const actorId = await DialogV2.wait({
     classes: ['spell-book'],
     window: { icon: 'fas fa-trash', title: 'SPELLBOOK.API.FlagPurge.Title', resizable: false },
@@ -252,7 +252,7 @@ export async function spellsNotInLists() {
     if (inLists.has(uuid)) continue;
     try {
       const spell = await fromUuid(uuid);
-      if (spell) missing.push({ name: spell.name, uuid, source: spell.pack || _loc('SPELLBOOK.API.SpellsNotInLists.UnknownSource') });
+      if (spell) missing.push({ name: spell.name, uuid, source: spell.pack || _loc('ATLAS.Common.UnknownSource') });
     } catch (error) {
       ATLAS.log(2, `Spells-not-in-lists: failed to load spell ${uuid}.`, error);
     }
@@ -266,7 +266,7 @@ export async function spellsNotInLists() {
   const rows = missing.map((s) => `<tr><td>${s.name}</td><td>${s.source}</td></tr>`).join('');
   const header = _loc('SPELLBOOK.API.SpellsNotInLists.Found', { count: missing.length });
   const nameCol = _loc('SPELLBOOK.API.SpellsNotInLists.NameColumn');
-  const sourceCol = _loc('SPELLBOOK.API.SpellsNotInLists.SourceColumn');
+  const sourceCol = _loc('ATLAS.Common.Source');
   const content = `<div class="spells-not-in-lists"><p>${header}</p><table><thead><tr><th>${nameCol}</th><th>${sourceCol}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   const result = await DialogV2.wait({
     classes: ['spell-book'],

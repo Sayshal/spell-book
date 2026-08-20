@@ -13,8 +13,8 @@ import { ClassManager } from './class-manager.mjs';
  * @type {Array<{id: string, prefix: string, labelKey: string}>}
  */
 const NON_CLASS_SOURCES = [
-  { id: 'feat', prefix: 'feat:', labelKey: 'SPELLBOOK.SpellSource.Feat' },
-  { id: 'race', prefix: 'race:', labelKey: 'SPELLBOOK.SpellSource.Species' }
+  { id: 'feat', prefix: 'feat:', labelKey: 'ATLAS.Common.Feat' },
+  { id: 'race', prefix: 'race:', labelKey: 'ATLAS.Common.Species' }
 ];
 
 /** @type {string[]} Casting methods that make a spell available without preparation. */
