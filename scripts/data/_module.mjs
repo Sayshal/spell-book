@@ -1,5 +1,6 @@
 export * from './custom-lists.mjs';
 export * from './helpers.mjs';
+export * from './migrations.mjs';
 export * from './scroll-processor.mjs';
 export * from './spell-fetcher.mjs';
 export * from './spell-list-registry.mjs';

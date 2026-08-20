@@ -20,7 +20,6 @@ export const FLAGS = {
   PARTY_MODE_ENABLED: 'partyModeEnabled',
   PENDING_SPELL_COPY: 'pendingSpellCopy',
   PREPARED_SPELLS_BY_CLASS: 'preparedSpellsByClass',
-  PREPARED_SPELLS: 'preparedSpells',
   PREVIOUS_CANTRIP_MAX: 'previousCantripMax',
   PREVIOUS_LEVEL: 'previousLevel',
   RECENT_SEARCHES: 'recentSearches',
@@ -91,6 +90,9 @@ export const RITUAL_CASTING_MODES = { NONE: 'none', PREPARED: 'prepared', ALWAYS
 
 /** @enum {string} Spellcasting rule sets */
 export const RULE_SETS = { LEGACY: 'legacy', MODERN: 'modern' };
+
+/** @enum {string} Module-owned spell list page kinds */
+export const LIST_KINDS = { CUSTOM: 'custom', DUPLICATE: 'duplicate', MERGED: 'merged' };
 
 /** @enum {string} Spell/cantrip swap timing */
 export const SWAP_MODES = { NONE: 'none', LEVEL_UP: 'levelUp', LONG_REST: 'longRest' };

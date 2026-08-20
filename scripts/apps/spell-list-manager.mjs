@@ -458,11 +458,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const hidden = this.availableLists.filter((l) => !l.isActorOwned && hiddenLists.includes(l.uuid));
     const modified = this.availableLists.filter((l) => !l.isActorOwned && l.isModified && !hiddenLists.includes(l.uuid));
     const merged = this.availableLists.filter((l) => !l.isActorOwned && l.isMerged && !hiddenLists.includes(l.uuid));
-    const custom = this.availableLists.filter((l) => !l.isActorOwned && !l.isMerged && !l.isModified && (l.isCustom || l.document?.flags?.[MODULE.ID]?.isNewList) && !hiddenLists.includes(l.uuid));
+    const custom = this.availableLists.filter((l) => !l.isActorOwned && l.isCustom && !hiddenLists.includes(l.uuid));
     const sourceConfig = game.settings.get('dnd5e', 'packSourceConfiguration') ?? {};
-    const allStandard = this.availableLists.filter(
-      (l) => !l.isActorOwned && !l.isCustom && !l.isMerged && !l.isModified && !l.document?.flags?.[MODULE.ID]?.isNewList && !hiddenLists.includes(l.uuid)
-    );
+    const allStandard = this.availableLists.filter((l) => !l.isActorOwned && !l.isCustom && !l.isMerged && !l.isModified && !hiddenLists.includes(l.uuid));
     const standard = allStandard.filter((l) => !isSourceHiddenSpellList(l.system?.spells, false, sourceConfig));
     const sourceHiddenCount = allStandard.length - standard.length;
     const byActor = (a, b) => (a.actorName && b.actorName ? a.actorName.localeCompare(b.actorName) : a.actorName ? -1 : b.actorName ? 1 : a.name.localeCompare(b.name));
@@ -496,8 +494,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   _addSelectedListContext(context) {
     const processed = processSpellListForDisplay(this.selectedList, this.classFolderCache, this.availableLists, this.enabledElements);
     const flags = this.selectedList.document.flags?.[MODULE.ID] || {};
-    const isCustomList = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList;
-    processed.isRenameable = isCustomList || !!this.selectedList.isMerged;
+    processed.isRenameable = !!flags.kind;
     processed.isRegistryEnabled = isListEnabledForRegistry(this.selectedList.uuid);
     processed.isActorOwned = !!flags.actorId;
     processed.spellCount = processed.spells?.length ?? 0;
@@ -535,7 +532,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   async _addEditingContext(context) {
     const flags = this.selectedList.document.flags?.[MODULE.ID] || {};
-    context.isCustomList = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList;
+    context.isCustomList = !!flags.kind;
     if (context.isCustomList && flags.originalUuid) {
       context.originalUuid = flags.originalUuid;
       context.compareInfo = await compareListVersions(flags.originalUuid, this.selectedList.document.uuid);
@@ -1431,9 +1428,8 @@ class EditingController {
     if (!app.selectedList) return;
     app.pendingChanges = { added: new Set(), removed: new Set() };
     const flags = app.selectedList.document.flags?.[MODULE.ID] || {};
-    const isCustom = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList;
     const isActorSpellbook = !!flags.actorId;
-    if (!isCustom && !isActorSpellbook) await this._duplicateForEditing(app);
+    if (!flags.kind && !isActorSpellbook) await this._duplicateForEditing(app);
     app.render(false, { parts: ['content', 'footer'] });
   }
 
@@ -1445,9 +1441,8 @@ class EditingController {
     if (!app.selectedList) return;
     let doc = app.selectedList.document;
     const flags = doc.flags?.[MODULE.ID] || {};
-    const isCustom = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList;
     const isActorSpellbook = !!flags.actorId;
-    if (!isCustom && !isActorSpellbook) {
+    if (!flags.kind && !isActorSpellbook) {
       const originalUuid = doc.uuid;
       await this._duplicateForEditing(app);
       doc = app.selectedList.document;
@@ -1552,8 +1547,7 @@ class EditingController {
   static async renameList(app) {
     if (!app.selectedList) return;
     const flags = app.selectedList.document.flags?.[MODULE.ID] || {};
-    const isRenameable = !!flags.isDuplicate || !!flags.isCustom || !!flags.isNewList || !!app.selectedList.isMerged;
-    if (!isRenameable) return;
+    if (!flags.kind) return;
     const currentName = app.selectedList.name;
     const content = await renderTemplate(TEMPLATES.DIALOGS.RENAME_SPELL_LIST, { currentName });
     let newName = null;

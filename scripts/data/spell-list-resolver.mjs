@@ -34,13 +34,12 @@ export function findSpellListsByType(type) {
 
 /**
  * Resolve a UUID or array of UUIDs referring to spell list journal pages into a merged Set of spell UUIDs.
- * @param {string|string[]|null|undefined} customSpellList - UUID or array of UUIDs
+ * @param {string[]|null|undefined} customSpellList - Array of spell list page UUIDs
  * @returns {Promise<Set<string>>} Merged spell UUIDs from all valid referenced lists
  */
 async function resolveCustomSpellLists(customSpellList) {
-  const uuids = Array.isArray(customSpellList) ? customSpellList : customSpellList ? [customSpellList] : [];
   const merged = new Set();
-  for (const uuid of uuids) {
+  for (const uuid of customSpellList || []) {
     if (!uuid || typeof uuid !== 'string') continue;
     const doc = await fromUuid(uuid);
     if (!(doc?.system?.spells?.size > 0)) continue;

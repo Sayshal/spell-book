@@ -4,7 +4,7 @@
  * metadata, and creates formatted presentation elements.
  */
 
-import { MODULE } from '../constants.mjs';
+import { LIST_KINDS, MODULE } from '../constants.mjs';
 import { getConfigLabel, getSpellSourceDocument, isGrantingItemActive } from '../data/_module.mjs';
 import { ClassManager } from '../managers/class-manager.mjs';
 import { buildGMMetadata, isGMElementEnabled } from './custom-ui.mjs';
@@ -18,9 +18,9 @@ import { buildGMMetadata, isGMElementEnabled } from './custom-ui.mjs';
  * @returns {object} Processed spell list with display data
  */
 export function processSpellListForDisplay(spellList, classFolderCache = null, availableSpellLists = null, enabledElements = null) {
-  ATLAS.log(3, 'Processing spell list for display.', { spellListName: spellList.document?.name, isCustom: !!spellList.document?.flags?.[MODULE.ID]?.isCustom });
+  ATLAS.log(3, 'Processing spell list for display.', { spellListName: spellList.document?.name, kind: spellList.document?.flags?.[MODULE.ID]?.kind });
   const processed = { ...spellList };
-  processed.isCustomList = !!spellList.document?.flags?.[MODULE.ID]?.isCustom || !!spellList.document?.flags?.[MODULE.ID]?.isDuplicate;
+  processed.isCustomList = !!spellList.document?.flags?.[MODULE.ID]?.kind;
   processed.canRestore = !!(processed.isCustomList && spellList.document.flags?.[MODULE.ID]?.originalUuid);
   processed.originalUuid = spellList.document.flags?.[MODULE.ID]?.originalUuid;
   processed.actorId = spellList.document.flags?.[MODULE.ID]?.actorId;
@@ -28,7 +28,7 @@ export function processSpellListForDisplay(spellList, classFolderCache = null, a
   processed.identifier = spellList.document.system?.identifier;
   const typeKey = spellList.document.system?.type === 'subclass' ? 'TYPES.Item.subclass' : 'TYPES.Item.class';
   processed.classType = _loc(typeKey);
-  processed.isMerged = !!spellList.document?.flags?.[MODULE.ID]?.isMerged;
+  processed.isMerged = spellList.document?.flags?.[MODULE.ID]?.kind === LIST_KINDS.MERGED;
   processed.isClassSpellList = false;
   if (processed.identifier && !processed.isPlayerSpellbook && !processed.isMerged && classFolderCache && availableSpellLists) {
     let spellListMeta = availableSpellLists.find((list) => list.uuid === spellList.uuid);

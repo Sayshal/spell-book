@@ -192,14 +192,6 @@ export class ClassManager {
     if (Object.keys(validPrepared).length !== Object.keys(preparedByClass).length) {
       await actor.unsetFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS);
       await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, validPrepared);
-      const allPreparedUuids = Object.values(validPrepared)
-        .flat()
-        .map((key) => {
-          const [, ...uuidParts] = key.split(':');
-          return uuidParts.join(':');
-        });
-      await actor.unsetFlag(MODULE.ID, FLAGS.PREPARED_SPELLS);
-      await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS, allPreparedUuids);
     }
     const cantripTracking = actorFlags[FLAGS.CANTRIP_SWAP_TRACKING] || {};
     const validCantrip = {};
@@ -215,16 +207,9 @@ export class ClassManager {
       await actor.unsetFlag(MODULE.ID, FLAGS.SWAP_TRACKING);
       await actor.setFlag(MODULE.ID, FLAGS.SWAP_TRACKING, validSwap);
     }
-    const wizardFlags = Object.keys(actorFlags).filter(
-      (key) =>
-        key.startsWith(`${FLAGS.WIZARD_COPIED_SPELLS}-`) ||
-        key.startsWith(`${FLAGS.WIZARD_COPIED_SPELLS}_`) ||
-        key.startsWith(`${FLAGS.WIZARD_RITUAL_CASTING}-`) ||
-        key.startsWith(`${FLAGS.WIZARD_RITUAL_CASTING}_`)
-    );
+    const wizardFlags = Object.keys(actorFlags).filter((key) => key.startsWith(`${FLAGS.WIZARD_COPIED_SPELLS}_`) || key.startsWith(`${FLAGS.WIZARD_RITUAL_CASTING}_`));
     for (const flagKey of wizardFlags) {
-      const separatorIndex = Math.max(flagKey.lastIndexOf('-'), flagKey.lastIndexOf('_'));
-      const classId = flagKey.substring(separatorIndex + 1);
+      const classId = flagKey.substring(flagKey.lastIndexOf('_') + 1);
       if (!currentClassIds.includes(classId)) await actor.unsetFlag(MODULE.ID, flagKey);
     }
     ATLAS.log(3, 'Stale flags cleanup completed.', { actorName: actor.name });

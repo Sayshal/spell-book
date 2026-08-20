@@ -586,10 +586,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const classId = this._resolveClassId(this.tabGroups.primary);
     if (!classId) return;
     const rules = RuleSet.getClassRules(this.actor, classId);
-    const toArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
-    const classUuids = toArray(rules.customSpellList);
-    const subclassUuids = toArray(rules.customSubclassSpellList);
-    const all = [...classUuids, ...subclassUuids].filter(Boolean);
+    const subclassUuids = rules.customSubclassSpellList || [];
+    const all = [...(rules.customSpellList || []), ...subclassUuids].filter(Boolean);
     if (!all.length) {
       ui.notifications.warn('SPELLBOOK.NoListAssigned.Title', { localize: true });
       return;
@@ -794,7 +792,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   _buildNoListNotice(tabId) {
     const classId = this._resolveClassId(tabId) ?? '';
     const rules = classId ? RuleSet.getClassRules(this.actor, classId) : {};
-    const listAssigned = [rules.customSpellList, rules.customSubclassSpellList].some((l) => (Array.isArray(l) ? l.length > 0 : !!l));
+    const listAssigned = [rules.customSpellList, rules.customSubclassSpellList].some((l) => l?.length > 0);
     const li = document.createElement('li');
     li.className = 'spell-list-notice no-list-notice';
     const button = game.user.isGM

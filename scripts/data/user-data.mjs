@@ -70,17 +70,9 @@ export async function loadUserSpellData(userId) {
   const page = await getUserPage(userId);
   if (!page) return {};
   const flagData = page.flags?.[MODULE.ID]?.[FLAGS.USER_SPELL_DATA];
-  const dataVersion = page.flags?.[MODULE.ID]?.dataVersion;
-  let spellData = {};
-  if (flagData && dataVersion === DATA_VERSION) {
+  const spellData = {};
+  if (flagData) {
     for (const [encodedKey, value] of Object.entries(flagData)) spellData[decodeUuidKey(encodedKey)] = value;
-  } else if (page.text?.content) {
-    spellData = parseSpellDataFromHTML(page.text.content);
-    await page.update({
-      [`flags.${MODULE.ID}.${FLAGS.USER_SPELL_DATA}`]: spellData,
-      [`flags.${MODULE.ID}.dataVersion`]: DATA_VERSION,
-      [`flags.${MODULE.ID}.migratedAt`]: Date.now()
-    });
   }
   cache.set(userId, spellData);
   return spellData;
@@ -145,34 +137,4 @@ export async function formatUserSpellsHTML(spellData, userName, userId) {
     favoritesTitle: _loc('SPELLBOOK.UserData.FavoritesTitle'),
     favoritedCol: _loc('SPELLBOOK.UserData.FavoritedColumn')
   });
-}
-
-/**
- * Parse spell data from legacy HTML tables (pre-3.1 migration path).
- * @param {string} htmlContent - Journal page HTML content
- * @returns {object} Parsed spell data object keyed by UUID
- */
-function parseSpellDataFromHTML(htmlContent) {
-  const doc = new DOMParser().parseFromString(htmlContent, 'text/html');
-  const spellData = {};
-  const notesRows = doc.querySelectorAll('table[data-table-type="spell-notes"] tbody tr[data-spell-uuid]');
-  for (const row of notesRows) {
-    const uuid = row.dataset.spellUuid;
-    const notes = row.querySelector('td:nth-child(2)')?.textContent.trim() || '';
-    if (!spellData[uuid]) spellData[uuid] = { notes: '', actorData: {} };
-    spellData[uuid].notes = notes;
-  }
-  const favTables = doc.querySelectorAll('table[data-table-type="spell-favorites"]');
-  for (const table of favTables) {
-    const actorId = table.dataset.actorId;
-    if (!actorId) continue;
-    for (const row of table.querySelectorAll('tbody tr[data-spell-uuid]')) {
-      const uuid = row.dataset.spellUuid;
-      const favorited = row.querySelector('td:nth-child(2)')?.textContent.trim().toLowerCase() === 'yes';
-      if (!spellData[uuid]) spellData[uuid] = { notes: '', actorData: {} };
-      if (!spellData[uuid].actorData[actorId]) spellData[uuid].actorData[actorId] = { favorited: false };
-      spellData[uuid].actorData[actorId].favorited = favorited;
-    }
-  }
-  return spellData;
 }

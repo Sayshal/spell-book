@@ -1,4 +1,4 @@
-import { MODULE, PACK, SETTINGS } from '../constants.mjs';
+import { LIST_KINDS, MODULE, PACK, SETTINGS } from '../constants.mjs';
 
 /**
  * Create a new spell list in the custom pack.
@@ -20,7 +20,7 @@ export async function createNewSpellList(name, identifier, type) {
           name,
           type: 'spells',
           ownership,
-          flags: { [MODULE.ID]: { isCustom: true, isNewList: true, isDuplicate: false, creationDate: Date.now() } },
+          flags: { [MODULE.ID]: { kind: LIST_KINDS.CUSTOM, creationDate: Date.now() } },
           system: { identifier: identifier.toLowerCase(), type, description: _loc('SPELLBOOK.Manager.CreateList.CustomDescription', { identifier }), spells: [] }
         }
       ]
@@ -49,7 +49,7 @@ export async function duplicateSpellList(originalSpellList) {
     originalName: originalSpellList.name,
     originalModTime: originalSpellList._stats?.modifiedTime || 0,
     originalVersion: originalSpellList._stats?.systemVersion || game.system.version,
-    isDuplicate: true
+    kind: LIST_KINDS.DUPLICATE
   };
   const folder = await getOrCreateSpellListFolder('modified');
   const ownership = { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
@@ -211,7 +211,7 @@ export async function createMergedSpellList(spellListUuids, mergedListName) {
           name: mergedListName,
           type: 'spells',
           ownership,
-          flags: { [MODULE.ID]: { isCustom: true, isMerged: true, isDuplicate: false, creationDate: Date.now(), sourceListUuids: spellListUuids } },
+          flags: { [MODULE.ID]: { kind: LIST_KINDS.MERGED, creationDate: Date.now(), sourceListUuids: spellListUuids } },
           system: {
             identifier: identifier.toLowerCase(),
             description: _loc('SPELLBOOK.Manager.CreateList.MultiMergedDescription', { listNames, count: lists.length }),
@@ -320,7 +320,7 @@ async function harvestPackLists(pack, lists, isCustomPack) {
       if (page.type !== 'spells') continue;
       const flags = page.flags?.[MODULE.ID] || {};
       if (!isCustomPack && page.system?.type === 'other') continue;
-      const isModified = isCustomPack && !!flags.isDuplicate;
+      const isModified = flags.kind === LIST_KINDS.DUPLICATE;
       lists.push({
         uuid: page.uuid,
         name: page.name,
@@ -330,8 +330,8 @@ async function harvestPackLists(pack, lists, isCustomPack) {
         system: page.system,
         spellCount: page.system.spells?.size,
         identifier: page.system.identifier,
-        isCustom: isCustomPack && !flags.isMerged && !flags.isDuplicate,
-        isMerged: !!flags.isMerged,
+        isCustom: flags.kind === LIST_KINDS.CUSTOM,
+        isMerged: flags.kind === LIST_KINDS.MERGED,
         isModified,
         document: page
       });

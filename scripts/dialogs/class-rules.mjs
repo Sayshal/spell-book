@@ -1,4 +1,4 @@
-import { FLAGS, MODULE, RITUAL_CASTING_MODES, RULE_SETS, SETTINGS, SWAP_MODES, TEMPLATES, WIZARD_DEFAULTS } from '../constants.mjs';
+import { FLAGS, LIST_KINDS, MODULE, RITUAL_CASTING_MODES, RULE_SETS, SETTINGS, SWAP_MODES, TEMPLATES, WIZARD_DEFAULTS } from '../constants.mjs';
 import { getJournalDocumentsFromPack, isSourceHiddenSpellList } from '../data/custom-lists.mjs';
 import { ClassManager } from '../managers/class-manager.mjs';
 import { RuleSet } from '../managers/rule-set.mjs';
@@ -51,14 +51,15 @@ async function loadSpellListOptions(assignedUuids = new Set()) {
           if (hiddenLists.includes(page.uuid)) continue;
           const flags = page.flags?.[MODULE.ID] || {};
           const isActorOwned = !!flags.actorId;
-          const exempt = isActorOwned || !!flags.isCustom || !!flags.isMerged;
+          const isModuleList = flags.kind === LIST_KINDS.CUSTOM || flags.kind === LIST_KINDS.MERGED;
+          const exempt = isActorOwned || isModuleList;
           const sourceHidden = isSourceHiddenSpellList(page.system?.spells, exempt, sourceConfig);
           if (sourceHidden && !assignedUuids.has(page.uuid)) continue;
           let label = page.name;
           if (isActorOwned && flags.actorId) {
             const owner = game.actors.get(flags.actorId);
             label = `${page.name} (${owner?.name ?? _loc('ATLAS.Common.Character')})`;
-          } else if (!isActorOwned && !flags.isCustom && !flags.isMerged) {
+          } else if (!isActorOwned && !isModuleList) {
             label = `${page.name} (${folderName})`;
           }
           if (sourceHidden) label = `${label} (${_loc('SPELLBOOK.Settings.SourceDisabledSuffix')})`;
@@ -92,8 +93,8 @@ function buildClassContexts(actor, spellListOptions) {
       const currentCantrips = SpellManager.getCurrentCantripCount(actor, identifier);
       const maxCantrips = SpellManager.getMaxCantrips(actor, identifier);
       const noScaleValue = maxCantrips === 0 && rules.showCantrips;
-      const customList = Array.isArray(rules.customSpellList) ? rules.customSpellList : rules.customSpellList ? [rules.customSpellList] : [];
-      const customSubclassList = Array.isArray(rules.customSubclassSpellList) ? rules.customSubclassSpellList : rules.customSubclassSpellList ? [rules.customSubclassSpellList] : [];
+      const customList = rules.customSpellList || [];
+      const customSubclassList = rules.customSubclassSpellList || [];
       const classSpellLists = spellListOptions.map((opt) => ({ ...opt, selected: customList.includes(opt.value) }));
       const subclassSpellLists = spellListOptions.map((opt) => ({ ...opt, selected: customSubclassList.includes(opt.value) }));
       return {
@@ -178,11 +179,7 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
     const assignedUuids = new Set();
     for (const classId of Object.keys(ClassManager.detectSpellcastingClasses(this.actor))) {
       const rules = RuleSet.getClassRules(this.actor, classId);
-      for (const key of ['customSpellList', 'customSubclassSpellList']) {
-        const value = rules[key];
-        if (Array.isArray(value)) value.forEach((uuid) => uuid && assignedUuids.add(uuid));
-        else if (value) assignedUuids.add(value);
-      }
+      for (const key of ['customSpellList', 'customSubclassSpellList']) for (const uuid of rules[key] || []) if (uuid) assignedUuids.add(uuid);
     }
     const spellListOptions = await loadSpellListOptions(assignedUuids);
     context.classes = buildClassContexts(this.actor, spellListOptions);
@@ -293,16 +290,8 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
         if (raw.spellLearningTimeMultiplier !== undefined) rules.spellLearningTimeMultiplier = parseFloat(raw.spellLearningTimeMultiplier) || WIZARD_DEFAULTS.SPELL_LEARNING_TIME_MULTIPLIER;
         if (raw.startingSpells !== undefined) rules.startingSpells = parseInt(raw.startingSpells) || WIZARD_DEFAULTS.STARTING_SPELLS;
         if (raw.spellsPerLevel !== undefined) rules.spellsPerLevel = parseInt(raw.spellsPerLevel) || WIZARD_DEFAULTS.SPELLS_PER_LEVEL;
-        if (raw.customSpellList !== undefined) {
-          if (Array.isArray(raw.customSpellList)) rules.customSpellList = raw.customSpellList.filter((v) => v?.trim());
-          else if (raw.customSpellList) rules.customSpellList = [raw.customSpellList];
-          else rules.customSpellList = [];
-        }
-        if (raw.customSubclassSpellList !== undefined) {
-          if (Array.isArray(raw.customSubclassSpellList)) rules.customSubclassSpellList = raw.customSubclassSpellList.filter((v) => v?.trim());
-          else if (raw.customSubclassSpellList) rules.customSubclassSpellList = [raw.customSubclassSpellList];
-          else rules.customSubclassSpellList = [];
-        }
+        if (raw.customSpellList !== undefined) rules.customSpellList = raw.customSpellList.filter((v) => v?.trim());
+        if (raw.customSubclassSpellList !== undefined) rules.customSubclassSpellList = raw.customSubclassSpellList.filter((v) => v?.trim());
         const wasShowing = previous.showCantrips !== false;
         if (wasShowing && !rules.showCantrips) await ClassRules.#removeCantripsForClass(actor, classId);
         classRules[classId] = { ...classRules[classId], ...rules };

@@ -1,6 +1,6 @@
 import { createAPI } from './scripts/api.mjs';
 import { MODULE, PACK, TEMPLATES } from './scripts/constants.mjs';
-import { findAllSpellLists, registerCustomSpellLists } from './scripts/data/_module.mjs';
+import { findAllSpellLists, migrateSpellListKinds, normalizeClassRuleLists, registerCustomSpellLists } from './scripts/data/_module.mjs';
 import { registerAllHooks } from './scripts/hooks.mjs';
 import { initializeMacros } from './scripts/managers/_module.mjs';
 import { registerSettings } from './scripts/settings.mjs';
@@ -48,6 +48,8 @@ Hooks.once('ready', async () => {
     if (pack?.locked) await pack.configure({ locked: false });
   }
   if (game.user.isGM) {
+    await normalizeClassRuleLists();
+    await migrateSpellListKinds();
     await registerCustomSpellLists();
     await initializeMacros();
     sweepPendingRequests();

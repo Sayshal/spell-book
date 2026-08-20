@@ -368,10 +368,7 @@ export class SpellManager {
       }
       preparedByClass[classIdentifier] = cleanedKeys;
     }
-    if (hasChanges) {
-      await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
-      await this._updateGlobalPreparedSpellsFlag(actor);
-    }
+    if (hasChanges) await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
   }
 
   /**
@@ -391,7 +388,6 @@ export class SpellManager {
     if (cleanedSpells.length !== preparedByClass[classIdentifier].length) {
       preparedByClass[classIdentifier] = cleanedSpells;
       await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
-      await this._updateGlobalPreparedSpellsFlag(actor);
     }
   }
 
@@ -527,7 +523,6 @@ export class SpellManager {
     const sanitized = Array.isArray(preparedByClass) ? {} : preparedByClass;
     sanitized[classIdentifier] = preparedSpellKeys;
     await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, sanitized);
-    await this._updateGlobalPreparedSpellsFlag(actor);
     await this._cleanupUnpreparedSpells(actor);
   }
 
@@ -646,22 +641,6 @@ export class SpellManager {
       return;
     }
     spellIdsToRemove.push(targetSpell.id);
-  }
-
-  /**
-   * Update the global prepared spells flag (backward compatibility).
-   * @param {object} actor - The actor document
-   * @private
-   */
-  static async _updateGlobalPreparedSpellsFlag(actor) {
-    const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
-    const allPreparedUuids = Object.values(preparedByClass)
-      .flat()
-      .map((key) => {
-        const { spellUuid } = this._parseClassSpellKey(key);
-        return spellUuid;
-      });
-    await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS, allPreparedUuids);
   }
 
   /**

@@ -114,8 +114,8 @@ export class RuleSet {
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     const currentRules = classRules[classIdentifier] || {};
     if (newRules.customSpellList !== undefined) {
-      const oldList = Array.isArray(currentRules.customSpellList) ? currentRules.customSpellList : currentRules.customSpellList ? [currentRules.customSpellList] : [];
-      const newList = Array.isArray(newRules.customSpellList) ? newRules.customSpellList : newRules.customSpellList ? [newRules.customSpellList] : [];
+      const oldList = currentRules.customSpellList || [];
+      const newList = newRules.customSpellList || [];
       const isDifferent = JSON.stringify([...oldList].sort()) !== JSON.stringify([...newList].sort());
       if (isDifferent) {
         ATLAS.log(3, `Custom spell list changed, checking for affected spells.`, { actorName: actor.name, classIdentifier });
@@ -325,7 +325,7 @@ export class RuleSet {
    * @private
    * @param {object} actor - The actor to check
    * @param {string} classIdentifier - The class identifier
-   * @param {string|Array<string>|null} newSpellListUuid - UUID(s) of the new spell list(s)
+   * @param {string[]|null} newSpellListUuid - UUIDs of the new spell list(s)
    * @returns {Promise<object[]>} Array of affected spell data
    * @static
    */
@@ -339,8 +339,7 @@ export class RuleSet {
     }
     let newSpellList = new Set();
     if (newSpellListUuid) {
-      const spellListUuids = Array.isArray(newSpellListUuid) ? newSpellListUuid : [newSpellListUuid];
-      const validUuids = spellListUuids.filter((uuid) => uuid && typeof uuid === 'string');
+      const validUuids = newSpellListUuid.filter((uuid) => uuid && typeof uuid === 'string');
       if (validUuids.length > 0) {
         ATLAS.log(3, `Loading ${validUuids.length} spell list(s) for affected spells check: ${validUuids.join(', ')}`);
         const spellListPromises = validUuids.map(async (uuid) => {
@@ -417,12 +416,6 @@ export class RuleSet {
     const affectedKeys = new Set(affectedSpells.map((s) => s.classSpellKey));
     preparedByClass[classIdentifier] = classPreparedSpells.filter((key) => !affectedKeys.has(key));
     await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, preparedByClass);
-    const allPreparedKeys = Object.values(preparedByClass).flat();
-    const allPreparedUuids = allPreparedKeys.map((key) => {
-      const [, ...uuidParts] = key.split(':');
-      return uuidParts.join(':');
-    });
-    await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS, allPreparedUuids);
     const affectedUuids = new Set(affectedSpells.map((s) => s.uuid));
     const spellIdsToRemove = actor.items
       .filter((item) => {

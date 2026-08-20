@@ -173,8 +173,6 @@ export class PartyMode {
    */
   static actorHasSpell(actor, spellUuid) {
     if (!actor.testUserPermission(game.user, 'OBSERVER')) return false;
-    const preparedSpells = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS) || [];
-    if (preparedSpells.includes(spellUuid)) return true;
     const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     for (const classSpells of Object.values(preparedByClass)) {
       for (const spellKey of classSpells) {
