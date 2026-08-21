@@ -1,9 +1,8 @@
 import { FLAGS, MODULE, SETTINGS } from '../constants.mjs';
 import { ClassManager } from '../managers/class-manager.mjs';
 import { PartyMode } from '../managers/party-mode.mjs';
-import { WizardBook } from '../managers/wizard-book.mjs';
 import { buildPlayerMetadata } from './custom-ui.mjs';
-import { getSpellDataAttributes, getSpellPreparationTags } from './formatting.mjs';
+import { getSpellDataAttributes } from './formatting.mjs';
 
 /**
  * Enrich a single spell with display data.
@@ -24,19 +23,19 @@ export function enrichSingleSpell(spell, actor, enabledElements, appState = {}) 
     const classSpellbook = appState.wizardbookCache.get(classIdentifier);
     if (classSpellbook?.includes(spell.compendiumUuid)) classes.push('in-wizard-spellbook');
   }
-  const inWizardSpellbook = appState.wizardbookCache?.get(classIdentifier)?.includes(spell.compendiumUuid) ?? false;
+  const inSpellbook = appState.wizardbookCache?.get(classIdentifier)?.includes(spell.compendiumUuid) ?? false;
   return {
     ...spell,
     cssClasses: classes.join(' '),
     dataAttributes: getSpellDataAttributes(spell),
-    tags: spell.tags || getSpellPreparationTags(spell, actor),
+    tags: spell.tags,
     comparisonIcon: buildComparisonIcon(spell, enabledElements, appState),
     favoriteButton: buildFavoriteButton(spell, enabledElements, spellUuid),
     notesIcon: buildNotesIcon(spell, enabledElements, spellUuid),
-    wizardAction: buildWizardAction(spell, classIdentifier, inWizardSpellbook, appState),
+    wizardAction: buildWizardAction(spell, inSpellbook),
     partyIcons: buildPartyIcons(spell, actor),
     formattedDetails: buildPlayerMetadata(spell, enabledElements, actor),
-    inWizardSpellbook
+    inSpellbook
   };
 }
 
@@ -95,31 +94,17 @@ export function buildNotesIcon(spell, enabledElements, spellUuid) {
 /**
  * Build wizard action config.
  * @param {object} spell - The spell
- * @param {string} classIdentifier - Class identifier for the spell
- * @param {boolean} inWizardSpellbook - Whether spell is in the wizard spellbook
- * @param {object} appState - App state with wizardManagers
+ * @param {boolean} inSpellbook - Whether spell is in the wizard spellbook
  * @returns {object} Action config
  */
-export function buildWizardAction(spell, classIdentifier, inWizardSpellbook, appState) {
-  let learningSource = null;
-  let learningSourceLabel = null;
-  if (inWizardSpellbook && classIdentifier && appState.wizardManagers) {
-    const wizardManager = appState.wizardManagers.get(classIdentifier);
-    if (wizardManager) {
-      const uuid = spell.spellUuid || spell.compendiumUuid;
-      learningSource = wizardManager.getSpellLearningSource(uuid);
-      learningSourceLabel = _loc(WizardBook.getLearnedLabelKey(learningSource));
-    }
-  }
+export function buildWizardAction(spell, inSpellbook) {
   return {
     isFromScroll: spell.isFromScroll,
-    inSpellbook: inWizardSpellbook,
-    canLearn: spell.system?.level > 0 && !inWizardSpellbook && !spell.isFromScroll,
+    inSpellbook: inSpellbook,
+    canLearn: spell.system?.level > 0 && !inSpellbook && !spell.isFromScroll,
     uuid: spell.spellUuid || spell.compendiumUuid,
     scrollId: spell.scrollId,
-    ariaLabel: _loc('SPELLBOOK.Scrolls.LearnFromScroll', { name: spell.name }),
-    learningSource,
-    learningSourceLabel
+    ariaLabel: _loc('SPELLBOOK.Scrolls.LearnFromScroll', { name: spell.name })
   };
 }
 

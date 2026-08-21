@@ -1,10 +1,9 @@
 import { FLAGS, LIST_KINDS, MODULE, RITUAL_CASTING_MODES, RULE_SETS, SETTINGS, SWAP_MODES, TEMPLATES, WIZARD_DEFAULTS } from '../constants.mjs';
-import { getJournalDocumentsFromPack, isSourceHiddenSpellList } from '../data/custom-lists.mjs';
-import { ClassManager } from '../managers/class-manager.mjs';
-import { RuleSet } from '../managers/rule-set.mjs';
-import { SpellDataManager } from '../managers/spell-data-manager.mjs';
-import { SpellManager } from '../managers/spell-manager.mjs';
-import { detachedRenderOptions } from '../ui/dialogs.mjs';
+import { getJournalDocumentsFromPack, isSourceHiddenSpellList } from '../data/_module.mjs';
+import { getPackTopLevelFolderName } from '../data/compendium-packs.mjs';
+import { ClassManager, RuleSet, SpellDataManager, SpellManager } from '../managers/_module.mjs';
+import { detachedRenderOptions } from '../ui/_module.mjs';
+import { refreshOpenSpellBooks } from '../utils/copy-approval.mjs';
 import { DetailsCustomization } from './details-customization.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -42,8 +41,7 @@ async function loadSpellListOptions(assignedUuids = new Set()) {
   const options = [];
   for (const pack of allPacks) {
     try {
-      let folderName = pack.metadata.label;
-      if (pack.folder) folderName = pack.folder.depth !== 1 ? (pack.folder.getParentFolders?.().at(-1)?.name ?? pack.folder.name) : pack.folder.name;
+      const folderName = getPackTopLevelFolderName(pack) ?? pack.metadata.label;
       const journals = await getJournalDocumentsFromPack(pack);
       for (const journal of journals) {
         for (const page of journal.pages) {
@@ -70,7 +68,7 @@ async function loadSpellListOptions(assignedUuids = new Set()) {
         }
       }
     } catch (error) {
-      ATLAS.log(2, `Skipping pack "${pack?.metadata?.label ?? pack?.metadata?.id}" while building spell list options.`, error);
+      ATLAS.log(2, `Skipping pack "${pack?.metadata?.label ?? pack?.metadata?.id}" while building spell list options`, error);
     }
   }
   options.sort((a, b) => a.label.localeCompare(b.label));
@@ -137,11 +135,7 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
     position: { width: 600, height: 700 },
     window: { icon: 'fas fa-cog', resizable: true },
     form: { handler: ClassRules.#onSubmit, closeOnSubmit: true },
-    actions: {
-      increase: ClassRules.#onIncrease,
-      decrease: ClassRules.#onDecrease,
-      openCustomization: ClassRules.#onOpenCustomization
-    }
+    actions: { openCustomization: ClassRules.#onOpenCustomization }
   };
 
   /** @override */
@@ -186,7 +180,7 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
     context.swapOptions = SWAP_OPTIONS;
     context.spellSwapOptions = SPELL_SWAP_OPTIONS;
     context.ritualOptions = RITUAL_OPTIONS;
-    context.ruleSetOptions = this._buildRuleSetOptions();
+    context.ruleSetOptions = this.#buildRuleSetOptions();
     context.notifyGm = this.actor.getFlag(MODULE.ID, FLAGS.NOTIFY_GM) ?? game.settings.get(MODULE.ID, SETTINGS.NOTIFY_GM_ON_SPELL_CHANGES);
     return context;
   }
@@ -204,58 +198,23 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
    * Build rule set override select options.
    * @returns {Array<{value: string, label: string}>} Options for the rule-set override select
    */
-  _buildRuleSetOptions() {
+  #buildRuleSetOptions() {
     const globalValue = game.settings.get(MODULE.ID, SETTINGS.SPELLCASTING_RULE_SET);
     const globalLabel = _loc(`SPELLBOOK.Settings.SpellcastingRuleSet.${globalValue.charAt(0).toUpperCase() + globalValue.slice(1)}`);
     const current = this.actor.getFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE) ?? 'global';
     return [
-      { value: 'global', label: `${_loc('ATLAS.Common.UseGlobal')} (${globalLabel})`, selected: current === 'global' },
+      { value: RULE_SETS.GLOBAL, label: `${_loc('ATLAS.Common.UseGlobal')} (${globalLabel})`, selected: current === RULE_SETS.GLOBAL },
       { value: RULE_SETS.LEGACY, label: _loc('SPELLBOOK.Settings.SpellcastingRuleSet.Legacy'), selected: current === RULE_SETS.LEGACY },
       { value: RULE_SETS.MODERN, label: _loc('SPELLBOOK.Settings.SpellcastingRuleSet.Modern'), selected: current === RULE_SETS.MODERN }
     ];
   }
 
   /**
-   * Generic increment handler for number inputs.
-   * @param {PointerEvent} _event - Click event
-   * @param {HTMLElement} target - Button with data-field and data-step
-   */
-  static #onIncrease(_event, target) {
-    const input = this.element.querySelector(`input[name="${target.dataset.field}"]`);
-    if (!input) return;
-    const step = parseInt(target.dataset.step) || 1;
-    const max = parseInt(input.dataset.max);
-    const current = parseInt(input.value) || 0;
-    input.value = isNaN(max) ? current + step : Math.min(current + step, max);
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-  }
-
-  /**
-   * Generic decrement handler for number inputs.
-   * @param {PointerEvent} _event - Click event
-   * @param {HTMLElement} target - Button with data-field and data-step
-   */
-  /**
    * Open the Details Customization dialog.
-   * @this ClassRules
+   * @this {ClassRules}
    */
   static #onOpenCustomization() {
     new DetailsCustomization().render({ force: true, ...detachedRenderOptions(this) });
-  }
-
-  /**
-   * Action handler: step the named numeric input down by its data-step (clamped to data-min).
-   * @param {Event} _event - Triggering event (unused)
-   * @param {HTMLElement} target - The button element (carries data-field and data-step)
-   */
-  static #onDecrease(_event, target) {
-    const input = this.element.querySelector(`input[name="${target.dataset.field}"]`);
-    if (!input) return;
-    const step = parseInt(target.dataset.step) || 1;
-    const min = parseInt(input.dataset.min) ?? 0;
-    const current = parseInt(input.value) || 0;
-    input.value = Math.max(current - step, min);
-    input.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
   /**
@@ -270,7 +229,7 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
     // Build all flag updates into a single actor update
     const flagUpdates = {};
     // Global overrides
-    const ruleSetValue = data.ruleSetOverride === 'global' ? null : data.ruleSetOverride;
+    const ruleSetValue = data.ruleSetOverride === RULE_SETS.GLOBAL ? null : data.ruleSetOverride;
     if (ruleSetValue !== undefined) flagUpdates[`flags.${MODULE.ID}.${FLAGS.RULE_SET_OVERRIDE}`] = ruleSetValue;
     flagUpdates[`flags.${MODULE.ID}.${FLAGS.NOTIFY_GM}`] = data.notifyGm === true || data.notifyGm === 'true';
     // Per-class rules
@@ -281,9 +240,9 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
         const rules = {};
         rules.showCantrips = raw.showCantrips === true || raw.showCantrips === 'true';
         rules.forceWizardMode = raw.forceWizardMode === true || raw.forceWizardMode === 'true';
-        rules.cantripSwapping = raw.cantripSwapping || 'none';
-        rules.spellSwapping = raw.spellSwapping || 'none';
-        rules.ritualCasting = raw.ritualCasting || 'none';
+        rules.cantripSwapping = raw.cantripSwapping || SWAP_MODES.NONE;
+        rules.spellSwapping = raw.spellSwapping || SWAP_MODES.NONE;
+        rules.ritualCasting = raw.ritualCasting || RITUAL_CASTING_MODES.NONE;
         rules.spellPreparationBonus = parseInt(raw.spellPreparationBonus) || 0;
         rules.cantripPreparationBonus = parseInt(raw.cantripPreparationBonus) || 0;
         if (raw.spellLearningCostMultiplier !== undefined) rules.spellLearningCostMultiplier = parseInt(raw.spellLearningCostMultiplier) || WIZARD_DEFAULTS.SPELL_LEARNING_COST_MULTIPLIER;
@@ -299,16 +258,14 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
       flagUpdates[`flags.${MODULE.ID}.${FLAGS.CLASS_RULES}`] = classRules;
     }
     await actor.update(flagUpdates);
-    RuleSet._classRules?.delete?.(actor);
+    RuleSet.invalidateCache(actor);
     ClassManager.invalidateCache(actor);
     SpellDataManager.invalidateCache(actor);
     SpellManager.invalidateCache(actor);
-    for (const app of foundry.applications.instances.values()) {
-      if (app.constructor.name === 'SpellBook' && app.actor === actor) app.reloadAllClasses?.();
-    }
+    refreshOpenSpellBooks(actor);
     this._saved = true;
     await this._onSave?.();
-    ATLAS.log(3, 'Class rules saved.', { actorName: actor.name });
+    ATLAS.log(3, `Class rules saved for ${actor.name}`);
   }
 
   /**

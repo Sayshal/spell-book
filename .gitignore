@@ -1,6 +1,5 @@
 /storage
 /packs
-/todos
 *.lock
 /todo
 README.html

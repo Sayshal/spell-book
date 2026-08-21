@@ -1,12 +1,7 @@
-/**
- * Dialog Utilities
- */
-
 const { DialogV2 } = foundry.applications.api;
 
 /**
  * Display a confirmation dialog with customizable options.
- * @todo I'm pretty sure we don't need to use localize here, it'll be done by the DialogV2 class.
  * @param {object} options - Dialog configuration options
  * @param {string} [options.title] - The dialog title text
  * @param {string} [options.content] - The dialog message content
@@ -19,22 +14,22 @@ const { DialogV2 } = foundry.applications.api;
  * @returns {Promise<boolean>} Whether the user confirmed
  */
 export async function confirmDialog({
-  title = _loc('SPELLBOOK.Manager.Confirm.Title'),
-  content = _loc('SPELLBOOK.Manager.Confirm.Content'),
-  confirmLabel = _loc('ATLAS.Common.Confirm'),
+  title,
+  content,
+  confirmLabel = 'ATLAS.Common.Confirm',
   confirmIcon = 'fas fa-check',
-  cancelLabel = _loc('COMMON.Cancel'),
+  cancelLabel = 'ATLAS.Common.Cancel',
   cancelIcon = 'fas fa-times',
   confirmCssClass = '',
   parent = null
-}) {
+} = {}) {
   const result = await DialogV2.wait({
     classes: ['spell-book'],
     window: { title: title },
     content: `<p>${content}</p>`,
     buttons: [
-      { icon: `${confirmIcon}`, label: confirmLabel, action: 'confirm', className: `dialog-button ${confirmCssClass}` },
-      { icon: `${cancelIcon}`, label: cancelLabel, action: 'cancel', className: 'dialog-button' }
+      { icon: confirmIcon, label: confirmLabel, action: 'confirm', className: `dialog-button ${confirmCssClass}` },
+      { icon: cancelIcon, label: cancelLabel, action: 'cancel', className: 'dialog-button' }
     ],
     default: 'cancel',
     rejectClose: false,

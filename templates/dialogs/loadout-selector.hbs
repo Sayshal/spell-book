@@ -36,15 +36,15 @@
               <span class="loadout-name">{{loadout.name}}</span>
               {{#if loadout.description}}<span class="loadout-description">{{loadout.description}}</span>{{/if}}
               <span class="loadout-meta">
-                {{localize "SPELLBOOK.Loadouts.SpellCount" count=loadout.spellCount}}{{#if
-            loadout.formattedDate}} • {{localize "SPELLBOOK.Loadouts.LastUpdated"
-            date=loadout.formattedDate}}{{/if}}
+                <span>{{localize "SPELLBOOK.Loadouts.SpellCount" count=loadout.spellCount}}</span>
+                {{#if loadout.formattedDate}}
+                  <span>{{localize "SPELLBOOK.Loadouts.LastUpdated" date=loadout.formattedDate}}</span>
+                {{/if}}
               </span>
             </div>
             <div class="loadout-actions">
               <button type="button" data-action="apply" data-loadout-id="{{loadout.id}}"
-                data-tooltip="{{localize 'ATLAS.Common.Apply'}}"
-                aria-label="{{localize 'ATLAS.Common.Apply'}}">
+                data-tooltip="{{localize 'ATLAS.Common.Apply'}}" aria-label="{{localize 'ATLAS.Common.Apply'}}">
                 <i class="fas fa-check" aria-hidden="true"></i>
               </button>
               <button type="button" data-action="overwrite" data-loadout-id="{{loadout.id}}"
@@ -54,8 +54,7 @@
               </button>
               <button type="button" data-action="delete" data-loadout-id="{{loadout.id}}"
                 data-loadout-name="{{loadout.name}}" class="delete-btn"
-                data-tooltip="{{localize 'ATLAS.Common.Delete'}}"
-                aria-label="{{localize 'ATLAS.Common.Delete'}}">
+                data-tooltip="{{localize 'ATLAS.Common.Delete'}}" aria-label="{{localize 'ATLAS.Common.Delete'}}">
                 <i class="fas fa-trash" aria-hidden="true"></i>
               </button>
             </div>

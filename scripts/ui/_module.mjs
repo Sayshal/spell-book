@@ -1,4 +1,3 @@
-export { SpellBookContextMenu } from './context-menu.mjs';
 export * from './custom-ui.mjs';
 export { DescriptionInjector } from './description-injector.mjs';
 export * from './dialogs.mjs';

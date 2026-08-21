@@ -3,16 +3,22 @@
   <div class="copy-details">
     <div class="form-group">
       <label>{{localize 'ATLAS.Common.Cost'}}:</label>
-      <span>{{costText}}</span>
+      <div class="form-fields">
+        <span>{{costText}}</span>
+      </div>
     </div>
     <div class="form-group">
       <label>{{localize 'SPELLBOOK.Wizard.TimeLabel'}}:</label>
-      <span>{{time}}</span>
+      <div class="form-fields">
+        <span>{{time}}</span>
+      </div>
     </div>
   </div>
   <div class="form-group">
     <label for="copy-approval-skip">{{localize 'SPELLBOOK.Approval.SkipTime'}}</label>
-    <input id="copy-approval-skip" type="checkbox" name="skipTime" />
+    <div class="form-fields">
+      <input id="copy-approval-skip" type="checkbox" name="skipTime">
+    </div>
     <p class="hint">{{localize 'SPELLBOOK.Approval.SkipTimeHint'}}</p>
   </div>
 </form>

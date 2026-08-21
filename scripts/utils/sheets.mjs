@@ -1,33 +1,33 @@
 import { PartyCoordinator, SpellBook, SpellListManager } from '../apps/_module.mjs';
-import { ASSETS, FLAGS, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
-import { PartyMode } from '../managers/party-mode.mjs';
-import { SpellManager } from '../managers/spell-manager.mjs';
-
+import { ASSETS, FLAGS, MODULE, SETTINGS, SWAP_MODES, TEMPLATES } from '../constants.mjs';
+import { PartyMode, SpellManager } from '../managers/_module.mjs';
 const { DialogV2 } = foundry.applications.api;
 const { renderTemplate } = foundry.applications.handlebars;
 
 /**
  * Check whether an actor has any spellcasting classes.
- * @todo Might be an easier way to do this.
  * @param {object} actor - The actor to check
  * @returns {boolean} True if the actor has at least one spellcasting class
  */
-const hasSpellcastingClasses = (actor) => !!actor?.spellcastingClasses && Object.keys(actor.spellcastingClasses).length > 0;
+export const hasSpellcastingClasses = (actor) => !foundry.utils.isEmpty(actor?.spellcastingClasses);
 
 /**
  * Inject a button into a rendered sheet, guarded by anchor resolution and duplicate detection.
  * @param {object} config - Button injection configuration
- * @param {HTMLElement} config.html - The sheet root element
+ * @param {HTMLElement} config.element - The sheet root element
  * @param {string} config.anchor - CSS selector for the element the button is inserted relative to
  * @param {'afterend'|'beforebegin'|'afterbegin'|'beforeend'} [config.position] - Insertion position (default 'afterend')
  * @param {string} [config.dedupeSelector] - CSS selector used to detect a pre-existing button
  * @param {Function} config.factory - Factory that builds the button element
  * @returns {boolean} Whether the button was added
  */
-function tryAddButton({ html, anchor, position = 'afterend', dedupeSelector, factory }) {
-  const anchorElement = html.querySelector(anchor);
-  if (!anchorElement) return false;
-  if (dedupeSelector && html.querySelector(dedupeSelector)) return false;
+export function tryAddButton({ element, anchor, position = 'afterend', dedupeSelector, factory }) {
+  const anchorElement = element.querySelector(anchor);
+  if (!anchorElement) {
+    ATLAS.log(2, `Sheet button not added; anchor "${anchor}" is not present`);
+    return false;
+  }
+  if (dedupeSelector && element.querySelector(dedupeSelector)) return false;
   const button = factory();
   anchorElement.insertAdjacentElement(position, button);
   return true;
@@ -51,7 +51,7 @@ async function openSpellBook(event, actor) {
     const renderOptions = windowId ? { force: true, window: { windowId } } : { force: true };
     new SpellBook({ actor }).render(renderOptions);
   } catch (error) {
-    ATLAS.log(1, 'Failed to open spell book from sheet button.', error);
+    ATLAS.log(1, 'Failed to open spell book from sheet button', error);
   } finally {
     icon?.classList.remove('fa-spin');
     button.disabled = false;
@@ -66,7 +66,7 @@ async function openSpellBook(event, actor) {
  * @param {boolean} [config.classicTooltip] - Use `title` + `tabindex=-1` instead of `data-tooltip`/`aria-label`
  * @returns {HTMLElement} The button element
  */
-function createSpellBookButton(actor, { className, classicTooltip = false }) {
+export function createSpellBookButton(actor, { className, classicTooltip = false }) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = className;
@@ -91,7 +91,7 @@ function createSpellBookButton(actor, { className, classicTooltip = false }) {
  * @param {string} config.className - CSS classes (sheet-specific)
  * @returns {HTMLElement} The button element
  */
-function createPartyButton({ groupActor, partyActors, className }) {
+export function createPartyButton({ groupActor, partyActors, className }) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = className;
@@ -139,15 +139,15 @@ async function promptLongRestSwap(actor, longRestClasses) {
 /**
  * Add the Spell Book button to a rendered dnd5e character sheet.
  * @param {object} _app - The character sheet application
- * @param {HTMLElement} html - The sheet root element
+ * @param {HTMLElement} element - The sheet root element
  * @param {object} data - The sheet data
  */
-export function addSpellbookButton(_app, html, data) {
+export function onActorSheetRender(_app, element, data) {
   const actor = data.actor;
   if (!hasSpellcastingClasses(actor)) return;
-  if (!html.querySelector('section.tab[data-tab="spells"]')) return;
+  if (!element.querySelector('section.tab[data-tab="spells"]')) return;
   tryAddButton({
-    html,
+    element,
     anchor: 'section.tab[data-tab="spells"] item-list-controls search ul.controls li:has(button[data-action="filter"])',
     dedupeSelector: '.spell-book-button',
     factory: () => {
@@ -170,10 +170,10 @@ export function onGroupActorRender(_sheet, element, data) {
   const spellcasters = (actor.system?.creatures || []).filter((a) => PartyMode.isSpellcaster(a));
   if (!spellcasters.length) return;
   tryAddButton({
-    html: element,
+    element,
     anchor: '.sheet-header-buttons .long-rest.gold-button',
-    dedupeSelector: '.party-spell-button',
-    factory: () => createPartyButton({ groupActor: actor, partyActors: spellcasters, className: 'party-spell-button gold-button' })
+    dedupeSelector: '.party-coordinator-button',
+    factory: () => createPartyButton({ groupActor: actor, partyActors: spellcasters, className: 'party-coordinator-button gold-button' })
   });
 }
 
@@ -181,7 +181,7 @@ export function onGroupActorRender(_sheet, element, data) {
  * Add a Spell List Manager button to the journal sidebar footer (GM only).
  * @param {object} app - The journal sidebar application
  */
-export function addJournalSpellBookButton(app) {
+export function onCompendiumDirectoryRender(app) {
   if (!game.user.isGM) return;
   const footer = app.element?.querySelector('.directory-footer');
   if (!footer) return;
@@ -204,14 +204,14 @@ export function addJournalSpellBookButton(app) {
  * @param {object} _config - The rest configuration
  * @returns {Promise<void>}
  */
-export async function handleRestCompleted(actor, result, _config) {
+export async function onRestCompleted(actor, result, _config) {
   if (!result.longRest) return;
   const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
   const longRestClasses = { cantripSwapping: [], spellSwapping: [] };
   let hasAnyLongRestMechanics = false;
   for (const [classIdentifier, rules] of Object.entries(classRules)) {
-    const needsSpellSwap = rules.spellSwapping === 'longRest';
-    const needsCantripSwap = rules.cantripSwapping === 'longRest';
+    const needsSpellSwap = rules.spellSwapping === SWAP_MODES.LONG_REST;
+    const needsCantripSwap = rules.cantripSwapping === SWAP_MODES.LONG_REST;
     if (!needsSpellSwap && !needsCantripSwap) continue;
     hasAnyLongRestMechanics = true;
     const classData = actor.spellcastingClasses?.[classIdentifier];
@@ -228,59 +228,4 @@ export async function handleRestCompleted(actor, result, _config) {
   if (!hasAnyLongRestMechanics) return;
   await actor.setFlag(MODULE.ID, FLAGS.LONG_REST_COMPLETED, true);
   await promptLongRestSwap(actor, longRestClasses);
-}
-
-/**
- * Add the Spell Book button to a Tidy5e classic character sheet.
- * @param {object} _sheet - The sheet application
- * @param {HTMLElement} element - The sheet root element
- * @param {object} data - The sheet data
- */
-export function onTidy5eRender(_sheet, element, data) {
-  const actor = data.actor;
-  if (!hasSpellcastingClasses(actor)) return;
-  tryAddButton({
-    html: element,
-    anchor: '.spellbook [data-tidy-sheet-part="utility-toolbar"] [data-tidy-sheet-part="search-container"]',
-    dedupeSelector: '.spellbook [data-tidy-sheet-part="utility-toolbar"] .spell-book-button',
-    factory: () => createSpellBookButton(actor, { className: 'inline-icon-button spell-book-button', classicTooltip: true })
-  });
-}
-
-/**
- * Add the Spell Book button to a Tidy5e Quadrone character sheet.
- * @param {object} _sheet - The sheet application
- * @param {HTMLElement} element - The sheet root element
- * @param {object} data - The sheet data
- */
-export function onTidy5eQuadroneRender(_sheet, element, data) {
-  const actor = data.actor;
-  if (!hasSpellcastingClasses(actor)) return;
-  tryAddButton({
-    html: element,
-    anchor: '.tidy-tab.spellbook [data-tidy-sheet-part="action-bar"] .button-group',
-    position: 'beforebegin',
-    dedupeSelector: '.tidy-tab.spellbook [data-tidy-sheet-part="action-bar"] .spell-book-button',
-    factory: () => createSpellBookButton(actor, { className: 'button button-icon-only spell-book-button' })
-  });
-}
-
-/**
- * Add the Party Coordinator button to a Tidy5e Quadrone group sheet.
- * @param {object} _sheet - The sheet application
- * @param {HTMLElement} element - The sheet root element
- * @param {object} data - The sheet data
- */
-export function onTidy5eGroupSheetRender(_sheet, element, data) {
-  const groupActor = data.actor;
-  if (groupActor?.type !== 'group') return;
-  const spellcasters = PartyMode.getPartyActors(groupActor);
-  if (!spellcasters.length) return;
-  tryAddButton({
-    html: element,
-    anchor: '[data-tidy-sheet-part="sheet-header-actions-container"]',
-    position: 'beforeend',
-    dedupeSelector: '.party-coordinator-button',
-    factory: () => createPartyButton({ groupActor, partyActors: spellcasters, className: 'button button-gold flexshrink party-coordinator-button' })
-  });
 }

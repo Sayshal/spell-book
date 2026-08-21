@@ -22,7 +22,7 @@
               <span class="party-icons">
                 {{#each spell.partyIcons.icons as |icon|}}
                   <img src="{{icon.src}}" alt="{{icon.name}}" class="party-member-icon" data-tooltip="{{icon.name}}"
-                    data-actor-id="{{icon.actorId}}" style="box-shadow: 0 0 0.1rem 0.1rem {{icon.userColor}};">
+                    data-actor-id="{{icon.actorId}}" style="--sb-party-icon-ring: {{icon.userColor}};">
                 {{/each}}
               </span>
             {{/if}}
@@ -65,10 +65,6 @@
             {{#if spell.wizardAction.learningSource}}
               {{#if (eq spell.wizardAction.learningSource "scroll")}}
                 <i class="fa-solid fa-scroll" aria-hidden="true"></i>
-              {{else if (eq spell.wizardAction.learningSource "gold")}}
-                <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>
-              {{else if (eq spell.wizardAction.learningSource "levelup")}}
-                <i class="fa-solid fa-arrow-up" aria-hidden="true"></i>
               {{else}}
                 <i class="fa-solid fa-book" aria-hidden="true"></i>
               {{/if}}
@@ -94,15 +90,16 @@
           </span>
         {{/if}}
         <button class="copy-spell-btn" data-action="learnSpell" data-uuid="{{spell.wizardAction.uuid}}" type="button"
-          aria-label="{{localize 'SPELLBOOK.Wizard.LearnSpell'}}" {{#if spell.wizardAction.unaffordable}}aria-disabled="true"
-          data-tooltip="{{spell.wizardAction.costTooltip}}" {{/if}}>
+          aria-label="{{localize 'SPELLBOOK.Wizard.LearnSpell'}}"
+          {{#if spell.wizardAction.unaffordable}}aria-disabled="true" data-tooltip="{{spell.wizardAction.costTooltip}}"
+          {{/if}}>
           <i class="fas fa-book"></i> {{localize "SPELLBOOK.Wizard.LearnSpell"}}
         </button>
       {{/if}}
     </div>
   {{else}}
     <div class="spell-preparation">
-      {{> modules/spell-book/templates/components/preparation-checkbox.hbs}}
+      {{> "modules/spell-book/templates/components/preparation-checkbox.hbs"}}
     </div>
   {{/if}}
 </li>

@@ -1,5 +1,4 @@
 export { ClassRules } from './class-rules.mjs';
-export { CustomSpellList } from './custom-spell-list.mjs';
 export { DetailsCustomization } from './details-customization.mjs';
 export { showLearnFromScrollDialog } from './learn-from-scroll.mjs';
 export { LoadoutSelector } from './loadout-selector.mjs';

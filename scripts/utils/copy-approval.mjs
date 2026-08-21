@@ -1,21 +1,10 @@
-import { FLAGS, MODULE, TEMPLATES } from '../constants.mjs';
-import { WizardBook } from '../managers/wizard-book.mjs';
-
+import { FLAGS, MESSAGE_TYPES, MODULE, TEMPLATES } from '../constants.mjs';
+import { WizardBook } from '../managers/_module.mjs';
 const { DialogV2 } = foundry.applications.api;
 const { renderTemplate } = foundry.applications.handlebars;
 
 /** @type {Set<string>} Actor ids whose approval dialog is already open on this client. */
 const openDialogs = new Set();
-
-/**
- * Refresh any open Spell Book windows for the actor so an approved copy shows immediately.
- * @param {object} actor - The actor document
- */
-function refreshOpenSpellBooks(actor) {
-  for (const app of foundry.applications.instances.values()) {
-    if (app.constructor.name === 'SpellBook' && app.actor === actor) app.reloadAllClasses?.();
-  }
-}
 
 /**
  * Queue a spell copy for GM approval. The request lives on the actor, so it survives until a GM logs in.
@@ -32,6 +21,7 @@ export async function requestCopyApproval(actor, classId, spellUuid, cost, minut
     return false;
   }
   await actor.setFlag(MODULE.ID, FLAGS.PENDING_SPELL_COPY, { classId, spellUuid, cost, minutes, userId: game.user.id });
+  ATLAS.log(3, `Queued spell copy approval for ${actor.name}`, { classId, spellUuid, cost, minutes });
   ui.notifications.info(ATLAS.primaryGM ? 'SPELLBOOK.Approval.Sent' : 'SPELLBOOK.Approval.Queued', { localize: true });
   return true;
 }
@@ -45,7 +35,7 @@ export async function requestCopyApproval(actor, classId, spellUuid, cost, minut
  */
 async function notifyRequester(request, spellName, approved) {
   const content = `<p>${_loc(approved ? 'SPELLBOOK.Approval.Approved' : 'SPELLBOOK.Approval.Denied', { spell: spellName })}</p>`;
-  await ChatMessage.create({ content, whisper: [request.userId], flags: { [MODULE.ID]: { messageType: 'copy-approval' } } });
+  await ChatMessage.create({ content, whisper: [request.userId], flags: { [MODULE.ID]: { [FLAGS.MESSAGE_TYPE]: MESSAGE_TYPES.COPY_APPROVAL } } });
 }
 
 /**
@@ -60,6 +50,7 @@ async function resolveRequest(actor) {
   try {
     const spell = await fromUuid(request.spellUuid);
     if (!spell) {
+      ATLAS.log(2, `Clearing spell copy request for ${actor.name}; spell ${request.spellUuid} could not be resolved`);
       await actor.unsetFlag(MODULE.ID, FLAGS.PENDING_SPELL_COPY);
       return;
     }
@@ -81,6 +72,7 @@ async function resolveRequest(actor) {
       rejectClose: false
     });
     if (result !== 'approve' && result !== 'skip') {
+      ATLAS.log(3, `Spell copy request for ${actor.name} denied`, { spell: spell.name });
       await actor.unsetFlag(MODULE.ID, FLAGS.PENDING_SPELL_COPY);
       await notifyRequester(request, spell.name, false);
       return;
@@ -89,6 +81,10 @@ async function resolveRequest(actor) {
     if (learned && result === 'approve' && request.minutes > 0) await game.time.advance(request.minutes * 60);
     await actor.unsetFlag(MODULE.ID, FLAGS.PENDING_SPELL_COPY);
     await notifyRequester(request, spell.name, learned);
+    ATLAS.log(3, `Spell copy request for ${actor.name} resolved`, { spell: spell.name, result, learned });
+  } catch (error) {
+    ATLAS.log(1, `Spell copy approval failed for ${actor.name}; clearing the pending request`, error);
+    await actor.unsetFlag(MODULE.ID, FLAGS.PENDING_SPELL_COPY);
   } finally {
     openDialogs.delete(actor.id);
   }
@@ -118,4 +114,15 @@ export function onUpdateActor(actor, changes, _options, userId) {
 export function sweepPendingRequests() {
   if (!ATLAS.isPrimaryGM) return;
   for (const actor of game.actors) if (actor.getFlag(MODULE.ID, FLAGS.PENDING_SPELL_COPY)) resolveRequest(actor);
+}
+
+/**
+ * Refresh any open Spell Book window for an actor so a change made elsewhere shows immediately.
+ * Resolves the app by its registered id; the class name is mangled in a built release.
+ * @param {object} actor - The actor document
+ * @returns {void}
+ */
+export function refreshOpenSpellBooks(actor) {
+  const app = foundry.applications.instances.get('player-spell-book');
+  if (app?.actor === actor) app.reloadAllClasses?.();
 }

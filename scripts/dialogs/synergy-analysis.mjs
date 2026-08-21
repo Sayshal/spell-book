@@ -14,7 +14,7 @@ export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
   };
 
   /** @override */
-  static PARTS = { main: { template: TEMPLATES.APPS.PARTY.SYNERGY_ANALYSIS } };
+  static PARTS = { main: { template: TEMPLATES.DIALOGS.SYNERGY_ANALYSIS } };
 
   /**
    * @param {object} synergyData - Pre-computed synergy analysis from PartyMode
@@ -41,6 +41,9 @@ export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
     for (const item of context.savingThrowDistribution || []) item.tooltipHtml = tip(item.localizedSave, item.members);
     for (const item of context.spellLevelDistribution || []) item.tooltipHtml = tip(item.localizedLevel, item.members);
     for (const item of context.duplicateSpells || []) item.tooltipHtml = tip(item.name, item.actors);
+    const countTip = SynergyAnalysis.#memberCountTooltip;
+    context.concentrationTooltip = countTip(_loc('DND5E.Concentration'), context.concentrationMembers);
+    context.ritualTooltip = countTip(_loc('DND5E.Ritual'), context.ritualMembers);
     const components = this.synergyData.memberContributions?.components || {};
     context.componentTooltips = {
       verbal: tip(_loc('DND5E.ComponentVerbal'), components.verbal),
@@ -77,6 +80,19 @@ export class SynergyAnalysis extends HandlebarsApplicationMixin(ApplicationV2) {
       return `<div><strong>${esc(name)}</strong> (${spells.length}): ${shown}${rest}</div>`;
     });
     if (grouped.size > SynergyAnalysis.#MAX_MEMBERS) lines.push(`<div>${esc(_loc('SPELLBOOK.Party.AndMoreMembers', { count: grouped.size - SynergyAnalysis.#MAX_MEMBERS }))}</div>`);
+    return `<strong>${esc(title)}</strong><hr>${lines.join('')}`;
+  }
+
+  /**
+   * Build a tooltip listing each member and how many spells they contribute.
+   * @param {string} title - Tooltip heading
+   * @param {Array<{name: string, count: number}>} members - Pre-sorted member counts
+   * @returns {string} Tooltip HTML
+   */
+  static #memberCountTooltip(title, members) {
+    const esc = Handlebars.escapeExpression;
+    if (!members?.length) return `<strong>${esc(title)}</strong>`;
+    const lines = members.map((member) => `<div>${esc(member.name)} (${member.count})</div>`);
     return `<strong>${esc(title)}</strong><hr>${lines.join('')}`;
   }
 }

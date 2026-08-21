@@ -1,8 +1,7 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
 import { getTargetUserId, loadUserSpellData, saveUserSpellData } from '../data/_module.mjs';
-import { getCanonicalSpellUuid } from '../managers/spell-manager.mjs';
-import { DescriptionInjector } from '../ui/description-injector.mjs';
-
+import { getCanonicalSpellUuid } from '../managers/_module.mjs';
+import { DescriptionInjector } from '../ui/_module.mjs';
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /** Per-spell user notes editor (writes to the user-data journal page). */
@@ -30,7 +29,7 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
     this.spellUuid = getCanonicalSpellUuid(options.spellUuid);
     this.spellName = fromUuidSync(this.spellUuid)?.name || '';
     this.actor = options.actor || null;
-    this.maxLength = game.settings.get(MODULE.ID, SETTINGS.SPELL_NOTES_LENGTH) || 240;
+    this.maxLength = game.settings.get(MODULE.ID, SETTINGS.SPELL_NOTES_MAX_LENGTH) || 240;
   }
 
   /** @override */
@@ -123,6 +122,6 @@ export class SpellNotes extends HandlebarsApplicationMixin(ApplicationV2) {
       icon.setAttribute('aria-label', tip);
     }
     await DescriptionInjector.handleNotesChange(canonicalUuid);
-    ATLAS.log(3, 'Spell notes saved.', { canonicalUuid, hasNotes });
+    ATLAS.log(3, 'Spell notes saved', { canonicalUuid, hasNotes });
   }
 }

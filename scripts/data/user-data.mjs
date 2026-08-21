@@ -1,9 +1,3 @@
-/**
- * Journal-based user spell data storage (notes and favorites).
- * @module Data/UserData
- * @author Tyler
- */
-
 import { FLAGS, MODULE, PACK, TEMPLATES } from '../constants.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
@@ -39,14 +33,14 @@ function decodeUuidKey(key) {
  * Get the user spell data journal from the module pack.
  * @returns {Promise<object|null>} The journal document or null
  */
-async function getJournal() {
-  const pack = game.packs.get(PACK.USERDATA);
+async function getUserSpellDataJournal() {
+  const pack = game.packs.get(PACK.USER_SPELL_DATA);
   if (!pack) {
-    ATLAS.log(2, `User spell data pack "${PACK.USERDATA}" not found. Reinstall the module or restart the world to restore it.`);
+    ATLAS.log(2, `User spell data pack "${PACK.USER_SPELL_DATA}" not found. Reinstall the module or restart the world to restore it`);
     return null;
   }
   const docs = await pack.getDocuments();
-  return docs.find((doc) => doc.name === JOURNAL_NAME && doc.flags?.[MODULE.ID]?.isUserSpellDataJournal) ?? null;
+  return docs.find((doc) => doc.name === JOURNAL_NAME && doc.flags?.[MODULE.ID]?.[FLAGS.IS_USER_SPELL_DATA_JOURNAL]) ?? null;
 }
 
 /**
@@ -55,8 +49,18 @@ async function getJournal() {
  * @returns {Promise<object|null>} The user's page or null
  */
 async function getUserPage(userId) {
-  const journal = await getJournal();
+  const journal = await getUserSpellDataJournal();
   return journal?.pages.find((page) => page.flags?.[MODULE.ID]?.userId === userId) ?? null;
+}
+
+/**
+ * Drop cached user spell data so the next read comes from the journal.
+ * @param {string} [userId] - User to forget, or omit to clear every entry
+ * @returns {void}
+ */
+export function invalidateUserSpellDataCache(userId) {
+  if (userId) cache.delete(userId);
+  else cache.clear();
 }
 
 /**
@@ -91,7 +95,7 @@ export async function saveUserSpellData(userId, spellData) {
   if (!user) return false;
   const encodedData = {};
   for (const [uuid, value] of Object.entries(spellData)) encodedData[encodeUuidKey(uuid)] = value;
-  const displayHtml = await formatUserSpellsHTML(spellData, user.name, userId);
+  const displayHtml = await formatUserSpellsHtml(spellData, user.name, userId);
   await page.update({
     'text.content': displayHtml,
     [`flags.${MODULE.ID}.${FLAGS.USER_SPELL_DATA}`]: encodedData,
@@ -109,7 +113,7 @@ export async function saveUserSpellData(userId, spellData) {
  * @param {string} userId - User ID for actor ownership lookup
  * @returns {Promise<string>} Rendered HTML string
  */
-export async function formatUserSpellsHTML(spellData, userName, userId) {
+export async function formatUserSpellsHtml(spellData, userName, userId) {
   const unknownSpell = _loc('SPELLBOOK.UI.UnknownSpell');
   const spellNameCache = new Map();
   const getSpellName = (uuid) => {
@@ -117,7 +121,7 @@ export async function formatUserSpellsHTML(spellData, userName, userId) {
     return spellNameCache.get(uuid);
   };
   const user = game.users.get(userId);
-  const userActors = game.actors.filter((actor) => actor.type === 'character' && (actor.ownership[userId] === 3 || user?.character?.id === actor.id));
+  const userActors = game.actors.filter((actor) => actor.type === 'character' && (actor.ownership[userId] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER || user?.character?.id === actor.id));
   const processedActors = userActors.map((actor) => {
     const favoriteSpells = [];
     for (const [uuid, data] of Object.entries(spellData)) if (data.actorData?.[actor.id]?.favorited) favoriteSpells.push({ uuid, name: getSpellName(uuid) });
@@ -126,7 +130,6 @@ export async function formatUserSpellsHTML(spellData, userName, userId) {
   const notesSpells = [];
   for (const [uuid, data] of Object.entries(spellData)) if (data.notes?.trim()) notesSpells.push({ uuid, name: getSpellName(uuid), notes: data.notes });
   return renderTemplate(TEMPLATES.COMPONENTS.USER_SPELL_DATA_TABLES, {
-    isGM: false,
     userId,
     userName,
     userActors: processedActors,

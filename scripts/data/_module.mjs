@@ -1,3 +1,5 @@
+export * from './class-spell-key.mjs';
+export * from './compendium-packs.mjs';
 export * from './custom-lists.mjs';
 export * from './helpers.mjs';
 export * from './migrations.mjs';

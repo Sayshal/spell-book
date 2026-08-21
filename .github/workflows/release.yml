@@ -110,7 +110,7 @@ jobs:
           echo "title=$(jq -r '.title' dist/module.json)" >> $GITHUB_OUTPUT
           echo "compat_min=$(jq -r '.compatibility.minimum' dist/module.json)" >> $GITHUB_OUTPUT
           echo "compat_verified=$(jq -r '.compatibility.verified' dist/module.json)" >> $GITHUB_OUTPUT
-          echo "compat_max=$(jq -r '.compatibility.maximum' dist/module.json)" >> $GITHUB_OUTPUT
+          echo "compat_max=$(jq -r '.compatibility.maximum // empty' dist/module.json)" >> $GITHUB_OUTPUT
 
       # Release to Foundry Package API
       - name: Release Foundry Package
@@ -133,7 +133,7 @@ jobs:
                 notes: $notes,
                 compatibility: (
                   {minimum: $compat_min, verified: $compat_verified}
-                  + (if $compat_max == "" or $compat_max == "null" then {} else {maximum: $compat_max} end)
+                  + (if $compat_max == "" then {} else {maximum: $compat_max} end)
                 )
               }
             }' > payload.json
@@ -182,7 +182,7 @@ jobs:
           foundry_url = 'https://foundryvtt.com/packages/' + module_id
 
           # Compatibility display: 'X' if min == (max or verified), else 'X - Y'
-          upper = compat_max if compat_max and compat_max != 'null' else compat_verified
+          upper = compat_max or compat_verified
           compat_value = compat_min if compat_min == upper else f'{compat_min} - {upper}'
 
           payload = json.dumps({

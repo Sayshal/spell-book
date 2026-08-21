@@ -4,6 +4,16 @@ import { buildClassSourceItem } from '../managers/spell-manager.mjs';
 const targetUserIdCache = new Map();
 
 /**
+ * Drop cached target-user lookups. Called when ownership or the user list changes.
+ * @param {string} [actorId] - Actor to forget, or omit to clear every entry
+ * @returns {void}
+ */
+export function invalidateTargetUserCache(actorId) {
+  if (actorId) targetUserIdCache.delete(actorId);
+  else targetUserIdCache.clear();
+}
+
+/**
  * Get the appropriate label/name from a CONFIG object.
  * @param {object} configObject - The CONFIG object (e.g., CONFIG.DND5E.spellSchools)
  * @param {string} key - The key to look up
@@ -42,13 +52,13 @@ export function isGrantingItemActive(item) {
   if (!item) return false;
   const isEquipped = item.system?.equipped ?? false;
   if (!isEquipped) {
-    ATLAS.log(3, `Granting item ${item.name} is not equipped.`, { item });
+    ATLAS.log(3, `Granting item ${item.name} is not equipped`, { item });
     return false;
   }
   const requiresAttunement = item.system?.attunement === 'required';
   const isAttuned = item.system?.attuned ?? false;
   if (requiresAttunement && !isAttuned) {
-    ATLAS.log(3, `Granting item ${item.name} requires attunement but is not attuned.`, { item });
+    ATLAS.log(3, `Granting item ${item.name} requires attunement but is not attuned`, { item });
     return false;
   }
   return true;

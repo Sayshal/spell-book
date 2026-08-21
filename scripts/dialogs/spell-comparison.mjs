@@ -1,6 +1,5 @@
 import { TEMPLATES } from '../constants.mjs';
-import { createSpellIconLink, formatSpellActivation, formatSpellComponents, formatSpellSchool } from '../ui/formatting.mjs';
-
+import { createSpellIconLink, formatSpellActivation, formatSpellComponents, formatSpellSchool } from '../ui/_module.mjs';
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 const MIN_COL_WIDTH = 150;
@@ -17,12 +16,12 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
     classes: ['spell-book', 'spell-comparison-dialog'],
     position: { width: 600, height: 'auto' },
     window: { icon: 'fas fa-scale-balanced', resizable: false, frame: false, positioned: true },
-    actions: { close: SpellComparison.#onClose, toggleDetach: SpellComparison.#onToggleDetach }
+    actions: { closeComparison: SpellComparison.#onClose, toggleDetach: SpellComparison.#onToggleDetach }
   };
 
   /**
    * Close the frameless dialog from the template close button.
-   * @this SpellComparison
+   * @this {SpellComparison}
    */
   static async #onClose() {
     this.element?.classList.add('closing');
@@ -32,7 +31,7 @@ export class SpellComparison extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Toggle detached-window mode.
-   * @this SpellComparison
+   * @this {SpellComparison}
    */
   static #onToggleDetach() {
     if (this.window.windowId) this.attachWindow();

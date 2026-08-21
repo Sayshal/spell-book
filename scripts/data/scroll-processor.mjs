@@ -1,10 +1,4 @@
 /**
- * Spell scroll detection and extraction from actor inventories.
- * @module Data/ScrollProcessor
- * @author Tyler
- */
-
-/**
  * Scan an actor's inventory for spell scrolls and extract learnable spell data.
  * @param {object} actor - The actor to scan
  * @param {number} maxSpellLevel - Maximum spell level the actor can learn
@@ -17,7 +11,7 @@ export async function scanForScrollSpells(actor, maxSpellLevel) {
     const spellData = await extractSpellFromScroll(scroll, maxSpellLevel);
     if (spellData) results.push(spellData);
   }
-  ATLAS.log(3, `Found ${results.length} scroll spells on ${actor.name}.`);
+  ATLAS.log(3, `Found ${results.length} scroll spells on ${actor.name}`);
   return results;
 }
 

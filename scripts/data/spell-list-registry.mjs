@@ -1,16 +1,10 @@
-/**
- * Spell List Registry Integration
- * @module DataUtils/Registry
- * @author Tyler
- */
-
 import { MODULE, SETTINGS } from '../constants.mjs';
 
 /**
- * Register custom spell lists with the D&D 5e SpellListRegistry.
+ * Register every registry-enabled spell list with the system's SpellListRegistry.
  * @returns {Promise<object>} Registration result statistics
  */
-export async function registerCustomSpellLists() {
+export async function registerEnabledSpellLists() {
   const result = { total: 0, registered: 0, skipped: 0, failed: 0, errors: [] };
   const enabledUuids = game.settings.get(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS) || [];
   if (enabledUuids.length === 0) return result;
@@ -63,26 +57,26 @@ export function isListEnabledForRegistry(uuid) {
  */
 export async function toggleListForRegistry(uuid) {
   const enabledLists = game.settings.get(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS);
-  const isEnabled = enabledLists.includes(uuid);
-  if (isEnabled) {
-    enabledLists.splice(enabledLists.indexOf(uuid), 1);
-    await game.settings.set(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS, enabledLists);
+  if (enabledLists.includes(uuid)) {
+    await game.settings.set(
+      MODULE.ID,
+      SETTINGS.REGISTRY_ENABLED_LISTS,
+      enabledLists.filter((entry) => entry !== uuid)
+    );
     ui.notifications.info('SPELLBOOK.Registry.DisableReloadHint', { localize: true });
     return false;
   }
-  enabledLists.push(uuid);
-  await game.settings.set(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS, enabledLists);
+  await game.settings.set(MODULE.ID, SETTINGS.REGISTRY_ENABLED_LISTS, [...enabledLists, uuid]);
   try {
     await dnd5e.registry.spellLists.register(uuid);
   } catch (err) {
-    ATLAS.log(1, 'Failed to live-register spell list, will apply on next reload.', err);
+    ATLAS.log(1, 'Failed to live-register spell list, will apply on next reload', err);
   }
   return true;
 }
 
 /**
- * Register a spell list with dnd5e immediately (used after saving a modified list to
- * push its current contents into the registry without requiring a world reload).
+ * Register a spell list with dnd5e immediately.
  * @param {string} uuid - UUID of the spell list
  * @returns {Promise<void>}
  */
@@ -95,6 +89,6 @@ export async function ensureListRegistered(uuid) {
   try {
     await dnd5e.registry.spellLists.register(uuid);
   } catch (err) {
-    ATLAS.log(1, 'ensureListRegistered failed.', err);
+    ATLAS.log(1, 'ensureListRegistered failed', err);
   }
 }

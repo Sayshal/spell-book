@@ -1,5 +1,5 @@
 import { SpellBook } from '../apps/_module.mjs';
-import { FLAGS, MODULE, TEMPLATES } from '../constants.mjs';
+import { FLAGS, MESSAGE_TYPES, MODULE, TEMPLATES } from '../constants.mjs';
 import { getClassSpellList } from '../data/spell-list-resolver.mjs';
 import { ClassRules } from '../dialogs/_module.mjs';
 import { ClassManager } from './class-manager.mjs';
@@ -43,7 +43,7 @@ async function checkSpellcastingLists(actor) {
   if (!fresh.length) return;
   const recipients = game.users.filter((u) => u.isGM || actor.testUserPermission(u, 'OWNER')).map((u) => u.id);
   const content = await renderTemplate(TEMPLATES.COMPONENTS.SPELLCASTING_NOTICE, { actorName: actor.name, actorUuid: actor.uuid, classes: fresh });
-  await ChatMessage.create({ content, whisper: recipients, flags: { [MODULE.ID]: { messageType: 'spellcasting-notice' } } });
+  await ChatMessage.create({ content, whisper: recipients, flags: { [MODULE.ID]: { [FLAGS.MESSAGE_TYPE]: MESSAGE_TYPES.SPELLCASTING_NOTICE } } });
   ATLAS.log(3, `Spellcasting list notice sent for ${actor.name}: ${fresh.map((c) => c.identifier).join(', ')}`);
 }
 
@@ -69,7 +69,7 @@ export function onAdvancementComplete(manager) {
  * @param {HTMLElement} html - The rendered message element
  */
 export function onRenderSpellcastingNotice(message, html) {
-  if (message.flags?.[MODULE.ID]?.messageType !== 'spellcasting-notice') return;
+  if (message.flags?.[MODULE.ID]?.[FLAGS.MESSAGE_TYPE] !== MESSAGE_TYPES.SPELLCASTING_NOTICE) return;
   const button = html.querySelector('.spellbook-configure');
   if (!button) return;
   const label = button.querySelector('.label');

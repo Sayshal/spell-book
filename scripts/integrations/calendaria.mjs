@@ -1,8 +1,5 @@
-import { FLAGS, MODULE, SETTINGS, WIZARD_SPELL_SOURCE } from '../constants.mjs';
-import { WizardBook } from '../managers/wizard-book.mjs';
-
-/** @type {string} Relay event carrying a copy that needs logging to the calendar. */
-export const COPY_LOGGED = 'spellBook.spellCopied';
+import { FLAGS, HOOKS, MODULE, SETTINGS, WIZARD_SPELL_SOURCE } from '../constants.mjs';
+import { WizardBook } from '../managers/_module.mjs';
 
 /** @type {Map<string, string>} Day key -> journal page id of that day's downtime note. */
 const dayNotes = new Map();
@@ -55,7 +52,7 @@ function dayNotePage(api, date) {
   if (cached) return cached;
   for (const note of api.getNotesForDate(date.year, date.month, date.day) ?? []) {
     const page = pageById(note.id);
-    if (page?.getFlag(MODULE.ID, 'downtimeNote')) {
+    if (page?.getFlag(MODULE.ID, FLAGS.DOWNTIME_NOTE)) {
       dayNotes.set(dayKey(date), page.id);
       return page;
     }
@@ -78,7 +75,7 @@ async function appendLine(api, date, line) {
   }
   const created = await api.createNote({ name: _loc('ATLAS.Common.Downtime'), content: line, startDate: date, allDay: true, openSheet: false });
   if (!created) return;
-  await created.setFlag(MODULE.ID, 'downtimeNote', true);
+  await created.setFlag(MODULE.ID, FLAGS.DOWNTIME_NOTE, true);
   dayNotes.set(dayKey(date), created.id);
 }
 
@@ -97,7 +94,7 @@ function onCopyLogged({ actorName, spellName, minutes }) {
   if (!api?.createNote || !api?.getNotesForDate || !date) return;
   const escape = foundry.utils.escapeHTML;
   const text = _loc('SPELLBOOK.DowntimeNote.Line', { actor: escape(actorName), spell: escape(spellName), time: WizardBook.formatCopyingTime(minutes) });
-  queue = queue.then(() => appendLine(api, date, `<p>${text}</p>`)).catch((error) => ATLAS.log(1, 'Downtime note append failed.', { error }));
+  queue = queue.then(() => appendLine(api, date, `<p>${text}</p>`)).catch((error) => ATLAS.log(1, 'Downtime note append failed', error));
 }
 
 /**
@@ -115,11 +112,11 @@ export function onSpellLearned({ actor, classId, spellUuid, source, name }) {
   const records = actor.getFlag(MODULE.ID, `${FLAGS.WIZARD_COPIED_SPELLS}_${classId}`) || [];
   const minutes = records.findLast((record) => record.spellUuid === spellUuid)?.timeSpent ?? 0;
   const payload = { actorName: actor.name, spellName: name ?? spellUuid, minutes };
-  if (ATLAS.isPrimaryGM) onCopyLogged(payload);
-  game.modules.get(MODULE.ID).atlas?.broadcast(COPY_LOGGED, payload);
+  Hooks.callAll(HOOKS.SPELL_COPIED, payload);
+  game.modules.get(MODULE.ID).atlas?.broadcast(HOOKS.SPELL_COPIED, payload);
 }
 
 /** Wire the GM-side note writer for copies relayed from other clients. */
 export function registerDowntimeNote() {
-  Hooks.on(COPY_LOGGED, onCopyLogged);
+  Hooks.on(HOOKS.SPELL_COPIED, onCopyLogged);
 }

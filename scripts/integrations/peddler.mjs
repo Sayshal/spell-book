@@ -1,13 +1,8 @@
-/**
- * Peddler trade integration: offer scroll copying when a purchase delivers a linked spell scroll.
- * @module Integrations/Peddler
- * @author Tyler
- */
-
-import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
-import { resolveLinkedScrollSpell } from '../data/scroll-processor.mjs';
+import { FLAGS, MESSAGE_TYPES, MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
+import { resolveLinkedScrollSpell } from '../data/_module.mjs';
 import { showLearnFromScrollDialog } from '../dialogs/_module.mjs';
 import { ClassManager, WizardBook } from '../managers/_module.mjs';
+import { refreshOpenSpellBooks } from '../utils/copy-approval.mjs';
 
 const { DialogV2 } = foundry.applications.api;
 const { renderTemplate } = foundry.applications.handlebars;
@@ -16,8 +11,6 @@ const { renderTemplate } = foundry.applications.handlebars;
 const PEDDLER_TRADE = 'peddler.trade';
 
 /** @type {string} Chat message flag identifying scroll-purchase cards */
-const MESSAGE_TYPE = 'scroll-purchase';
-
 /**
  * Whisper a copy offer to the buyer's owners for every linked spell scroll a trade delivered.
  * @param {object} data - The peddler.trade payload
@@ -42,7 +35,7 @@ async function onPeddlerTrade({ buyerActor, summary }) {
       spellName: linked.spell.name,
       spellUuid: linked.spellUuid
     });
-    await ChatMessage.create({ content, whisper: recipients, flags: { [MODULE.ID]: { messageType: MESSAGE_TYPE } } });
+    await ChatMessage.create({ content, whisper: recipients, flags: { [MODULE.ID]: { [FLAGS.MESSAGE_TYPE]: MESSAGE_TYPES.SCROLL_PURCHASE } } });
     ATLAS.log(3, `Scroll purchase offer sent for ${buyerActor.name}: ${linked.spell.name}`);
   }
 }
@@ -61,7 +54,7 @@ async function promptForClass(classes) {
     content: `<p>${_loc('SPELLBOOK.ScrollPurchase.ChooseClassBody')}</p><select name="classId">${options}</select>`,
     buttons: [
       { icon: 'fas fa-check', label: 'SPELLBOOK.Wizard.LearnSpellButton', action: 'confirm', className: 'dialog-button', callback: (_e, button) => button.form.elements.classId.value },
-      { icon: 'fas fa-times', label: 'COMMON.Cancel', action: 'cancel', className: 'dialog-button' }
+      { icon: 'fas fa-times', label: 'ATLAS.Common.Cancel', action: 'cancel', className: 'dialog-button' }
     ],
     default: 'confirm',
     rejectClose: false
@@ -95,22 +88,12 @@ async function isAlreadyLearned(actor, spellUuid) {
 }
 
 /**
- * Refresh any open Spell Book windows for the actor so a card learn shows immediately.
- * @param {object} actor - The actor document
- */
-function refreshOpenSpellBooks(actor) {
-  for (const app of foundry.applications.instances.values()) {
-    if (app.constructor.name === 'SpellBook' && app.actor === actor) app.reloadAllClasses?.();
-  }
-}
-
-/**
  * Wire the learn button on scroll-purchase whispers.
  * @param {object} message - The chat message document
  * @param {HTMLElement} html - The rendered message element
  */
 export function onRenderScrollPurchase(message, html) {
-  if (message.flags?.[MODULE.ID]?.messageType !== MESSAGE_TYPE) return;
+  if (message.flags?.[MODULE.ID]?.[FLAGS.MESSAGE_TYPE] !== MESSAGE_TYPES.SCROLL_PURCHASE) return;
   const button = html.querySelector('.spellbook-learn-scroll');
   if (!button) return;
   const actor = fromUuidSync(button.dataset.actorUuid);
@@ -149,9 +132,9 @@ export function onRenderScrollPurchase(message, html) {
 }
 
 /** Register the Peddler trade listener; GM clients only, since Peddler commits trades GM-side. */
-export function registerPeddlerIntegration() {
+export function initializePeddler() {
   Hooks.on(PEDDLER_TRADE, (data) => {
     if (ATLAS.isPrimaryGM) onPeddlerTrade(data);
   });
-  ATLAS.log(3, 'Peddler integration registered.');
+  ATLAS.log(3, 'Peddler integration registered');
 }

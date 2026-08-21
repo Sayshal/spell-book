@@ -1,19 +1,18 @@
 import { SpellBook, SpellListManager } from './apps/_module.mjs';
-import { MODULE, PACK, SETTINGS } from './constants.mjs';
+import { HOOKS, MODULE, PACK, SETTINGS } from './constants.mjs';
+import { invalidateTargetUserCache, invalidateUserSpellDataCache } from './data/_module.mjs';
+import { initializePeddler, onRenderScrollPurchase, onSpellLearned, onTidy5eGroupSheetRender, onTidy5eQuadroneRender, onTidy5eRender, registerDowntimeNote } from './integrations/_module.mjs';
 import { SpellDataManager } from './managers/_module.mjs';
-import { onRenderScrollPurchase, registerPeddlerIntegration } from './integrations/peddler.mjs';
 import { onAdvancementComplete, onRenderSpellcastingNotice, onSpellcastingItemCreate } from './managers/spellcasting-notice.mjs';
-import { DescriptionInjector } from './ui/description-injector.mjs';
-import { onUpdateActor } from './utils/copy-approval.mjs';
-import { onSpellLearned, registerDowntimeNote } from './utils/downtime-note.mjs';
-import { addJournalSpellBookButton, addSpellbookButton, handleRestCompleted, onGroupActorRender, onTidy5eGroupSheetRender, onTidy5eQuadroneRender, onTidy5eRender } from './utils/sheets.mjs';
+import { DescriptionInjector } from './ui/_module.mjs';
+import { onActorSheetRender, onCompendiumDirectoryRender, onGroupActorRender, onRestCompleted, onUpdateActor } from './utils/_module.mjs';
 
 /** Register all hooks for the Spell Book module. */
-export function registerAllHooks() {
-  Hooks.on('renderActorSheetV2', addSpellbookButton);
+export function registerHooks() {
+  Hooks.on('renderActorSheetV2', onActorSheetRender);
   Hooks.on('renderGroupActorSheet', onGroupActorRender);
-  Hooks.on('activateCompendiumDirectory', addJournalSpellBookButton);
-  Hooks.on('dnd5e.restCompleted', handleRestCompleted);
+  Hooks.on('activateCompendiumDirectory', onCompendiumDirectoryRender);
+  Hooks.on('dnd5e.restCompleted', onRestCompleted);
   if (game.modules.get('tidy5e-sheet')?.active) {
     Hooks.on('tidy5e-sheet.renderActorSheet', onTidy5eRender);
     Hooks.on('renderTidy5eCharacterSheet', onTidy5eRender);
@@ -36,19 +35,25 @@ export function registerAllHooks() {
   Hooks.on('dnd5e.advancementManagerComplete', onAdvancementComplete);
   Hooks.on('renderChatMessageHTML', onRenderSpellcastingNotice);
   Hooks.on('updateActor', onUpdateActor);
-  Hooks.on('spellLearned', onSpellLearned);
+  Hooks.on('updateActor', (actor, changes) => {
+    if ('ownership' in changes) invalidateTargetUserCache(actor.id);
+  });
+  Hooks.on('updateUser', (_user, changes) => {
+    if ('character' in changes) invalidateTargetUserCache();
+  });
+  Hooks.on('deleteUser', (user) => {
+    invalidateTargetUserCache();
+    invalidateUserSpellDataCache(user.id);
+  });
+  Hooks.on(HOOKS.SPELL_LEARNED, onSpellLearned);
   registerDowntimeNote();
   if (game.modules.get('peddler')?.active) {
-    registerPeddlerIntegration();
+    initializePeddler();
     Hooks.on('renderChatMessageHTML', onRenderScrollPurchase);
   }
   Hooks.once('setup', () => {
-    let position = game.settings.get(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION);
-    if (!position || (typeof position === 'object' && Object.keys(position).length === 0)) position = { height: 850, width: 700, left: 300, top: 100 };
-    SpellBook.DEFAULT_OPTIONS.position = position;
-    let managerPosition = game.settings.get(MODULE.ID, SETTINGS.SPELL_LIST_MANAGER_POSITION);
-    if (!managerPosition || (typeof managerPosition === 'object' && Object.keys(managerPosition).length === 0)) managerPosition = { height: 800, width: 1100, left: 200, top: 80 };
-    SpellListManager.DEFAULT_OPTIONS.position = managerPosition;
+    SpellBook.DEFAULT_OPTIONS.position = game.settings.get(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION) ?? { height: 850, width: 700, left: 300, top: 100 };
+    SpellListManager.DEFAULT_OPTIONS.position = game.settings.get(MODULE.ID, SETTINGS.SPELL_LIST_MANAGER_POSITION) ?? { height: 800, width: 1100, left: 200, top: 80 };
   });
-  ATLAS.log(3, 'Hooks registered.');
+  ATLAS.log(3, 'Hooks registered');
 }

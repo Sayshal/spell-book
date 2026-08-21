@@ -1,10 +1,5 @@
-/**
- * Rule Set Management and Class-Specific Configuration
- * @module Managers/RuleSet
- * @author Tyler
- */
-
 import { CLASS_IDENTIFIERS, FLAGS, MODULE, RITUAL_CASTING_MODES, RULE_SETS, SETTINGS, SPELL_MODE, SWAP_MODES, TEMPLATES, WIZARD_DEFAULTS } from '../constants.mjs';
+import { parseClassSpellKey } from '../data/class-spell-key.mjs';
 import { getClassSpellList } from '../data/spell-list-resolver.mjs';
 import { ClassManager } from './class-manager.mjs';
 
@@ -16,45 +11,36 @@ export class RuleSet {
    * Cache for class rules by actor. Uses WeakMap for automatic cleanup when actors are deleted.
    * @type {WeakMap<object, Map<string, object>>}
    * @private
-   * @static
    */
-  static _classRules = new WeakMap();
+  static #classRules = new WeakMap();
 
   /**
-   * Apply a rule set to an actor, populating class-specific defaults.
-   * @param {object} actor - The actor to configure
-   * @param {string} ruleSet - The rule set to apply ('legacy' or 'modern')
+   * Drop cached class rules for one actor.
+   * @param {object} actor - The actor document
    * @returns {void}
-   * @static
    */
-  static applyRuleSetToActor(actor, ruleSet) {
-    ATLAS.log(3, `Applying rule set to actor.`, { actorName: actor.name, actorId: actor.id, ruleSet });
-    const spellcastingClasses = RuleSet._detectSpellcastingClasses(actor);
-    const existingClassRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
-    const classRules = {};
-    for (const classId of Object.keys(spellcastingClasses)) {
-      const defaults = RuleSet._getClassDefaults(classId, ruleSet);
-      const existing = existingClassRules[classId] || {};
-      classRules[classId] = { ...defaults, ...existing };
-    }
-    actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, classRules);
-    actor.setFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE, ruleSet);
-    if (this._classRules.has(actor)) this._classRules.delete(actor);
-    ATLAS.log(3, `Applied ${ruleSet} rule set to ${actor.name} for ${Object.keys(classRules).length} classes`);
+  static invalidateCache(actor) {
+    this.#classRules.delete(actor);
+  }
+
+  /**
+   * Drop every actor's cached class rules. Used when the world rule set changes.
+   * @returns {void}
+   */
+  static invalidateAllCaches() {
+    this.#classRules = new WeakMap();
+    ATLAS.log(3, 'RuleSet caches cleared');
   }
 
   /**
    * Get the effective rule set for an actor.
    * @param {object} actor - The actor to check
    * @returns {string} The effective rule set ('legacy' or 'modern')
-   * @static
    */
   static getEffectiveRuleSet(actor) {
-    ATLAS.log(3, `Getting effective rule set for actor.`, { actorName: actor.name, actorId: actor.id });
     const override = actor.getFlag(MODULE.ID, FLAGS.RULE_SET_OVERRIDE);
     if (override) return override;
     const effectiveRuleSet = game.settings.get(MODULE.ID, SETTINGS.SPELLCASTING_RULE_SET) || RULE_SETS.LEGACY;
-    ATLAS.log(3, `Effective rule set determined.`, { actorName: actor.name, effectiveRuleSet });
     return effectiveRuleSet;
   }
 
@@ -65,7 +51,6 @@ export class RuleSet {
    * @param {string} property - The rule property to retrieve
    * @param {*} [defaultValue] - Default value if property is undefined
    * @returns {*} The rule property value or default
-   * @static
    */
   static getClassRule(actor, classIdentifier, property, defaultValue = null) {
     return this.getClassRules(actor, classIdentifier)?.[property] ?? defaultValue;
@@ -76,13 +61,11 @@ export class RuleSet {
    * @param {object} actor - The actor to check
    * @param {string} classIdentifier - The class identifier
    * @returns {object} The class rules object
-   * @static
    */
   static getClassRules(actor, classIdentifier) {
-    if (!this._classRules.has(actor)) this._classRules.set(actor, new Map());
-    const actorCache = this._classRules.get(actor);
+    if (!this.#classRules.has(actor)) this.#classRules.set(actor, new Map());
+    const actorCache = this.#classRules.get(actor);
     if (actorCache.has(classIdentifier)) return actorCache.get(classIdentifier);
-    ATLAS.log(3, `Getting class rules.`, { actorName: actor.name, actorId: actor.id, classIdentifier });
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     const existingRules = classRules[classIdentifier];
     let rules;
@@ -90,13 +73,12 @@ export class RuleSet {
       const classExists = actor.spellcastingClasses?.[classIdentifier] !== undefined;
       if (!classExists) {
         const ruleSet = RuleSet.getEffectiveRuleSet(actor);
-        rules = RuleSet._getClassDefaults(classIdentifier, ruleSet);
+        rules = RuleSet.#getClassDefaults(classIdentifier, ruleSet);
       } else rules = existingRules;
     } else {
       const ruleSet = RuleSet.getEffectiveRuleSet(actor);
-      rules = RuleSet._getClassDefaults(classIdentifier, ruleSet);
+      rules = RuleSet.#getClassDefaults(classIdentifier, ruleSet);
     }
-    ATLAS.log(3, 'Class rules retrieved.', { actorName: actor.name, classIdentifier, hasExistingRules: !!existingRules });
     actorCache.set(classIdentifier, rules);
     return rules;
   }
@@ -107,10 +89,9 @@ export class RuleSet {
    * @param {string} classIdentifier - The class identifier
    * @param {object} newRules - The new rules to apply
    * @returns {Promise<boolean>} True if rules were updated, false if cancelled
-   * @static
    */
   static async updateClassRules(actor, classIdentifier, newRules) {
-    ATLAS.log(3, `Updating class rules.`, { actorName: actor.name, actorId: actor.id, classIdentifier, newRules });
+    ATLAS.log(3, `Updating class rules`, { actorName: actor.name, actorId: actor.id, classIdentifier, newRules });
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     const currentRules = classRules[classIdentifier] || {};
     if (newRules.customSpellList !== undefined) {
@@ -118,23 +99,23 @@ export class RuleSet {
       const newList = newRules.customSpellList || [];
       const isDifferent = JSON.stringify([...oldList].sort()) !== JSON.stringify([...newList].sort());
       if (isDifferent) {
-        ATLAS.log(3, `Custom spell list changed, checking for affected spells.`, { actorName: actor.name, classIdentifier });
-        const affectedSpells = await RuleSet._getAffectedSpellsByListChange(actor, classIdentifier, newRules.customSpellList);
+        ATLAS.log(3, `Custom spell list changed, checking for affected spells`, { actorName: actor.name, classIdentifier });
+        const affectedSpells = await RuleSet.#getAffectedSpellsByListChange(actor, classIdentifier, newRules.customSpellList);
         if (affectedSpells.length > 0) {
-          ATLAS.log(3, `Found affected spells, requesting confirmation.`, { actorName: actor.name, classIdentifier, affectedCount: affectedSpells.length });
-          const shouldProceed = await RuleSet._confirmSpellListChange(actor, classIdentifier, affectedSpells);
+          ATLAS.log(3, `Found affected spells, requesting confirmation`, { actorName: actor.name, classIdentifier, affectedCount: affectedSpells.length });
+          const shouldProceed = await RuleSet.#confirmSpellListChange(actor, classIdentifier, affectedSpells);
           if (!shouldProceed) {
-            ATLAS.log(3, `User cancelled spell list change.`, { actorName: actor.name, classIdentifier });
+            ATLAS.log(3, `User cancelled spell list change`, { actorName: actor.name, classIdentifier });
             return false;
           }
-          await RuleSet._unprepareAffectedSpells(actor, classIdentifier, affectedSpells);
+          await RuleSet.#unprepareAffectedSpells(actor, classIdentifier, affectedSpells);
         }
       }
     }
     classRules[classIdentifier] = { ...classRules[classIdentifier], ...newRules };
     await actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, classRules);
-    if (this._classRules.has(actor)) this._classRules.delete(actor);
-    ATLAS.log(3, `Class rules updated successfully.`, { actorName: actor.name, classIdentifier });
+    if (this.#classRules.has(actor)) this.#classRules.delete(actor);
+    ATLAS.log(3, `Class rules updated successfully`, { actorName: actor.name, classIdentifier });
     return true;
   }
 
@@ -142,50 +123,23 @@ export class RuleSet {
    * Initialize class rules for any newly detected spellcasting classes.
    * @param {object} actor - The actor to check
    * @returns {void}
-   * @static
    */
   static async initializeNewClasses(actor) {
-    ATLAS.log(3, `Initializing new classes for actor.`, { actorName: actor.name, actorId: actor.id });
-    const spellcastingClasses = RuleSet._detectSpellcastingClasses(actor);
+    const spellcastingClasses = ClassManager.detectSpellcastingClasses(actor);
     const existingRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     const ruleSet = RuleSet.getEffectiveRuleSet(actor);
     let hasNewClasses = false;
     for (const classId of Object.keys(spellcastingClasses)) {
       if (!existingRules[classId]) {
-        existingRules[classId] = RuleSet._getClassDefaults(classId, ruleSet);
+        existingRules[classId] = RuleSet.#getClassDefaults(classId, ruleSet);
         hasNewClasses = true;
       }
     }
     if (hasNewClasses) {
       await actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, existingRules);
-      if (this._classRules.has(actor)) this._classRules.delete(actor);
-      ATLAS.log(3, `New classes initialized.`, { actorName: actor.name, classCount: Object.keys(spellcastingClasses).length });
-    } else ATLAS.log(3, `No new classes to initialize.`, { actorName: actor.name });
-  }
-
-  /**
-   * Detect spellcasting classes on an actor.
-   * @private
-   * @param {object} actor - The actor to check
-   * @returns {Object<string, Object>} Map of class identifiers to class data
-   * @static
-   */
-  static _detectSpellcastingClasses(actor) {
-    ATLAS.log(3, `Detecting spellcasting classes.`, { actorName: actor.name, actorId: actor.id });
-    const classes = {};
-    if (!actor.spellcastingClasses) {
-      ATLAS.log(3, `No spellcasting classes found on actor.`, { actorName: actor.name });
-      return classes;
-    }
-    for (const [identifier, classItem] of Object.entries(actor.spellcastingClasses)) {
-      const spellcastingConfig = classItem.spellcasting;
-      if (!spellcastingConfig) continue;
-      const subclass = classItem.subclass;
-      const spellcastingSource = subclass?.system?.spellcasting?.progression && subclass.system.spellcasting.progression !== 'none' ? subclass : classItem;
-      classes[identifier] = { name: classItem.name, item: classItem, spellcasting: spellcastingConfig, spellcastingSource: spellcastingSource };
-    }
-    ATLAS.log(3, `Detected spellcasting classes.`, { actorName: actor.name, classCount: Object.keys(classes).length, classIdentifiers: Object.keys(classes) });
-    return classes;
+      if (this.#classRules.has(actor)) this.#classRules.delete(actor);
+      ATLAS.log(3, `New classes initialized`, { actorName: actor.name, classCount: Object.keys(spellcastingClasses).length });
+    } else ATLAS.log(3, `No new classes to initialize`, { actorName: actor.name });
   }
 
   /**
@@ -194,10 +148,8 @@ export class RuleSet {
    * @param {string} classIdentifier - The class identifier
    * @param {string} ruleSet - The rule set to use ('legacy' or 'modern')
    * @returns {object} Default rules for the class
-   * @static
    */
-  static _getClassDefaults(classIdentifier, ruleSet) {
-    ATLAS.log(3, `Getting class defaults.`, { classIdentifier, ruleSet });
+  static #getClassDefaults(classIdentifier, ruleSet) {
     const defaults = {
       cantripSwapping: SWAP_MODES.NONE,
       spellSwapping: SWAP_MODES.NONE,
@@ -211,9 +163,8 @@ export class RuleSet {
       spellLearningCostMultiplier: WIZARD_DEFAULTS.SPELL_LEARNING_COST_MULTIPLIER,
       spellLearningTimeMultiplier: WIZARD_DEFAULTS.SPELL_LEARNING_TIME_MULTIPLIER
     };
-    if (ruleSet === RULE_SETS.LEGACY) RuleSet._applyLegacyDefaults(classIdentifier, defaults);
-    else if (ruleSet === RULE_SETS.MODERN) RuleSet._applyModernDefaults(classIdentifier, defaults);
-    ATLAS.log(3, `Class defaults determined.`, { classIdentifier, ruleSet });
+    if (ruleSet === RULE_SETS.LEGACY) RuleSet.#applyLegacyDefaults(classIdentifier, defaults);
+    else if (ruleSet === RULE_SETS.MODERN) RuleSet.#applyModernDefaults(classIdentifier, defaults);
     return defaults;
   }
 
@@ -223,10 +174,8 @@ export class RuleSet {
    * @param {string} classIdentifier - The class identifier
    * @param {object} defaults - The defaults object to modify
    * @returns {void}
-   * @static
    */
-  static _applyLegacyDefaults(classIdentifier, defaults) {
-    ATLAS.log(3, `Applying legacy defaults for class.`, { classIdentifier });
+  static #applyLegacyDefaults(classIdentifier, defaults) {
     defaults.cantripSwapping = SWAP_MODES.NONE;
     defaults.ritualCasting = RITUAL_CASTING_MODES.NONE;
     switch (classIdentifier) {
@@ -265,7 +214,6 @@ export class RuleSet {
         defaults.showCantrips = true;
         break;
     }
-    ATLAS.log(3, `Legacy defaults applied.`, { classIdentifier });
   }
 
   /**
@@ -274,10 +222,8 @@ export class RuleSet {
    * @param {string} classIdentifier - The class identifier
    * @param {object} defaults - The defaults object to modify
    * @returns {void}
-   * @static
    */
-  static _applyModernDefaults(classIdentifier, defaults) {
-    ATLAS.log(3, `Applying modern defaults for class.`, { classIdentifier });
+  static #applyModernDefaults(classIdentifier, defaults) {
     defaults.cantripSwapping = SWAP_MODES.LEVEL_UP;
     defaults.ritualCasting = RITUAL_CASTING_MODES.NONE;
     switch (classIdentifier) {
@@ -317,7 +263,6 @@ export class RuleSet {
         defaults.showCantrips = true;
         break;
     }
-    ATLAS.log(3, `Modern defaults applied.`, { classIdentifier });
   }
 
   /**
@@ -327,14 +272,12 @@ export class RuleSet {
    * @param {string} classIdentifier - The class identifier
    * @param {string[]|null} newSpellListUuid - UUIDs of the new spell list(s)
    * @returns {Promise<object[]>} Array of affected spell data
-   * @static
    */
-  static async _getAffectedSpellsByListChange(actor, classIdentifier, newSpellListUuid) {
-    ATLAS.log(3, `Getting affected spells by list change.`, { actorName: actor.name, actorId: actor.id, classIdentifier, newSpellListUuid });
+  static async #getAffectedSpellsByListChange(actor, classIdentifier, newSpellListUuid) {
     const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     const classPreparedSpells = preparedByClass[classIdentifier] || [];
     if (classPreparedSpells.length === 0) {
-      ATLAS.log(3, `No prepared spells for class, no affected spells.`, { actorName: actor.name, classIdentifier });
+      ATLAS.log(3, `No prepared spells for class, no affected spells`, { actorName: actor.name, classIdentifier });
       return [];
     }
     let newSpellList = new Set();
@@ -357,14 +300,13 @@ export class RuleSet {
     }
     const affectedSpells = [];
     for (const classSpellKey of classPreparedSpells) {
-      const [, ...uuidParts] = classSpellKey.split(':');
-      const spellUuid = uuidParts.join(':');
+      const { spellUuid } = parseClassSpellKey(classSpellKey);
       if (!newSpellList.has(spellUuid)) {
         const spell = await fromUuid(spellUuid);
         if (spell) affectedSpells.push({ name: spell.name, uuid: spellUuid, level: spell.system.level, classSpellKey: classSpellKey });
       }
     }
-    ATLAS.log(3, `Affected spells determined.`, { actorName: actor.name, classIdentifier, affectedCount: affectedSpells.length });
+    ATLAS.log(3, `Affected spells determined`, { actorName: actor.name, classIdentifier, affectedCount: affectedSpells.length });
     return affectedSpells;
   }
 
@@ -375,10 +317,9 @@ export class RuleSet {
    * @param {string} classIdentifier - The class identifier
    * @param {object[]} affectedSpells - Array of spells that will be unprepared
    * @returns {Promise<boolean>} Whether the user confirmed the change
-   * @static
    */
-  static async _confirmSpellListChange(actor, classIdentifier, affectedSpells) {
-    ATLAS.log(3, `Showing spell list change confirmation dialog.`, { actorName: actor.name, classIdentifier, affectedCount: affectedSpells.length });
+  static async #confirmSpellListChange(actor, classIdentifier, affectedSpells) {
+    ATLAS.log(3, `Showing spell list change confirmation dialog`, { actorName: actor.name, classIdentifier, affectedCount: affectedSpells.length });
     const classItem = actor.spellcastingClasses?.[classIdentifier];
     const className = classItem?.name || classIdentifier;
     const cantripCount = affectedSpells.filter((s) => s.level === 0).length;
@@ -387,16 +328,16 @@ export class RuleSet {
     const content = await renderTemplate(TEMPLATES.DIALOGS.SPELL_LIST_CHANGE_CONFIRMATION, context);
     const result = await foundry.applications.api.DialogV2.wait({
       classes: ['spell-book'],
-      title: _loc('SPELLBOOK.SpellListChange.Title'),
+      window: { title: _loc('SPELLBOOK.SpellListChange.Title') },
       content: content,
       buttons: [
         { icon: 'fas fa-check', label: 'SPELLBOOK.SpellListChange.Proceed', action: 'confirm', className: 'dialog-button' },
-        { icon: 'fas fa-times', label: 'COMMON.Cancel', action: 'cancel', className: 'dialog-button' }
+        { icon: 'fas fa-times', label: 'ATLAS.Common.Cancel', action: 'cancel', className: 'dialog-button' }
       ],
       default: 'cancel',
       rejectClose: false
     });
-    ATLAS.log(3, `User responded to spell list change confirmation.`, { actorName: actor.name, classIdentifier, confirmed: result === 'confirm' });
+    ATLAS.log(3, `User responded to spell list change confirmation`, { actorName: actor.name, classIdentifier, confirmed: result === 'confirm' });
     return result === 'confirm';
   }
 
@@ -407,10 +348,9 @@ export class RuleSet {
    * @param {string} classIdentifier - The class identifier
    * @param {object[]} affectedSpells - Array of spells to unprepare
    * @returns {Promise<void>}
-   * @static
    */
-  static async _unprepareAffectedSpells(actor, classIdentifier, affectedSpells) {
-    ATLAS.log(3, `Unpreparing affected spells.`, { actorName: actor.name, actorId: actor.id, classIdentifier, affectedCount: affectedSpells.length });
+  static async #unprepareAffectedSpells(actor, classIdentifier, affectedSpells) {
+    ATLAS.log(3, `Unpreparing affected spells`, { actorName: actor.name, actorId: actor.id, classIdentifier, affectedCount: affectedSpells.length });
     const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     const classPreparedSpells = preparedByClass[classIdentifier] || [];
     const affectedKeys = new Set(affectedSpells.map((s) => s.classSpellKey));
@@ -430,9 +370,9 @@ export class RuleSet {
       })
       .map((item) => item.id);
     if (spellIdsToRemove.length > 0) {
-      ATLAS.log(3, `Removing ${spellIdsToRemove.length} spell items from actor.`, { actorName: actor.name, classIdentifier });
+      ATLAS.log(3, `Removing ${spellIdsToRemove.length} spell items from actor`, { actorName: actor.name, classIdentifier });
       await actor.deleteEmbeddedDocuments('Item', spellIdsToRemove);
     }
-    ATLAS.log(3, `Affected spells unprepared successfully.`, { actorName: actor.name, classIdentifier, spellsRemoved: spellIdsToRemove.length });
+    ATLAS.log(3, `Affected spells unprepared successfully`, { actorName: actor.name, classIdentifier, spellsRemoved: spellIdsToRemove.length });
   }
 }

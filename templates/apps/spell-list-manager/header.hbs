@@ -1,12 +1,9 @@
 <header class="spell-book-header">
   <i class="fas fa-bars-progress header-icon" aria-hidden="true"></i>
   <span class="header-title">{{localize "SPELLBOOK.Manager.Application.Title"}}</span>
-  <button type="button" class="detach-btn" data-action="toggleDetach"
-    data-tooltip="{{#if detached}}{{localize 'APPLICATION.ACTIONS.Attach'}}{{else}}{{localize 'APPLICATION.ACTIONS.Detach'}}{{/if}}">
-    <i class="fas {{#if detached}}fa-arrow-down-to-square{{else}}fa-arrow-up-right-from-square{{/if}}"
-      aria-hidden="true"></i>
-  </button>
-  <button type="button" class="close-btn" data-action="closeManager" data-tooltip="Close">
+  {{> "modules/spell-book/templates/components/detach-button.hbs" buttonClass="detach-btn"}}
+  <button type="button" class="close-btn" data-action="closeManager"
+    data-tooltip="{{localize 'APPLICATION.ACTIONS.Close'}}">
     <i class="fas fa-times" aria-hidden="true"></i>
   </button>
 </header>

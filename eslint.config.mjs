@@ -27,6 +27,11 @@ export default [
         Folder: 'readonly',
         CONST: 'readonly',
         ChatMessage: 'readonly',
+        Actor: 'readonly',
+        Item: 'readonly',
+        JournalEntryPage: 'readonly',
+        dnd5e: 'readonly',
+        chrisPremades: 'readonly',
         canvas: 'readonly',
         Macro: 'readonly',
         Handlebars: 'readonly',
@@ -85,6 +90,6 @@ export default [
     }
   },
   jsdoc.configs['flat/recommended'],
-  { files: ['**/*.mjs'], rules: { 'no-undef': 'off' } },
+  { files: ['**/*.mjs'], rules: { 'no-undef': 'error' } },
   { ignores: ['**/node_modules/*', '**/coverage/*', 'dev/**', 'foundry/**', 'dnd5e/**', 'dist/**', '_source/**', 'todo/**'] }
 ];

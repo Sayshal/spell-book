@@ -1,22 +1,21 @@
-import { ASSETS, FLAGS, MODULE, SEARCH_DEBOUNCE_DELAY, SETTINGS, TEMPLATES, WIZARD_DEFAULTS, WIZARD_SPELL_SOURCE } from '../constants.mjs';
-import { getConfigLabel, getSpellSourceDocument, getTargetUserId } from '../data/helpers.mjs';
-import { scanForScrollSpells } from '../data/scroll-processor.mjs';
-import { fetchAllSpells } from '../data/spell-fetcher.mjs';
-import { loadUserSpellData } from '../data/user-data.mjs';
+import { ASSETS, CLASS_RULE_NAMES, FLAGS, HOOKS, MODULE, RITUAL_CASTING_MODES, SEARCH_DEBOUNCE_DELAY, SETTINGS, TAB_PREFIXES, TEMPLATES, WIZARD_DEFAULTS, WIZARD_SPELL_SOURCE } from '../constants.mjs';
+import { buildClassSpellKey, fetchAllSpells, getConfigLabel, getSpellSourceDocument, getTargetUserId, loadUserSpellData, scanForScrollSpells } from '../data/_module.mjs';
 import { ClassRules, LoadoutSelector, SpellComparison, SpellNotes } from '../dialogs/_module.mjs';
-import { ClassManager } from '../managers/class-manager.mjs';
-import { Loadouts } from '../managers/loadouts.mjs';
-import { PartyMode } from '../managers/party-mode.mjs';
-import { RuleSet } from '../managers/rule-set.mjs';
-import { SpellDataManager } from '../managers/spell-data-manager.mjs';
-import { SpellManager } from '../managers/spell-manager.mjs';
-import { WizardBook } from '../managers/wizard-book.mjs';
-import { getEnabledPlayerElements } from '../ui/custom-ui.mjs';
-import { detachedRenderOptions } from '../ui/dialogs.mjs';
-import { addSpellToActorFavorites, removeSpellFromActorFavorites } from '../ui/favorites.mjs';
-import { bindFilterListeners, clearFilterState, getFilterState, unbindFilterListeners } from '../ui/filter-state.mjs';
-import { createSpellIconLink, extractSpellFilterData } from '../ui/formatting.mjs';
-import { enrichSingleSpell } from '../ui/spell-render.mjs';
+import { refreshChrisPremades } from '../integrations/chris-premades.mjs';
+import { ClassManager, Loadouts, PartyMode, RuleSet, SpellDataManager, SpellManager, WizardBook } from '../managers/_module.mjs';
+import {
+  addSpellToActorFavorites,
+  bindFilterListeners,
+  clearFilterState,
+  createSpellIconLink,
+  detachedRenderOptions,
+  enrichSingleSpell,
+  extractSpellFilterData,
+  getEnabledPlayerElements,
+  getFilterState,
+  removeSpellFromActorFavorites,
+  unbindFilterListeners
+} from '../ui/_module.mjs';
 import { requestCopyApproval } from '../utils/copy-approval.mjs';
 import { PartyCoordinator } from './party-coordinator.mjs';
 import { SpellListManager } from './spell-list-manager.mjs';
@@ -31,7 +30,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @override */
   static DEFAULT_OPTIONS = {
     id: 'player-spell-book',
-    classes: ['spell-book'],
+    classes: ['spell-book', 'player-spell-book'],
     tag: 'form',
     form: {
       handler: SpellBook.formHandler,
@@ -97,7 +96,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     super(options);
     this.actor = actor;
     this.#coldFetchPromise = fetchAllSpells();
-    this.#debouncedApplyFilters = foundry.utils.debounce(() => this._applyFiltersForActive(), SEARCH_DEBOUNCE_DELAY);
+    this.#debouncedApplyFilters = foundry.utils.debounce(() => this.#applyFiltersForActive(), SEARCH_DEBOUNCE_DELAY);
   }
 
   /** @override */
@@ -130,7 +129,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /** @override */
-  _prepareTabs(group) {
+  #prepareTabs(group) {
     if (group !== 'primary') return super._prepareTabs(group);
     const tabs = {};
     const classes = ClassManager.detectSpellcastingClasses(this.actor);
@@ -161,7 +160,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     context.actor = this.actor;
-    const tabs = this._prepareTabs('primary');
+    const tabs = this.#prepareTabs('primary');
     const tabArr = Object.values(tabs);
     context.tabs = tabs;
     context.tabArr = tabArr;
@@ -194,21 +193,19 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           await this.actor.setFlag(MODULE.ID, FLAGS.PARTY_MODE_ENABLED, !current);
           partyBtn.classList.toggle('active', !current);
           ui.notifications.info(_loc(current ? 'SPELLBOOK.Party.ModeDisabled' : 'SPELLBOOK.Party.ModeEnabled'));
-          this._invalidateAndReload(this.tabGroups.primary);
+          this.#invalidateAndReload(this.tabGroups.primary);
         });
       }
       const loadoutBtn = htmlElement.querySelector('[data-action="openLoadoutDialog"]');
       if (loadoutBtn) this.#attachLoadoutQuickSelect(loadoutBtn);
       return;
     }
-    // Listen for checkbox changes on spell tabs to update UI state (no persistence)
     htmlElement.addEventListener('change', (event) => {
       const cb = event.target.closest('input[type="checkbox"]');
       if (!cb?.dataset?.uuid) return;
       event.stopPropagation();
       const tabId = htmlElement.dataset.tab;
-      const classId = this._resolveClassId(tabId);
-      // Validate cantrip changes
+      const classId = this.#resolveClassId(tabId);
       const spellLevel = parseInt(cb.closest('li')?.dataset?.spellLevel ?? cb.closest('.spell-level')?.dataset?.level ?? '-1', 10);
       if (spellLevel === 0 && cb.checked && classId) {
         const spell = fromUuidSync(cb.dataset.uuid);
@@ -225,9 +222,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (sbCheckbox) sbCheckbox.classList.toggle('checked', cb.checked);
       const spellItem = cb.closest('.spell-item');
       if (spellItem) spellItem.classList.toggle('prepared-spell', cb.checked);
-      if (tabId && !this._isLearnTab(tabId)) {
-        if (spellLevel === 0) this._updateCantripCounter(tabId);
-        else this._updatePreparationFooter(tabId);
+      if (tabId && !this.#isLearnTab(tabId)) {
+        if (spellLevel === 0) this.#updateCantripCounter(tabId);
+        else this.#updatePreparationFooter(tabId);
       }
     });
   }
@@ -235,9 +232,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /** @override */
   _onFirstRender(context, options) {
     super._onFirstRender(context, options);
-    Hooks.callAll('spellBookOpened', { actor: this.actor, app: this });
-    this._initializeFilters();
-    if (this.tabGroups.primary) this._loadClassData(this.tabGroups.primary);
+    Hooks.callAll(HOOKS.SPELL_BOOK_OPENED, { actor: this.actor, app: this });
+    this.#initializeFilters();
+    if (this.tabGroups.primary) this.#loadClassData(this.tabGroups.primary);
   }
 
   /** @override */
@@ -286,11 +283,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** @override */
   changeTab(tab, group, options) {
-    if (group === 'primary') this._savePendingChanges();
+    if (group === 'primary') this.#savePendingChanges();
     super.changeTab(tab, group, options);
     if (group !== 'primary') return;
-    if (!this.#state.get(tab)?.loaded) this._loadClassData(tab);
-    else this._restorePendingChanges(tab);
+    if (!this.#state.get(tab)?.loaded) this.#loadClassData(tab);
+    else this.#restorePendingChanges(tab);
   }
 
   /**
@@ -299,7 +296,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @returns {string[]} UUIDs flagged as prepared
    */
   getCurrentPreparedUuids(classIdentifier) {
-    const panel = this._getPanelEl(classIdentifier);
+    const panel = this.#getPanelEl(classIdentifier);
     const checkboxes = panel?.querySelectorAll('input[type="checkbox"][data-uuid]');
     if (checkboxes?.length)
       return Array.from(checkboxes)
@@ -316,10 +313,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /** Capture current checkbox states for the active tab before switching away. */
-  _savePendingChanges() {
+  #savePendingChanges() {
     const activeTab = this.tabGroups.primary;
-    if (!activeTab || this._isLearnTab(activeTab)) return;
-    const panel = this._getPanelEl(activeTab);
+    if (!activeTab || this.#isLearnTab(activeTab)) return;
+    const panel = this.#getPanelEl(activeTab);
     if (!panel) return;
     const changes = new Map();
     for (const cb of panel.querySelectorAll('input[type="checkbox"][data-uuid]')) {
@@ -332,10 +329,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Restore pending checkbox states after a tab re-renders.
    * @param {string} tabId - The class tab id whose pending state should be reapplied
    */
-  _restorePendingChanges(tabId) {
+  #restorePendingChanges(tabId) {
     const changes = this.#pendingChanges.get(tabId);
     if (!changes?.size) return;
-    const panel = this._getPanelEl(tabId);
+    const panel = this.#getPanelEl(tabId);
     if (!panel) return;
     for (const cb of panel.querySelectorAll('input[type="checkbox"][data-uuid]')) {
       const pending = changes.get(cb.dataset.uuid);
@@ -356,7 +353,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.#state.clear();
     const { top, left, width, height } = this.position;
     game.settings.set(MODULE.ID, SETTINGS.SPELL_BOOK_POSITION, { top, left, width, height });
-    Hooks.callAll('spellBookClosed', { actor: this.actor });
+    Hooks.callAll(HOOKS.SPELL_BOOK_CLOSED, { actor: this.actor });
   }
 
   /**
@@ -364,7 +361,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {string} tabId - The tab id (may include `wizardbook-` prefix)
    * @returns {HTMLElement|null} The panel element, or null if not rendered
    */
-  _getPanelEl(tabId) {
+  #getPanelEl(tabId) {
     return this.element?.querySelector(`.tab[data-tab="${CSS.escape(tabId)}"]`) ?? null;
   }
 
@@ -373,8 +370,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {string} tabId - Tab identifier (may include `wizardbook-` prefix)
    * @returns {string} The base class identifier
    */
-  _resolveClassId(tabId) {
-    return tabId?.startsWith('wizardbook-') ? tabId.slice(11) : tabId;
+  #resolveClassId(tabId) {
+    return tabId?.startsWith(TAB_PREFIXES.WIZARD_BOOK) ? tabId.slice(TAB_PREFIXES.WIZARD_BOOK.length) : tabId;
   }
 
   /**
@@ -382,12 +379,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {string} tabId - The tab id
    * @returns {boolean} True if the tab id is a wizardbook-* identifier
    */
-  _isLearnTab(tabId) {
-    return tabId?.startsWith('wizardbook-') ?? false;
+  #isLearnTab(tabId) {
+    return tabId?.startsWith(TAB_PREFIXES.WIZARD_BOOK) ?? false;
   }
 
   /**
    * Toggle a spell's favorite state on the actor.
+   * @this {SpellBook}
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} target - The favorite toggle button or child element
    */
@@ -405,6 +403,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Toggle a spell in/out of the comparison set.
+   * @this {SpellBook}
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} target - The comparison icon element
    */
@@ -443,6 +442,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Open the spell notes editor dialog.
+   * @this {SpellBook}
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} target - The notes icon element
    */
@@ -455,20 +455,21 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Add a spell to the wizard's spellbook journal.
+   * @this {SpellBook}
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} target - The learn button element
    */
   static async #onLearnSpell(_event, target) {
     if (target.getAttribute('aria-disabled') === 'true') return;
     const uuid = target.dataset.uuid;
-    const baseClass = this._resolveClassId(this.tabGroups.primary);
+    const baseClass = this.#resolveClassId(this.tabGroups.primary);
     if (!uuid || !baseClass) return;
     const spell = fromUuidSync(uuid);
     if (!spell) return;
     const { cost, isFree } = await WizardBook.getCopyingCost(this.actor, baseClass, spell);
     const time = WizardBook.getCopyingMinutes(this.actor, baseClass, spell);
     if (!isFree) {
-      const costText = `${cost} GP`;
+      const costText = _loc('SPELLBOOK.Wizard.SpellCopyCost', { cost });
       const content = await foundry.applications.handlebars.renderTemplate(TEMPLATES.DIALOGS.WIZARD_LEARN_SPELL, { spell, costText, time: WizardBook.formatCopyingTime(time) });
       const confirmed = await foundry.applications.api.DialogV2.confirm({
         classes: ['spell-book'],
@@ -487,50 +488,54 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const learned = await WizardBook.copySpell(this.actor, baseClass, uuid, cost, time, source);
     if (!learned) return;
     this.#state.delete(baseClass);
-    this._invalidateAndReload(this.tabGroups.primary);
+    this.#invalidateAndReload(this.tabGroups.primary);
   }
 
   /**
    * Remove a spell from the wizard's spellbook journal.
+   * @this {SpellBook}
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} target - The unlearn wrapper or child element
    */
   static async #onUnlearnSpell(_event, target) {
     const wrapper = target.closest('.in-spellbook-wrapper') || target;
     const uuid = wrapper.dataset.uuid;
-    const baseClass = this._resolveClassId(this.tabGroups.primary);
+    const baseClass = this.#resolveClassId(this.tabGroups.primary);
     if (!uuid || !baseClass) return;
     await WizardBook.removeSpellFromSpellbook(this.actor, baseClass, uuid);
     this.#state.delete(baseClass);
-    this._invalidateAndReload(this.tabGroups.primary);
+    this.#invalidateAndReload(this.tabGroups.primary);
   }
 
   /**
    * Learn a spell from a scroll item; optionally consumes the scroll.
+   * @this {SpellBook}
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} target - The scroll learn button element
    */
   static async #onLearnSpellFromScroll(_event, target) {
     const scrollId = target.dataset.scrollId;
-    const baseClass = this._resolveClassId(this.tabGroups.primary);
+    const baseClass = this.#resolveClassId(this.tabGroups.primary);
     if (!scrollId || !baseClass) return;
     const scrollItem = this.actor.items.get(scrollId);
     if (!scrollItem) return;
     const learned = await WizardBook.learnFromScroll(this.actor, baseClass, scrollItem);
     if (!learned) return;
     this.#state.delete(baseClass);
-    this._invalidateAndReload(this.tabGroups.primary);
+    this.#invalidateAndReload(this.tabGroups.primary);
   }
 
-  /** Open the spell loadout selector dialog. */
+  /**
+   * Open the spell loadout selector dialog.
+   * @this {SpellBook}
+   */
   static #onOpenLoadoutDialog() {
-    const classId = this._resolveClassId(this.tabGroups.primary);
+    const classId = this.#resolveClassId(this.tabGroups.primary);
     new LoadoutSelector({ actor: this.actor, classIdentifier: classId, parent: this }).render({ force: true, ...detachedRenderOptions(this) });
   }
 
   /**
    * Bind a right-click ContextMenu to the Loadouts sidebar button that lists saved loadouts for the active class.
-   * Clicking an entry applies that loadout immediately. Items are refreshed on every open.
    * @param {HTMLElement} button - The loadout sidebar button
    */
   #attachLoadoutQuickSelect(button) {
@@ -540,7 +545,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     button.addEventListener(
       'contextmenu',
       () => {
-        const classId = this._resolveClassId(this.tabGroups.primary);
+        const classId = this.#resolveClassId(this.tabGroups.primary);
         const loadouts = Loadouts.getLoadouts(this.actor, classId);
         menu.menuItems = loadouts.length
           ? loadouts.map((l) => ({
@@ -551,15 +556,15 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
                 await this.refreshClassTab(classId);
               }
             }))
-          : [{ name: _loc('SPELLBOOK.Loadouts.NoLoadouts'), icon: '<i class="fas fa-ban"></i>', onClick: () => {} }];
+          : [{ name: 'SPELLBOOK.Loadouts.NoLoadouts', icon: '<i class="fas fa-ban"></i>', onClick: () => {} }];
       },
       { capture: true }
     );
   }
 
   /**
-   * Open the class rules settings dialog. If the triggering button has a `data-scroll-class`
-   * attribute, scroll that class's custom-spell-list field into view on first render.
+   * Open the class rules settings dialog.
+   * @this {SpellBook}
    * @param {PointerEvent} _event - The triggering event
    * @param {HTMLElement} [target] - The button that was clicked
    */
@@ -571,19 +576,22 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     dialog.render({ force: true, ...detachedRenderOptions(this) });
   }
 
-  /** Open the party spell coordinator. */
+  /**
+   * Open the party spell coordinator.
+   * @this {SpellBook}
+   */
   static #onOpenPartyManager() {
     new PartyCoordinator({ actor: this.actor }).render({ force: true, ...detachedRenderOptions(this) });
   }
 
   /**
    * GM-only: open the Spell List Manager on the current tab's class list (or subclass list).
-   * @this SpellBook
+   * @this {SpellBook}
    * @returns {Promise<void>} Resolves once the manager (or picker) has been rendered
    */
   static async #onOpenManager() {
     if (!game.user.isGM) return;
-    const classId = this._resolveClassId(this.tabGroups.primary);
+    const classId = this.#resolveClassId(this.tabGroups.primary);
     if (!classId) return;
     const rules = RuleSet.getClassRules(this.actor, classId);
     const subclassUuids = rules.customSubclassSpellList || [];
@@ -613,13 +621,16 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       classes: ['spell-book'],
       position: { width: 420 },
       content,
-      ok: { label: 'Open', callback: (_event, button) => button.form.elements.uuid.value },
+      ok: { label: _loc('ATLAS.Common.Open'), callback: (_event, button) => button.form.elements.uuid.value },
       renderOptions: detachedRenderOptions(this)
     });
     if (chosen) await openWith(chosen);
   }
 
-  /** Toggle detached-window mode for the spell book. */
+  /**
+   * Toggle detached-window mode for the spell book.
+   * @this {SpellBook}
+   */
   static #onToggleDetach() {
     if (this.window.windowId) this.attachWindow();
     else this.detachWindow();
@@ -637,7 +648,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.render({ parts: ['header'] });
   }
 
-  /** Close the spell book. */
+  /**
+   * Close the spell book.
+   * @this {SpellBook}
+   */
   static async #onClose() {
     this.element?.classList.add('closing');
     await new Promise((resolve) => setTimeout(resolve, 250));
@@ -654,8 +668,6 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const container = heading.closest('.spell-level');
     if (!container) return;
     const isCollapsed = container.classList.toggle('collapsed');
-    const list = container.querySelector('.spell-list');
-    if (list) list.style.display = isCollapsed ? 'none' : '';
     const icon = heading.querySelector('.collapse-indicator');
     if (icon) {
       icon.classList.toggle('fa-caret-down', !isCollapsed);
@@ -669,23 +681,22 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {string} tabId - The tab id to reload
    * @returns {Promise<void>} Resolves when the class data has been reloaded and rendered
    */
-  _invalidateAndReload(tabId) {
+  #invalidateAndReload(tabId) {
     this.#state.delete(tabId);
-    SpellDataManager.invalidateClassCache(this.actor, this._resolveClassId(tabId));
-    return this._loadClassData(tabId);
+    SpellDataManager.invalidateClassCache(this.actor, this.#resolveClassId(tabId));
+    return this.#loadClassData(tabId);
   }
 
   /**
    * Re-render a single class tab's spell list, picking up any flag-driven preparation changes.
-   * Clears pending checkbox edits for that tab.
    * @param {string} classIdentifier - The class tab id
    */
   async refreshClassTab(classIdentifier) {
     this.#pendingChanges.delete(classIdentifier);
     if (!this.#state.get(classIdentifier)?.loaded) return;
-    await this._renderClassResults(classIdentifier);
-    this._updateCantripCounter(classIdentifier);
-    this._updatePreparationFooter(classIdentifier);
+    await this.#renderClassResults(classIdentifier);
+    this.#updateCantripCounter(classIdentifier);
+    this.#updatePreparationFooter(classIdentifier);
   }
 
   /** Invalidate and reload every class tab currently loaded (e.g. after Class Rules changes). */
@@ -693,7 +704,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const tabIds = [...this.#state.keys()];
     this.#state.clear();
     SpellDataManager.invalidateCache(this.actor);
-    await Promise.all(tabIds.map((tabId) => this._loadClassData(tabId)));
+    await Promise.all(tabIds.map((tabId) => this.#loadClassData(tabId)));
   }
 
   /** Re-render all loaded class panels using the current Details Customization settings. */
@@ -701,7 +712,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     for (const [tabId, state] of this.#state) {
       if (!state.loaded) continue;
       state.resultIndex = 0;
-      await this._renderClassResults(tabId);
+      await this.#renderClassResults(tabId);
     }
   }
 
@@ -709,11 +720,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Fetch spell data for a class and render the first batch into its panel.
    * @param {string} tabId - The tab id to load
    */
-  async _loadClassData(tabId) {
-    const panel = this._getPanelEl(tabId);
+  async #loadClassData(tabId) {
+    const panel = this.#getPanelEl(tabId);
     if (!panel) return;
-    const baseClass = this._resolveClassId(tabId);
-    const isLearn = this._isLearnTab(tabId);
+    const baseClass = this.#resolveClassId(tabId);
+    const isLearn = this.#isLearnTab(tabId);
     let results = isLearn ? await SpellDataManager.getLearnableSpellsForClass(this.actor, baseClass) : await SpellDataManager.getPreparableSpellsForClass(this.actor, baseClass);
     if (isLearn) {
       const maxLevel = SpellDataManager._calculateMaxSpellLevel(this.actor, baseClass);
@@ -725,19 +736,19 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         if (spellbook?.includes(entry.spellUuid)) continue;
         if (resultUuids.has(entry.spellUuid)) continue;
         const spell = entry.spell;
-        spell._fromScroll = true;
-        spell._scrollId = entry.scrollId;
-        spell._scrollName = entry.scrollName;
+        spell.isFromScroll = true;
+        spell.scrollId = entry.scrollId;
+        spell.scrollName = entry.scrollName;
         scrollOnly.push(spell);
       }
       if (scrollOnly.length) results = [...scrollOnly, ...results];
     }
     this.#state.set(tabId, { results, allResults: results, loaded: true });
-    await this._renderClassResults(tabId);
-    if (isLearn) await this._updateWizardCounters(tabId);
+    await this.#renderClassResults(tabId);
+    if (isLearn) await this.#updateWizardCounters(tabId);
     else {
-      this._updateCantripCounter(tabId);
-      this._updatePreparationFooter(tabId);
+      this.#updateCantripCounter(tabId);
+      this.#updatePreparationFooter(tabId);
     }
   }
 
@@ -745,15 +756,15 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Render the first batch of results for a class into its panel.
    * @param {string} tabId - The tab id whose panel should be populated
    */
-  async _renderClassResults(tabId) {
-    const panel = this._getPanelEl(tabId);
+  async #renderClassResults(tabId) {
+    const panel = this.#getPanelEl(tabId);
     const state = this.#state.get(tabId);
     if (!panel || !state) return;
     const spinner = panel.querySelector('.results-loading');
     const listEl = panel.querySelector('.spell-list-items');
     if (spinner) spinner.hidden = true;
     if (!state.allResults?.length) {
-      listEl?.replaceChildren(this._buildNoListNotice(tabId));
+      listEl?.replaceChildren(this.#buildNoListNotice(tabId));
       state.resultIndex = 0;
       return;
     }
@@ -762,10 +773,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       state.resultIndex = 0;
       return;
     }
-    const rc = await this._buildRenderContext(tabId);
-
-    // Group spells by level and render all
-    const groups = this._groupByLevel(state.results);
+    const rc = await this.#buildRenderContext(tabId);
+    const groups = this.#groupByLevel(state.results);
     const fragment = document.createDocumentFragment();
     for (const group of groups) {
       if (!group.spells.length) continue;
@@ -774,13 +783,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       levelTpl.innerHTML = levelHtml;
       const levelEl = levelTpl.content.firstElementChild;
       const spellList = levelEl.querySelector('.spell-list');
-      const rendered = await Promise.all(group.spells.map((s) => this._renderResult(s, rc)));
+      const rendered = await Promise.all(group.spells.map((s) => this.#renderResult(s, rc)));
       spellList?.append(...rendered);
       fragment.appendChild(levelEl);
     }
     if (spinner) spinner.hidden = true;
     listEl?.replaceChildren(fragment);
-    this._restorePendingChanges(tabId);
+    this.#restorePendingChanges(tabId);
   }
 
   /**
@@ -789,8 +798,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @returns {HTMLElement} A <li> notice with a button that opens the Class Rules dialog
    * @private
    */
-  _buildNoListNotice(tabId) {
-    const classId = this._resolveClassId(tabId) ?? '';
+  #buildNoListNotice(tabId) {
+    const classId = this.#resolveClassId(tabId) ?? '';
     const rules = classId ? RuleSet.getClassRules(this.actor, classId) : {};
     const listAssigned = [rules.customSpellList, rules.customSubclassSpellList].some((l) => l?.length > 0);
     const li = document.createElement('li');
@@ -815,11 +824,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {object[]} spells - Flat array of spell documents
    * @returns {Array<{ level: number, levelName: string, spells: object[], isCollapsed: boolean, isWizardContext: boolean, cantripCounter: object }>} Sorted level groups
    */
-  _groupByLevel(spells) {
+  #groupByLevel(spells) {
     const groups = new Map();
     const scrollOnly = [];
     for (const spell of spells) {
-      if (spell._fromScroll) {
+      if (spell.isFromScroll) {
         scrollOnly.push(spell);
         continue;
       }
@@ -854,11 +863,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Build the shared render context computed once per batch for a given class tab.
    * @param {string} tabId - The tab id being rendered
-   * @returns {Promise<object>} Render context object for `_renderResult`
+   * @returns {Promise<object>} Render context object for `#renderResult`
    */
-  async _buildRenderContext(tabId) {
-    const baseClass = this._resolveClassId(tabId);
-    const isLearn = this._isLearnTab(tabId);
+  async #buildRenderContext(tabId) {
+    const baseClass = this.#resolveClassId(tabId);
+    const isLearn = this.#isLearnTab(tabId);
     let scrollSpellMap = null;
     if (isLearn) {
       const maxLevel = SpellDataManager._calculateMaxSpellLevel(this.actor, baseClass);
@@ -869,7 +878,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const wizardbookCache = new Map();
     if (wizardSpellbook) wizardbookCache.set(baseClass, wizardSpellbook);
     const showCost = isLearn && !!baseClass && game.settings.get(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST);
-    const costData = showCost ? await this._buildCostData(baseClass) : null;
+    const costData = showCost ? await this.#buildCostData(baseClass) : null;
     const state = this.#state.get(tabId);
     if (state) state.costData = costData;
     return {
@@ -883,8 +892,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       enabledElements: getEnabledPlayerElements(),
       appState: {
         wizardbookCache,
-        comparisonSpells: this.#comparisonSet,
-        wizardManagers: null
+        comparisonSpells: this.#comparisonSet
       }
     };
   }
@@ -894,21 +902,21 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {string} classId - The class identifier
    * @returns {Promise<object>} Wealth, remaining free spells, and the class cost multiplier
    */
-  async _buildCostData(classId) {
+  async #buildCostData(classId) {
     return {
       wealth: WizardBook.getTotalWealth(this.actor),
       freeRemaining: await WizardBook.getRemainingFreeSpells(this.actor, classId),
-      multiplier: RuleSet.getClassRule(this.actor, classId, 'spellLearningCostMultiplier', WIZARD_DEFAULTS.SPELL_LEARNING_COST_MULTIPLIER)
+      multiplier: RuleSet.getClassRule(this.actor, classId, CLASS_RULE_NAMES.SPELL_LEARNING_COST_MULTIPLIER, WIZARD_DEFAULTS.SPELL_LEARNING_COST_MULTIPLIER)
     };
   }
 
   /**
    * Derive one spell's copying cost and affordability from batch cost data.
    * @param {object} spell - The spell document
-   * @param {object} costData - Batch data from `_buildCostData`
+   * @param {object} costData - Batch data from `#buildCostData`
    * @returns {{ cost: number, isFree: boolean, affordable: boolean, shortfall: number }} Cost state for the spell
    */
-  _getSpellCost(spell, costData) {
+  #getSpellCost(spell, costData) {
     const level = spell.system?.level ?? 0;
     const isFree = level === 0 || costData.freeRemaining > 0;
     const cost = isFree ? 0 : level * costData.multiplier;
@@ -919,32 +927,24 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Render a single spell item as a DOM element using the spell-item partial.
    * @param {object} spell - Spell document from the class spell list
-   * @param {object} rc - Shared render context from `_buildRenderContext`
+   * @param {object} rc - Shared render context from `#buildRenderContext`
    * @returns {Promise<HTMLElement>} The rendered `<li>` spell item element
    */
-  async _renderResult(spell, rc) {
+  async #renderResult(spell, rc) {
     const { batchData, userData, wizardSpellbook, scrollSpellMap, classId: baseClass, isLearn, enabledElements, appState, costData } = rc;
     const spellUuid = spell.uuid;
-
-    // Attach user data so enrichSingleSpell can read favorites/notes state
     spell.favorited = !!userData?.[spellUuid]?.favorite;
     spell.hasNotes = !!userData?.[spellUuid]?.notes;
-
-    // Use canonical enrichment pipeline for tags, details, icons, party indicators
     const enriched = enrichSingleSpell(spell, this.actor, enabledElements, appState);
     try {
       enriched.enrichedIcon = createSpellIconLink(spell);
     } catch {
       enriched.enrichedIcon = `<img src="${spell.img || 'icons/svg/book.svg'}" class="spell-icon" alt="${spell.name}" width="32" height="32" loading="lazy">`;
     }
-
-    // Preparation status — class-specific, not handled by enrichSingleSpell
     let status = batchData ? SpellManager.getSpellPreparationStatus(this.actor, spell, baseClass, batchData) : { prepared: false, disabled: true, disabledReason: '' };
     const props = spell.system?.properties;
     const isRitual = spell.system?.components?.ritual || (props instanceof Set ? props.has('ritual') : Array.isArray(props) ? props.includes('ritual') : false);
     const prepId = `${baseClass}-${spellUuid}`.replaceAll('.', '-').replaceAll(':', '-');
-
-    // Build tags from batchData (compendium spells don't have aggregatedModes, so enrichSingleSpell tags are empty)
     const tags = [];
     let crossClass = false;
     const canonical = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spellUuid;
@@ -977,16 +977,12 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     if (isRitual) tags.push({ cssClass: 'ritual', icon: 'fas fa-book-open', tooltip: _loc('SPELLBOOK.Preparation.RitualTooltip') });
     enriched.tags = tags.length ? tags : undefined;
-
-    // Update cssClasses with preparation state
     if (status.prepared && !enriched.cssClasses.includes('prepared-spell')) enriched.cssClasses += ' prepared-spell';
-
-    // Wizard action — learn mode only, needs scroll map + spellbook data
     let wizardAction;
     if (isLearn) {
       const inSpellbook = wizardSpellbook?.includes(spellUuid) ?? false;
-      const fromScroll = !!spell._fromScroll;
-      const scrollEntry = fromScroll ? { scrollId: spell._scrollId, scrollName: spell._scrollName } : !inSpellbook ? scrollSpellMap?.get(spellUuid) : null;
+      const fromScroll = !!spell.isFromScroll;
+      const scrollEntry = fromScroll ? { scrollId: spell.scrollId, scrollName: spell.scrollName } : !inSpellbook ? scrollSpellMap?.get(spellUuid) : null;
       const source = inSpellbook ? WizardBook.getSpellLearningSource(this.actor, baseClass, spellUuid) : null;
       const labelKey = source ? WizardBook.getLearnedLabelKey(source) : null;
       wizardAction = {
@@ -1000,7 +996,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         learningSourceLabel: labelKey ? _loc(labelKey) : ''
       };
       if (costData && wizardAction.canLearn) {
-        const { cost, isFree, affordable, shortfall } = this._getSpellCost(spell, costData);
+        const { cost, isFree, affordable, shortfall } = this.#getSpellCost(spell, costData);
         wizardAction.isFree = isFree;
         wizardAction.unaffordable = !affordable;
         wizardAction.costLabel = isFree ? _loc('SPELLBOOK.Wizard.SpellCopyFree') : _loc('SPELLBOOK.Wizard.SpellCopyCost', { cost });
@@ -1033,11 +1029,11 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /** Await cold fetch, extract filter options, and render the dropdown bar into all class panels. */
-  async _initializeFilters() {
+  async #initializeFilters() {
     const allSpells = await this.#coldFetchPromise;
     if (!this.element) return;
-    this.#filterOptions = SpellBook._extractFilterOptions(allSpells);
-    await this._renderSidebarFilters();
+    this.#filterOptions = SpellBook.#extractFilterOptions(allSpells);
+    await this.#renderSidebarFilters();
   }
 
   /**
@@ -1045,7 +1041,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {object[]} spells - Full spell index from cold fetch
    * @returns {{ schools: Array, activationTypes: Array, sources: Array, damageTypes: Array, conditions: Array }} Sorted filter option arrays
    */
-  static _extractFilterOptions(spells) {
+  static #extractFilterOptions(spells) {
     const schools = new Map();
     const activationTypes = new Map();
     const sources = new Map();
@@ -1080,14 +1076,14 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Render filter dropdown controls into the sidebar's filter section.
    */
-  async _renderSidebarFilters() {
+  async #renderSidebarFilters() {
     const container = this.element?.querySelector('.sidebar-filter-section');
     if (!container || !this.#filterOptions) return;
     const allLabel = _loc('ATLAS.Common.All');
     const yesNo = [
       { value: '', label: allLabel },
-      { value: 'yes', label: _loc('COMMON.Yes') },
-      { value: 'no', label: _loc('COMMON.No') }
+      { value: 'yes', label: _loc('ATLAS.Common.Yes') },
+      { value: 'no', label: _loc('ATLAS.Common.No') }
     ];
     const makeOpts = (entries) => [{ value: '', label: allLabel }, ...entries.map(([value, label]) => ({ value, label }))];
     const useMetric = dnd5e.utils.defaultUnits('length') === 'm';
@@ -1160,7 +1156,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
     bindFilterListeners(container);
-    container.addEventListener('change', () => this._applyFiltersForActive());
+    container.addEventListener('change', () => this.#applyFiltersForActive());
   }
 
   /**
@@ -1176,15 +1172,15 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /** Apply filters to the currently-active class panel (called from the debounced search input). */
-  _applyFiltersForActive() {
-    if (this.tabGroups.primary) this._applyFilters(this.tabGroups.primary);
+  #applyFiltersForActive() {
+    if (this.tabGroups.primary) this.#applyFilters(this.tabGroups.primary);
   }
 
   /**
    * Apply search query and dropdown filters to a class's full result set, then re-render its panel.
    * @param {string} tabId - The tab id whose filters should be applied
    */
-  _applyFilters(tabId) {
+  #applyFilters(tabId) {
     const state = this.#state.get(tabId);
     if (!state?.allResults?.length) return;
     const sidebar = this.element?.querySelector('.spell-book-sidebar');
@@ -1229,26 +1225,22 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       }
       if (filterState.prepared && !spell.preparation?.prepared) return false;
       if (filterState.favorited && !spell.favorited) return false;
-      if (filterState.affordable && state.costData && !this._getSpellCost(spell, state.costData).affordable) return false;
+      if (filterState.affordable && state.costData && !this.#getSpellCost(spell, state.costData).affordable) return false;
       return true;
     });
     state.resultIndex = 0;
-    this._renderClassResults(tabId);
+    this.#renderClassResults(tabId);
   }
 
   /**
    * Form handler — no-op since submitOnChange is false. Save is via the save button.
+   * @this {SpellBook}
    */
   static async formHandler() {}
 
   /**
-   * Save all preparation changes for all class tabs.
-   * @param {Event} _event - The triggering event
-   * @param {HTMLElement} _target - The save button
-   */
-  /**
    * Reset filters (click) or reset filters + uncheck all preparation boxes (shift-click).
-   * @this SpellBook
+   * @this {SpellBook}
    * @param {PointerEvent} event - The click event
    */
   static #onResetState(event) {
@@ -1265,8 +1257,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     clearFilterState();
     if (event.shiftKey) {
       for (const tabId of this.#state.keys()) {
-        if (this._isLearnTab(tabId)) continue;
-        const panel = this._getPanelEl(tabId);
+        if (this.#isLearnTab(tabId)) continue;
+        const panel = this.#getPanelEl(tabId);
         const pending = this.#pendingChanges.get(tabId) ?? new Map();
         for (const cb of panel?.querySelectorAll('input[type="checkbox"][data-uuid]:not(:disabled)') ?? []) {
           pending.set(cb.dataset.uuid, false);
@@ -1274,25 +1266,26 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         if (pending.size) this.#pendingChanges.set(tabId, pending);
       }
     }
-    this._applyFiltersForActive();
+    this.#applyFiltersForActive();
     if (event.shiftKey) {
       for (const tabId of this.#state.keys()) {
-        if (this._isLearnTab(tabId)) continue;
-        this._updateCantripCounter(tabId);
-        this._updatePreparationFooter(tabId);
+        if (this.#isLearnTab(tabId)) continue;
+        this.#updateCantripCounter(tabId);
+        this.#updatePreparationFooter(tabId);
       }
     }
   }
 
   /**
    * Action handler: collect pending changes across tabs and persist the prepared spell selection.
+   * @this {SpellBook}
    * @param {Event} _event - Triggering event (unused)
    * @param {HTMLElement} _target - Action button (unused)
    */
   static async #onSaveSpells(_event, _target) {
     for (const [tabId] of this.#pendingChanges) {
       if (tabId === this.tabGroups.primary) continue;
-      this._restorePendingChanges(tabId);
+      this.#restorePendingChanges(tabId);
     }
     const spellDataByClass = {};
     for (const cb of this.element.querySelectorAll('input[type="checkbox"][data-class-identifier]')) {
@@ -1300,7 +1293,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (!uuid) continue;
       const classId = cb.dataset.classIdentifier;
       if (!spellDataByClass[classId]) spellDataByClass[classId] = {};
-      const key = SpellManager._createClassSpellKey(uuid, classId);
+      const key = buildClassSpellKey(classId, uuid);
       spellDataByClass[classId][key] = {
         uuid,
         isPrepared: cb.checked,
@@ -1312,13 +1305,13 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     const classChanges = {};
     for (const [classId, classSpellData] of Object.entries(spellDataByClass)) {
-      const ritualMode = RuleSet.getClassRule(this.actor, classId, 'ritualCasting', 'none');
-      if (ritualMode === 'always') {
+      const ritualMode = RuleSet.getClassRule(this.actor, classId, CLASS_RULE_NAMES.RITUAL_CASTING, RITUAL_CASTING_MODES.NONE);
+      if (ritualMode === RITUAL_CASTING_MODES.ALWAYS) {
         const wizardClasses = ClassManager.getWizardEnabledClasses(this.actor);
         if (wizardClasses.some((w) => w.identifier === classId)) {
           const spellbook = await WizardBook.getWizardSpellbook(this.actor, classId);
           for (const spellUuid of spellbook) {
-            const key = SpellManager._createClassSpellKey(spellUuid, classId);
+            const key = buildClassSpellKey(classId, spellUuid);
             if (classSpellData[key]) continue;
             const spell = fromUuidSync(spellUuid);
             if (!spell || spell.system?.level === 0) continue;
@@ -1341,7 +1334,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         const maxCantrips = SpellManager.getMaxCantrips(this.actor, classId);
         const scData = this.actor.spellcastingClasses?.[classId];
         const baseMax = scData?.preparation?.max ?? scData?.spellcasting?.preparation?.max ?? this.actor.system.attributes?.preparation?.max ?? 0;
-        const maxSpells = Math.max(0, baseMax + RuleSet.getClassRule(this.actor, classId, 'spellPreparationBonus', 0));
+        const maxSpells = Math.max(0, baseMax + RuleSet.getClassRule(this.actor, classId, CLASS_RULE_NAMES.SPELL_PREPARATION_BONUS, 0));
         classChanges[classId] = {
           className: scData?.name ?? classId,
           changes,
@@ -1351,12 +1344,12 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           }
         };
       }
-      if (ritualMode !== 'always') {
+      if (ritualMode !== RITUAL_CASTING_MODES.ALWAYS) {
         const ritualSpells = this.actor.itemTypes.spell.filter(
           (s) => s.system?.method === 'ritual' && ClassManager.getSpellClassIdentifier(s) === classId && s.flags?.[MODULE.ID]?.isModuleRitual === true
         );
         let idsToRemove;
-        if (ritualMode === 'prepared') {
+        if (ritualMode === RITUAL_CASTING_MODES.PREPARED) {
           idsToRemove = ritualSpells
             .filter((r) => {
               const src = r._stats?.compendiumSource || r.uuid;
@@ -1371,7 +1364,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     this.#pendingChanges.clear();
     if (Object.keys(classChanges).length) await SpellManager.sendNotification({ actorName: this.actor.name, classChanges });
-    if (game.modules.get('chris-premades')?.active && game.settings.get(MODULE.ID, SETTINGS.CPR_COMPATIBILITY)) await chrisPremades.utils.actorUtils.updateAll(this.actor);
+    await refreshChrisPremades(this.actor);
     ui.notifications.info('SPELLBOOK.UI.ChangesSaved', { localize: true });
     for (const cb of this.element.querySelectorAll('input[type="checkbox"][data-uuid]')) cb.dataset.wasPrepared = String(cb.checked);
   }
@@ -1380,9 +1373,9 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Update the cantrip counter display and lock/unlock unchecked cantrip checkboxes.
    * @param {string} tabId - The prep-mode tab id
    */
-  _updateCantripCounter(tabId) {
-    const panel = this._getPanelEl(tabId);
-    const baseClass = this._resolveClassId(tabId);
+  #updateCantripCounter(tabId) {
+    const panel = this.#getPanelEl(tabId);
+    const baseClass = this.#resolveClassId(tabId);
     if (!panel || !baseClass) return;
     let current = 0;
     for (const cb of panel.querySelectorAll('.spell-level[data-level="0"] .spell-list input[type="checkbox"]')) {
@@ -1391,7 +1384,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const max = SpellManager.getMaxCantrips(this.actor, baseClass);
     const counter = panel.querySelector('.cantrip-count');
     if (counter) {
-      counter.textContent = `${current}/${max} Cantrips`;
+      counter.textContent = _loc('SPELLBOOK.Cantrips.Counter', { current, max });
       counter.classList.toggle('at-max', current >= max);
     }
     for (const li of panel.querySelectorAll('.spell-level[data-level="0"] .spell-list li')) {
@@ -1407,20 +1400,20 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Reads per-class max from spellcasting config (dnd5e 5.3 scale values) + preparation bonus.
    * @param {string} tabId - The prep-mode tab id
    */
-  _updatePreparationFooter(tabId) {
-    const panel = this._getPanelEl(tabId);
+  #updatePreparationFooter(tabId) {
+    const panel = this.#getPanelEl(tabId);
     const footer = panel?.querySelector('.prep-count');
     if (!footer) return;
-    const baseClass = this._resolveClassId(tabId);
+    const baseClass = this.#resolveClassId(tabId);
     const spellcastingData = this.actor.spellcastingClasses?.[baseClass];
     const baseMax = spellcastingData?.preparation?.max ?? spellcastingData?.spellcasting?.preparation?.max ?? this.actor.system.attributes?.preparation?.max ?? 0;
-    const bonus = RuleSet.getClassRule(this.actor, baseClass, 'spellPreparationBonus', 0);
+    const bonus = RuleSet.getClassRule(this.actor, baseClass, CLASS_RULE_NAMES.SPELL_PREPARATION_BONUS, 0);
     const max = Math.max(0, baseMax + bonus);
     let current = 0;
     for (const cb of panel.querySelectorAll('.spell-level:not([data-level="0"]) input[type="checkbox"][data-class-identifier]')) {
       if (cb.checked) current++;
     }
-    footer.textContent = `${current}/${max} Spells`;
+    footer.textContent = _loc('SPELLBOOK.Preparation.Counter', { current, max });
     footer.classList.toggle('at-max', max > 0 && current >= max);
   }
 
@@ -1428,16 +1421,16 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    * Update the wizard learn-tab counters header (total/max spells, free spells remaining).
    * @param {string} tabId - The learn-mode tab id
    */
-  async _updateWizardCounters(tabId) {
-    const panel = this._getPanelEl(tabId);
-    const baseClass = this._resolveClassId(tabId);
+  async #updateWizardCounters(tabId) {
+    const panel = this.#getPanelEl(tabId);
+    const baseClass = this.#resolveClassId(tabId);
     if (!panel || !baseClass) return;
     const counters = await SpellDataManager.getWizardCounters(this.actor, baseClass);
     const totalEl = panel.querySelector('.wizard-total-count');
     const freeEl = panel.querySelector('.wizard-free-count');
     const walletEl = panel.querySelector('.wizard-wallet');
-    if (totalEl) totalEl.textContent = `${counters.total}/${counters.max} Spells`;
-    if (freeEl) freeEl.textContent = `${counters.freeRemaining} Free`;
+    if (totalEl) totalEl.textContent = _loc('SPELLBOOK.Preparation.Counter', { current: counters.total, max: counters.max });
+    if (freeEl) freeEl.textContent = _loc('SPELLBOOK.Wizard.FreeCounter', { count: counters.freeRemaining });
     if (walletEl) {
       const showWallet = game.settings.get(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST);
       walletEl.textContent = showWallet ? _loc('SPELLBOOK.Wizard.WalletTotal', { amount: WizardBook.getTotalWealth(this.actor).toFixed(2) }) : '';

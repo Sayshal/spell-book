@@ -8,35 +8,35 @@ import { MODULE, PACK } from '../constants.mjs';
 const MACROS = [
   {
     flagKey: 'spellBookQuickAccess',
-    version: '2.0.0',
+    version: '2.2.0',
     name: 'Spell Book - Quick Access',
     img: 'icons/sundries/books/book-purple-gem.webp',
     command: 'SPELLBOOK.api.spellBookQuickAccess();'
   },
   {
     flagKey: 'spellSlotTracker',
-    version: '2.0.0',
+    version: '2.2.0',
     name: 'Spell Book - Slot Tracker',
     img: 'icons/magic/symbols/runes-star-pentagon-magenta.webp',
     command: 'SPELLBOOK.api.spellSlotTracker();'
   },
   {
     flagKey: 'scrollScanner',
-    version: '2.0.0',
+    version: '2.2.0',
     name: 'Spell Book - Scroll Scanner',
     img: 'icons/sundries/scrolls/scroll-bound-red.webp',
     command: 'SPELLBOOK.api.scrollScanner();'
   },
   {
     flagKey: 'spellsNotInLists',
-    version: '2.0.0',
+    version: '2.2.0',
     name: 'Spell Book - Spells Not In Lists',
     img: 'icons/tools/scribal/magnifying-glass.webp',
     command: 'SPELLBOOK.api.spellsNotInLists();'
   },
   {
     flagKey: 'flagPurge',
-    version: '2.0.0',
+    version: '2.2.0',
     name: 'Spell Book - Flag Purge',
     img: 'icons/sundries/flags/banner-standard-tattered-red.webp',
     command: 'SPELLBOOK.api.flagPurge();'
@@ -49,9 +49,20 @@ const MANAGED_FLAG_KEYS = new Set(MACROS.map((m) => m.flagKey));
 export async function initializeMacros() {
   const pack = game.packs.get(PACK.MACROS);
   if (!pack) return;
-  if (pack.locked) await pack.configure({ locked: false });
-  const existing = await pack.getDocuments();
-  for (const def of MACROS) await upsertMacro(pack, existing, def);
+  let existing;
+  try {
+    existing = await pack.getDocuments();
+  } catch (error) {
+    ATLAS.log(1, 'Skipping macro setup; the macro pack could not be read', error);
+    return;
+  }
+  for (const def of MACROS) {
+    try {
+      await upsertMacro(pack, existing, def);
+    } catch (error) {
+      ATLAS.log(1, `Failed to write macro "${def.name}"`, error);
+    }
+  }
   for (const doc of existing) {
     const managed = doc.getFlag(MODULE.ID, 'managed');
     const keyFlag = Object.keys(doc.flags?.[MODULE.ID] ?? {}).find((k) => MANAGED_FLAG_KEYS.has(k) || k === 'managed');

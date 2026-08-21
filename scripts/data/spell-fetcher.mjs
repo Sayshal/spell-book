@@ -1,8 +1,4 @@
-/**
- * Thin wrapper on dnd5e CompendiumBrowser.fetch for spell retrieval.
- * @module Data/SpellFetcher
- * @author Tyler
- */
+import { getEligibleSpellPacks } from './compendium-packs.mjs';
 
 /** @type {object} dnd5e CompendiumBrowser class reference */
 const CompendiumBrowser = dnd5e.applications.CompendiumBrowser;
@@ -33,9 +29,7 @@ const DEFAULT_INDEX_FIELDS = new Set([
  * Fetch all spells from visible compendiums up to a maximum level.
  * @param {object} [options] - Fetch options
  * @param {number} [options.maxLevel] - Maximum spell level to include
- * @param {Function} [options.onProgress]
- *   Invoked after each pack's spells are indexed. Receives the pack collection ID
- *   and cumulative spell count. When provided, packs are iterated serially.
+ * @param {Function} [options.onProgress] - Invoked after each pack's spells are indexed.
  * @returns {Promise<object[]>} Array of spell index entries
  */
 export async function fetchAllSpells({ maxLevel, onProgress } = {}) {
@@ -53,16 +47,13 @@ export async function fetchAllSpells({ maxLevel, onProgress } = {}) {
       sort
     });
     applyLabelsFallback(results);
-    ATLAS.log(3, `Fetched ${results.length} spells.`);
+    ATLAS.log(3, `Fetched ${results.length} spells`);
     return results;
   }
   const Filter = dnd5e?.Filter;
   const SourceField = dnd5e?.dataModels?.shared?.SourceField;
   const fields = Array.from(new Set([...DEFAULT_INDEX_FIELDS, ...Filter.uniqueKeys(filters)])).filter((f) => f !== 'system.source.slug');
-  const packSourceConfig = game.settings.get('dnd5e', 'packSourceConfiguration') ?? {};
-  const eligiblePacks = game.packs.filter(
-    (p) => p.metadata.type === 'Item' && p.visible && packSourceConfig[p.collection] !== false && (!p.metadata.flags.dnd5e?.types || new Set(p.metadata.flags.dnd5e.types).has('spell'))
-  );
+  const eligiblePacks = getEligibleSpellPacks();
   const results = [];
   for (const pack of eligiblePacks) {
     const index = await pack.getIndex({ fields });
@@ -79,13 +70,12 @@ export async function fetchAllSpells({ maxLevel, onProgress } = {}) {
   }
   results.sort(sort);
   applyLabelsFallback(results);
-  ATLAS.log(3, `Fetched ${results.length} spells across ${eligiblePacks.length} packs.`);
+  ATLAS.log(3, `Fetched ${results.length} spells across ${eligiblePacks.length} packs`);
   return results;
 }
 
 /**
  * Fetch spells from compendiums matching a set of UUIDs, filtered by max level.
- * Uses CompendiumBrowser.fetch for instant index retrieval instead of individual fromUuid calls.
  * @param {Set<string>} uuids - Spell UUIDs to match
  * @param {number} maxLevel - Maximum spell level to include
  * @returns {Promise<object[]>} Matching spell index entries
@@ -115,10 +105,7 @@ function applyLabelsFallback(entries) {
       entry.labels.school = school?.label ?? school?.name ?? school ?? '';
     }
     if (entry.system?.activation?.type) {
-      const type = entry.system.activation.type;
-      const value = entry.system.activation.value || 1;
-      const typeLabel = CONFIG.DND5E.abilityActivationTypes[type];
-      entry.labels.activation = value === 1 || value === null ? typeLabel : `${value} ${typeLabel}s`;
+      entry.labels.activation = formatActivationLabel(entry.system.activation.type, entry.system.activation.value);
     }
     if (entry.system?.range) {
       const range = entry.system.range;
@@ -131,10 +118,9 @@ function applyLabelsFallback(entries) {
       }
     }
     if (entry.system?.properties?.length) {
-      const componentMap = { vocal: 'V', somatic: 'S', material: 'M', concentration: 'C', ritual: 'R' };
       const vsm = entry.system.properties
-        .filter((p) => componentMap[p])
-        .map((p) => componentMap[p])
+        .map((p) => CONFIG.DND5E.itemProperties[p]?.abbreviation)
+        .filter(Boolean)
         .join(', ');
       if (vsm) entry.labels.components = { vsm };
     }
@@ -145,4 +131,20 @@ function applyLabelsFallback(entries) {
       else entry.labels.materials = _loc('SPELLBOOK.MaterialComponents.UnknownCost');
     }
   }
+}
+
+/**
+ * Build a spell activation label, leaving word order and pluralisation to the lang files.
+ * @param {string} type - Activation type key
+ * @param {number} [value] - Activation count
+ * @returns {string} Localized activation label
+ */
+export function formatActivationLabel(type, value) {
+  const typeLabel = CONFIG.DND5E.abilityActivationTypes[type] || type;
+  const count = value || 1;
+  if (count === 1) return typeLabel;
+  const plural = game.i18n.pluralRules.select(count);
+  const counted = CONFIG.DND5E.activityActivationTypes?.[type]?.counted;
+  if (counted) return _loc(`${counted}.${plural}`, { number: count });
+  return _loc(`SPELLBOOK.Formatting.ActivationCounted.${plural}`, { number: count, type: typeLabel });
 }

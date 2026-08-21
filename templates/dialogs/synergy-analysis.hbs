@@ -77,13 +77,11 @@
               <span class="stat-label">{{localize "SPELLBOOK.Party.Analysis.TotalPrepared"}}</span>
               <span class="stat-value">{{totalPreparedSpells}}</span>
             </div>
-            <div class="stat-item"
-              data-tooltip-html="<strong>{{localize 'DND5E.Concentration'}}</strong><hr>{{#each concentrationMembers}}<div>{{name}} ({{count}})</div>{{/each}}">
+            <div class="stat-item" data-tooltip-html="{{concentrationTooltip}}">
               <span class="stat-label">{{localize "DND5E.Concentration"}}</span>
               <span class="stat-value">{{concentrationSpells}} ({{concentrationPercentage}}%)</span>
             </div>
-            <div class="stat-item"
-              data-tooltip-html="<strong>{{localize 'DND5E.Ritual'}}</strong><hr>{{#each ritualMembers}}<div>{{name}} ({{count}})</div>{{/each}}">
+            <div class="stat-item" data-tooltip-html="{{ritualTooltip}}">
               <span class="stat-label">{{localize "DND5E.Ritual"}}</span>
               <span class="stat-value">{{ritualSpells}}</span>
             </div>

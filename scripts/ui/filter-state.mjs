@@ -15,10 +15,8 @@ export const DEFAULT_FILTER_STATE = Object.freeze({
   affordable: false,
   properties: {},
   materialCostly: false,
-  preparedByParty: false,
   target: '',
-  source: '',
-  spellSource: ''
+  source: ''
 });
 
 /** @type {object|null} Cached filter state */
@@ -57,10 +55,9 @@ export function getFilterState(formElement) {
     properties,
     materialCostly: formElement.querySelector('[name="filter-material-costly"]')?.checked || false,
     target: formElement.querySelector('[name="filter-target"]')?.value || '',
-    preparedByParty: formElement.querySelector('[name="filter-preparedByParty"]')?.checked || false,
     source: formElement.querySelector('[name="filter-source"]')?.value || ''
   };
-  ATLAS.log(3, 'Filter state read from DOM.');
+  ATLAS.log(3, 'Filter state read from DOM');
   return cachedState;
 }
 
@@ -69,7 +66,7 @@ export function getFilterState(formElement) {
  */
 export function clearFilterState() {
   cachedState = null;
-  ATLAS.log(3, 'Filter cache cleared.');
+  ATLAS.log(3, 'Filter cache cleared');
 }
 
 /**
@@ -94,7 +91,7 @@ export function bindFilterListeners(filterContainer) {
     },
     opts
   );
-  ATLAS.log(3, 'Filter listeners bound.');
+  ATLAS.log(3, 'Filter listeners bound');
 }
 
 /**

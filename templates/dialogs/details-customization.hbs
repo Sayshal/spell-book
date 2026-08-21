@@ -1,9 +1,8 @@
 <div class="details-customization-content">
   <div class="scroll-body">
-    <fieldset data-group="player-ui">
+    <fieldset data-section="player-ui">
       <legend>
-        <span>{{localize "SPELLBOOK.Settings.DetailsCustomization.SpellBook"}} &mdash;
-          {{localize "SPELLBOOK.Settings.DetailsCustomization.UIElements"}}</span>
+        <span>{{localize "SPELLBOOK.Settings.DetailsCustomization.GroupLegend" scope=(localize "SPELLBOOK.Settings.DetailsCustomization.SpellBook") section=(localize "SPELLBOOK.Settings.DetailsCustomization.UIElements")}}</span>
         <label class="select-all-label">
           <input type="checkbox" class="select-all">
           {{localize "ATLAS.Common.SelectAll"}}
@@ -13,10 +12,9 @@
         {{> "modules/spell-book/templates/components/setting-item.hbs" this}}
       {{/each}}
     </fieldset>
-    <fieldset data-group="player-metadata">
+    <fieldset data-section="player-metadata">
       <legend>
-        <span>{{localize "SPELLBOOK.Settings.DetailsCustomization.SpellBook"}} &mdash;
-          {{localize "SPELLBOOK.Settings.DetailsCustomization.MetadataElements"}}</span>
+        <span>{{localize "SPELLBOOK.Settings.DetailsCustomization.GroupLegend" scope=(localize "SPELLBOOK.Settings.DetailsCustomization.SpellBook") section=(localize "SPELLBOOK.Settings.DetailsCustomization.MetadataElements")}}</span>
         <label class="select-all-label">
           <input type="checkbox" class="select-all">
           {{localize "ATLAS.Common.SelectAll"}}
@@ -27,10 +25,9 @@
       {{/each}}
     </fieldset>
     {{#if isGM}}
-      <fieldset data-group="gm-ui">
+      <fieldset data-section="gm-ui">
         <legend>
-          <span>{{localize "SPELLBOOK.Settings.DetailsCustomization.SpellListManager"}} &mdash;
-            {{localize "SPELLBOOK.Settings.DetailsCustomization.UIElements"}}</span>
+          <span>{{localize "SPELLBOOK.Settings.DetailsCustomization.GroupLegend" scope=(localize "SPELLBOOK.Settings.DetailsCustomization.SpellListManager") section=(localize "SPELLBOOK.Settings.DetailsCustomization.UIElements")}}</span>
           <label class="select-all-label">
             <input type="checkbox" class="select-all">
             {{localize "ATLAS.Common.SelectAll"}}
@@ -40,10 +37,9 @@
           {{> "modules/spell-book/templates/components/setting-item.hbs" this}}
         {{/each}}
       </fieldset>
-      <fieldset data-group="gm-metadata">
+      <fieldset data-section="gm-metadata">
         <legend>
-          <span>{{localize "SPELLBOOK.Settings.DetailsCustomization.SpellListManager"}} &mdash;
-            {{localize "SPELLBOOK.Settings.DetailsCustomization.MetadataElements"}}</span>
+          <span>{{localize "SPELLBOOK.Settings.DetailsCustomization.GroupLegend" scope=(localize "SPELLBOOK.Settings.DetailsCustomization.SpellListManager") section=(localize "SPELLBOOK.Settings.DetailsCustomization.MetadataElements")}}</span>
           <label class="select-all-label">
             <input type="checkbox" class="select-all">
             {{localize "ATLAS.Common.SelectAll"}}
@@ -54,27 +50,8 @@
         {{/each}}
       </fieldset>
     {{/if}}
-    <fieldset>
-      <legend>{{localize "SPELLBOOK.Settings.DetailsCustomization.WizardBookIconColor"}}</legend>
-      <div class="form-group">
-        <label
-          for="wizard-book-icon-color">{{localize "SPELLBOOK.Settings.DetailsCustomization.WizardBookIconColor"}}</label>
-        <div class="form-fields">
-          <color-picker id="wizard-book-icon-color" name="wizardBookIconColor" value="{{wizardBookIconColor}}"
-            placeholder="{{userColor}}"></color-picker>
-          <button type="button" data-action="useUserColor" data-user-color="{{userColor}}"
-            data-tooltip="{{localize 'SPELLBOOK.Settings.DetailsCustomization.WizardBookUseUserColor'}}">
-            <i class="fas fa-user" aria-hidden="true"></i>
-          </button>
-          <button type="button" data-action="reset"
-            data-tooltip="{{localize 'ATLAS.Common.ResetToDefault'}}">
-            <i class="fas fa-undo" aria-hidden="true"></i>
-          </button>
-        </div>
-      </div>
-    </fieldset>
   </div>
   <footer class="form-footer">
-    <button type="submit"><i class="fas fa-save" aria-hidden="true"></i> {{localize "Save"}}</button>
+    <button type="submit"><i class="fas fa-save" aria-hidden="true"></i> {{localize "ATLAS.Common.Save"}}</button>
   </footer>
 </div>

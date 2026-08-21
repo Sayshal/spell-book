@@ -1,4 +1,4 @@
-import { LIST_KINDS, MODULE, PACK, SETTINGS } from '../constants.mjs';
+import { FLAGS, FOLDER_TYPES, LIST_KINDS, MODULE, PACK, SETTINGS } from '../constants.mjs';
 
 /**
  * Create a new spell list in the custom pack.
@@ -8,7 +8,7 @@ import { LIST_KINDS, MODULE, PACK, SETTINGS } from '../constants.mjs';
  * @returns {Promise<object|null>} The created spell list page or null
  */
 export async function createNewSpellList(name, identifier, type) {
-  const folder = await getOrCreateSpellListFolder('custom');
+  const folder = await getOrCreateSpellListFolder(FOLDER_TYPES.CUSTOM);
   const ownership = { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
   const journal = await JournalEntry.create(
     {
@@ -20,7 +20,7 @@ export async function createNewSpellList(name, identifier, type) {
           name,
           type: 'spells',
           ownership,
-          flags: { [MODULE.ID]: { kind: LIST_KINDS.CUSTOM, creationDate: Date.now() } },
+          flags: { [MODULE.ID]: { [FLAGS.KIND]: LIST_KINDS.CUSTOM, creationDate: Date.now() } },
           system: { identifier: identifier.toLowerCase(), type, description: _loc('SPELLBOOK.Manager.CreateList.CustomDescription', { identifier }), spells: [] }
         }
       ]
@@ -29,6 +29,7 @@ export async function createNewSpellList(name, identifier, type) {
   );
   const page = journal?.pages?.contents[0];
   if (page) await dnd5e.registry.spellLists.register(page.uuid);
+  ATLAS.log(3, `Created custom spell list "${name}"`, { identifier, type, uuid: page?.uuid });
   return page ?? null;
 }
 
@@ -49,9 +50,9 @@ export async function duplicateSpellList(originalSpellList) {
     originalName: originalSpellList.name,
     originalModTime: originalSpellList._stats?.modifiedTime || 0,
     originalVersion: originalSpellList._stats?.systemVersion || game.system.version,
-    kind: LIST_KINDS.DUPLICATE
+    [FLAGS.KIND]: LIST_KINDS.DUPLICATE
   };
-  const folder = await getOrCreateSpellListFolder('modified');
+  const folder = await getOrCreateSpellListFolder(FOLDER_TYPES.MODIFIED);
   const ownership = { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
   const journal = await JournalEntry.create(
     {
@@ -60,10 +61,11 @@ export async function duplicateSpellList(originalSpellList) {
       ownership,
       pages: [{ name: originalSpellList.name, type: 'spells', ownership, flags: pageData.flags, system: pageData.system }]
     },
-    { pack: game.packs.get(PACK.SPELLS).collection }
+    { pack: PACK.SPELLS }
   );
   const page = journal?.pages?.contents[0];
   if (page) await updateSpellListMapping(originalSpellList.uuid, page.uuid);
+  ATLAS.log(3, `Duplicated spell list "${originalSpellList.name}"`, { originalUuid: originalSpellList.uuid, uuid: page?.uuid });
   return page ?? null;
 }
 
@@ -79,7 +81,7 @@ export async function findDuplicateSpellList(originalUuid) {
   try {
     journals = await customPack.getDocuments();
   } catch (err) {
-    ATLAS.log(2, `Error loading custom pack documents: ${err.message}`);
+    ATLAS.log(1, 'Error loading custom pack documents', err);
     return null;
   }
   for (const journal of journals) for (const page of journal.pages) if (page.flags?.[MODULE.ID]?.originalUuid === originalUuid) return page;
@@ -95,10 +97,12 @@ export async function removeCustomSpellList(duplicateUuid) {
   const page = await fromUuid(duplicateUuid);
   if (!page?.parent) return false;
   const originalUuid = page.flags?.[MODULE.ID]?.originalUuid;
+  const name = page.name;
+  await page.parent.delete();
   if (originalUuid) {
-    const mappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
+    const mappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_LIST_MAPPINGS) || {};
     delete mappings[originalUuid];
-    await game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, mappings);
+    await game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_LIST_MAPPINGS, mappings);
     const hidden = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
     if (hidden.includes(originalUuid))
       await game.settings.set(
@@ -107,7 +111,7 @@ export async function removeCustomSpellList(duplicateUuid) {
         hidden.filter((u) => u !== originalUuid)
       );
   }
-  await page.parent.delete();
+  ATLAS.log(3, `Removed custom spell list "${name}"`, { uuid: duplicateUuid, originalUuid });
   return true;
 }
 
@@ -116,14 +120,14 @@ export async function removeCustomSpellList(duplicateUuid) {
  * @returns {Promise<Object<string, string>>} Mapping of original UUIDs to custom UUIDs
  */
 export async function getValidCustomListMappings() {
-  const mappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
+  const mappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_LIST_MAPPINGS) || {};
   const customPack = game.packs.get(PACK.SPELLS);
   if (!customPack) return mappings;
   let journals;
   try {
     journals = await customPack.getDocuments();
   } catch (err) {
-    ATLAS.log(2, `Skipping mapping prune; custom pack unavailable: ${err.message}`);
+    ATLAS.log(2, 'Skipping mapping prune; custom pack unavailable', err);
     return mappings;
   }
   const livePageUuids = new Set();
@@ -135,7 +139,7 @@ export async function getValidCustomListMappings() {
     else removedOriginals.push(originalUuid);
   }
   if (removedOriginals.length) {
-    await game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, valid);
+    await game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_LIST_MAPPINGS, valid);
     const hidden = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
     const next = hidden.filter((u) => !removedOriginals.includes(u));
     if (next.length !== hidden.length) await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, next);
@@ -199,7 +203,7 @@ export async function createMergedSpellList(spellListUuids, mergedListName) {
   const mergedSpells = Array.from(new Set(collected));
   const identifier = lists[0].system?.identifier || 'merged';
   const listNames = lists.map((l) => l.name).join(', ');
-  const folder = await getOrCreateSpellListFolder('merged');
+  const folder = await getOrCreateSpellListFolder(FOLDER_TYPES.MERGED);
   const ownership = { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
   const journal = await JournalEntry.create(
     {
@@ -211,7 +215,7 @@ export async function createMergedSpellList(spellListUuids, mergedListName) {
           name: mergedListName,
           type: 'spells',
           ownership,
-          flags: { [MODULE.ID]: { kind: LIST_KINDS.MERGED, creationDate: Date.now(), sourceListUuids: spellListUuids } },
+          flags: { [MODULE.ID]: { [FLAGS.KIND]: LIST_KINDS.MERGED, creationDate: Date.now(), sourceListUuids: spellListUuids } },
           system: {
             identifier: identifier.toLowerCase(),
             description: _loc('SPELLBOOK.Manager.CreateList.MultiMergedDescription', { listNames, count: lists.length }),
@@ -222,25 +226,36 @@ export async function createMergedSpellList(spellListUuids, mergedListName) {
     },
     { pack: PACK.SPELLS }
   );
-  return journal?.pages?.contents[0] ?? null;
+  const page = journal?.pages?.contents[0];
+  ATLAS.log(3, `Merged ${lists.length} spell lists into "${mergedListName}"`, { spellCount: mergedSpells.length, uuid: page?.uuid });
+  return page ?? null;
 }
 
 /**
  * Get or create a folder in the custom spell lists pack.
- * @param {string} folderType - Folder type ('custom', 'merged', or 'modified')
+ * @param {string} folderType - Folder type ('custom', 'merged', 'modified', or 'actorSpellbook')
  * @returns {Promise<object|null>} The folder document or null
  */
 export async function getOrCreateSpellListFolder(folderType) {
   const locKeys = {
-    custom: 'SPELLBOOK.Manager.Folders.CustomSpellListsFolder',
-    merged: 'SPELLBOOK.Manager.Folders.MergedSpellListsFolder',
-    modified: 'SPELLBOOK.Manager.Folders.ModifiedSpellListsFolder'
+    [FOLDER_TYPES.CUSTOM]: 'SPELLBOOK.Manager.Folders.CustomSpellListsFolder',
+    [FOLDER_TYPES.MERGED]: 'SPELLBOOK.Manager.Folders.MergedSpellListsFolder',
+    [FOLDER_TYPES.MODIFIED]: 'SPELLBOOK.Manager.Folders.ModifiedSpellListsFolder',
+    [FOLDER_TYPES.ACTOR_SPELLBOOK]: 'SPELLBOOK.Manager.Folders.ActorSpellbooksFolder'
   };
-  const folderName = _loc(locKeys[folderType]);
+  const locKey = locKeys[folderType];
+  const folderName = _loc(locKey);
   const customPack = game.packs.get(PACK.SPELLS);
-  const existing = customPack.folders.find((f) => f.name === folderName);
-  if (existing) return existing;
-  return Folder.create({ name: folderName, type: 'JournalEntry', folder: null }, { pack: customPack.collection });
+  const existing = customPack.folders.find((f) => f.getFlag(MODULE.ID, FLAGS.FOLDER_TYPE) === folderType) || customPack.folders.find((f) => f.name === folderName || f.name === locKey);
+  if (existing) {
+    const updates = {};
+    if (existing.getFlag(MODULE.ID, FLAGS.FOLDER_TYPE) !== folderType) updates[`flags.${MODULE.ID}.${FLAGS.FOLDER_TYPE}`] = folderType;
+    if (existing.name !== folderName) updates.name = folderName;
+    if (Object.keys(updates).length) await existing.update(updates);
+    return existing;
+  }
+  ATLAS.log(3, `Creating "${folderName}" folder in the custom spell list pack`, { folderType });
+  return Folder.create({ name: folderName, type: 'JournalEntry', folder: null, flags: { [MODULE.ID]: { [FLAGS.FOLDER_TYPE]: folderType } } }, { pack: customPack.collection });
 }
 
 /**
@@ -249,9 +264,9 @@ export async function getOrCreateSpellListFolder(folderType) {
  * @param {string} duplicateUuid - UUID of the duplicate spell list
  */
 async function updateSpellListMapping(originalUuid, duplicateUuid) {
-  const mappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS);
+  const mappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_LIST_MAPPINGS);
   mappings[originalUuid] = duplicateUuid;
-  await game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS, mappings);
+  await game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_LIST_MAPPINGS, mappings);
 }
 
 /**
@@ -285,7 +300,7 @@ export async function findAllSpellLists() {
   }
   const customPack = game.packs.get(PACK.SPELLS);
   if (customPack) await harvestPackLists(customPack, lists, true);
-  const customMappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_MAPPINGS) || {};
+  const customMappings = game.settings.get(MODULE.ID, SETTINGS.CUSTOM_SPELL_LIST_MAPPINGS) || {};
   for (const list of lists) {
     const doc = list.document;
     if (doc?.system?.identifier && !list.identifier) list.identifier = doc.system.identifier;
@@ -320,7 +335,7 @@ async function harvestPackLists(pack, lists, isCustomPack) {
       if (page.type !== 'spells') continue;
       const flags = page.flags?.[MODULE.ID] || {};
       if (!isCustomPack && page.system?.type === 'other') continue;
-      const isModified = flags.kind === LIST_KINDS.DUPLICATE;
+      const isModified = flags[FLAGS.KIND] === LIST_KINDS.DUPLICATE;
       lists.push({
         uuid: page.uuid,
         name: page.name,
@@ -330,8 +345,8 @@ async function harvestPackLists(pack, lists, isCustomPack) {
         system: page.system,
         spellCount: page.system.spells?.size,
         identifier: page.system.identifier,
-        isCustom: flags.kind === LIST_KINDS.CUSTOM,
-        isMerged: flags.kind === LIST_KINDS.MERGED,
+        isCustom: flags[FLAGS.KIND] === LIST_KINDS.CUSTOM,
+        isMerged: flags[FLAGS.KIND] === LIST_KINDS.MERGED,
         isModified,
         document: page
       });
@@ -349,7 +364,7 @@ export async function getJournalDocumentsFromPack(pack) {
     try {
       return await pack.getDocuments();
     } catch (err) {
-      ATLAS.log(2, `Error loading documents from pack "${pack.collection}": ${err.message}`);
+      ATLAS.log(1, `Error loading documents from pack "${pack.collection}"`, err);
       return [];
     }
   }
@@ -364,12 +379,12 @@ export async function getJournalDocumentsFromPack(pack) {
         const journal = await pack.getDocument(journalData._id);
         journals.push(journal);
       } catch (err) {
-        ATLAS.log(2, `Error loading journal "${journalData.name}" from pack "${pack.collection}": ${err.message}`);
+        ATLAS.log(2, `Error loading journal "${journalData.name}" from pack "${pack.collection}"`, err);
       }
     }
     return journals;
   } catch (err) {
-    ATLAS.log(2, `Error indexing pack "${pack.collection}": ${err.message}`);
+    ATLAS.log(1, `Error indexing pack "${pack.collection}"`, err);
     return [];
   }
 }

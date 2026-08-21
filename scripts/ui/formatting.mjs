@@ -1,12 +1,5 @@
-/**
- * Spell Display Formatting and Processing Utilities
- * Transforms raw spell data into display-ready formats, extracts filterable
- * metadata, and creates formatted presentation elements.
- */
-
 import { LIST_KINDS, MODULE } from '../constants.mjs';
-import { getConfigLabel, getSpellSourceDocument, isGrantingItemActive } from '../data/_module.mjs';
-import { ClassManager } from '../managers/class-manager.mjs';
+import { getConfigLabel } from '../data/_module.mjs';
 import { buildGMMetadata, isGMElementEnabled } from './custom-ui.mjs';
 
 /**
@@ -18,7 +11,6 @@ import { buildGMMetadata, isGMElementEnabled } from './custom-ui.mjs';
  * @returns {object} Processed spell list with display data
  */
 export function processSpellListForDisplay(spellList, classFolderCache = null, availableSpellLists = null, enabledElements = null) {
-  ATLAS.log(3, 'Processing spell list for display.', { spellListName: spellList.document?.name, kind: spellList.document?.flags?.[MODULE.ID]?.kind });
   const processed = { ...spellList };
   processed.isCustomList = !!spellList.document?.flags?.[MODULE.ID]?.kind;
   processed.canRestore = !!(processed.isCustomList && spellList.document.flags?.[MODULE.ID]?.originalUuid);
@@ -41,7 +33,6 @@ export function processSpellListForDisplay(spellList, classFolderCache = null, a
   if (spellList.spellsByLevel?.length) {
     processed.spellsByLevel = spellList.spellsByLevel.map((level) => ({ ...level, spells: level.spells.map((spell) => processSpellItemForDisplay(spell, enabledElements)) }));
   }
-  ATLAS.log(3, 'Spell list processed for display.', { isPlayerSpellbook: processed.isPlayerSpellbook, spellLevels: processed.spellsByLevel?.length });
   return processed;
 }
 
@@ -137,10 +128,10 @@ export function extractSpellFilterData(spell) {
   const castingTime = extractCastingTime(spell);
   const range = extractRange(spell);
   const damageTypes = extractDamageTypes(spell);
-  const isRitual = checkIsRitual(spell);
-  const concentration = checkIsConcentration(spell);
+  const isRitual = isRitualSpell(spell);
+  const concentration = isConcentrationSpell(spell);
   const materialComponents = extractMaterialComponents(spell);
-  const requiresSave = checkSpellRequiresSave(spell);
+  const requiresSave = spellRequiresSave(spell);
   const conditions = extractSpellConditions(spell);
   const source = extractSpellSource(spell);
   const target = extractTarget(spell);
@@ -221,7 +212,7 @@ export function hasSpellProperty(spell, property) {
  * @param {object} spell - The spell document or index data
  * @returns {boolean} Whether the spell is a ritual
  */
-export function checkIsRitual(spell) {
+export function isRitualSpell(spell) {
   return hasSpellProperty(spell, 'ritual');
 }
 
@@ -230,7 +221,7 @@ export function checkIsRitual(spell) {
  * @param {object} spell - The spell document or index data
  * @returns {boolean} Whether the spell requires concentration
  */
-export function checkIsConcentration(spell) {
+export function isConcentrationSpell(spell) {
   return hasSpellProperty(spell, 'concentration');
 }
 
@@ -261,7 +252,7 @@ function hasCostlyMaterials(spell, materialsValue, cost) {
   if (!haystacks.length) return false;
   const consumeKeyword = _loc('SPELLBOOK.Filters.Materials.ConsumeKeyword').toLowerCase();
   const gpKeyword = _loc('SPELLBOOK.Filters.Materials.GpKeyword').toLowerCase();
-  const gpPattern = new RegExp(`\\d[\\d,]*\\+?\\s*${gpKeyword}\\b`);
+  const gpPattern = new RegExp(`\\d[\\d,]*\\+?\\s*${gpKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
   for (const text of haystacks) {
     if (text.includes(consumeKeyword)) return true;
     if (gpPattern.test(text)) return true;
@@ -287,7 +278,7 @@ export function extractSaveAbilities(spell) {
  * @param {object} spell - The spell document
  * @returns {boolean} Whether the spell requires a save
  */
-export function checkSpellRequiresSave(spell) {
+export function spellRequiresSave(spell) {
   if (extractSaveAbilities(spell).length) return true;
   if (spell.system?.description?.value) {
     const saveText = _loc('SPELLBOOK.Filters.SavingThrow').toLowerCase();
@@ -352,10 +343,10 @@ export function createSpellIconLink(spell) {
   const parsed = foundry.utils.parseUuid(uuid);
   const itemId = parsed.id;
   const entityType = parsed.type;
-  let packId;
-  if (parsed.collection) packId = parsed.collection.collection;
-  const result = `<a class="content-link" draggable="true" data-link="" data-uuid="${uuid}" data-id="${itemId}" data-type="${entityType}" data-pack="${packId}" data-tooltip="${spell.name}">
-    <img src="${spell.img}" class="spell-icon" alt="${spell.name} icon">
+  const packId = parsed.collection?.collection ?? '';
+  const name = foundry.utils.escapeHTML(spell.name ?? '');
+  const result = `<a class="content-link" draggable="true" data-link="" data-uuid="${uuid}" data-id="${itemId}" data-type="${entityType}" data-pack="${packId}" data-tooltip="${name}">
+    <img src="${spell.img}" class="spell-icon" alt="${name}">
   </a>`
     .replace(/\s+/g, ' ')
     .trim();
@@ -388,38 +379,4 @@ export function getSpellDataAttributes(spell) {
   ];
   if (spell.filterData?.spellListName) attributes.push(`data-spell-list="${spell.filterData.spellListName}"`);
   return attributes.join(' ');
-}
-
-/**
- * Get the preparation tags for a spell.
- * @param {object} spell - The spell object
- * @param {object} actor - The actor (needed for granted item lookups and class data)
- * @returns {Array<object>} Array of tag objects with cssClass, text, and tooltip properties
- */
-export function getSpellPreparationTags(spell, actor) {
-  const tags = [];
-  const modes = spell.aggregatedModes;
-  if (modes?.hasPrepared) tags.push({ cssClass: 'prepared', text: _loc('SPELLBOOK.Preparation.Prepared'), tooltip: _loc('SPELLBOOK.Preparation.PreparedTooltip') });
-  if (modes?.hasPact) tags.push({ cssClass: 'pact', text: _loc('SPELLBOOK.Preparation.Pact'), tooltip: _loc('DND5E.PactMagic') });
-  if (modes?.hasAlwaysPrepared) {
-    let tooltip = _loc('SPELLBOOK.Preparation.AlwaysTooltip');
-    const sourceDoc = getSpellSourceDocument(spell, actor);
-    if (sourceDoc?.type === 'subclass') tooltip = sourceDoc.name;
-    else if (sourceDoc?.type === 'class') {
-      const classIdentifier = ClassManager.getSpellClassIdentifier(spell);
-      const subclass = actor?.items.find((i) => i.type === 'subclass' && i.system?.classIdentifier === classIdentifier);
-      tooltip = subclass?.name || sourceDoc.name;
-    }
-    tags.push({ cssClass: 'always-prepared', text: _loc('SPELLBOOK.Preparation.Always'), tooltip: tooltip });
-  }
-  if (modes?.hasGranted) {
-    const cachedFor = spell.flags?.dnd5e?.cachedFor;
-    const itemId = foundry.utils.parseUuid(cachedFor, { relative: actor }).embedded?.[1];
-    const grantingItem = actor?.items.get(itemId);
-    if (isGrantingItemActive(grantingItem)) tags.push({ cssClass: 'granted', text: _loc('SPELLBOOK.SpellSource.Granted'), tooltip: grantingItem?.name || '' });
-  }
-  if (modes?.hasInnate) tags.push({ cssClass: 'innate', text: _loc('SPELLBOOK.Preparation.Innate'), tooltip: _loc('SPELLBOOK.Preparation.InnateTooltip') });
-  if (modes?.hasRitual) tags.push({ cssClass: 'ritual', text: _loc('SPELLBOOK.Preparation.Ritual'), tooltip: _loc('SPELLBOOK.Preparation.RitualTooltip') });
-  if (modes?.hasAtWill) tags.push({ cssClass: 'atwill', text: _loc('SPELLBOOK.Preparation.AtWill'), tooltip: _loc('SPELLBOOK.Preparation.AtWillTooltip') });
-  return tags;
 }
