@@ -10,7 +10,7 @@
   "changelog": "https://github.com/Sayshal/spell-book/releases",
   "compatibility": {
     "minimum": "14",
-    "verified": "14.366"
+    "verified": "14.367"
   },
   "description": "Because preparing your spells shouldn't feel like an IRS audit. Spell Book replaces the cramped dnd5e prepare list with a dedicated window: one tab per casting class, filters, favorites, and loadouts you swap in with a click. GMs get a spell-list editor, wizards get a gold-and-time spellbook to copy into, and a party screen catches prep overlap.",
   "download": "",
