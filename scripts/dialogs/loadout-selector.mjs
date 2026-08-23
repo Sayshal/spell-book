@@ -1,14 +1,7 @@
-/**
- * Spell Loadout Management Dialog
- * @module Dialogs/LoadoutSelector
- * @author Tyler
- */
-
-import { FLAGS, MODULE, TEMPLATES } from '../constants.mjs';
-import { Loadouts } from '../managers/loadouts.mjs';
-import { SpellManager } from '../managers/spell-manager.mjs';
-import { detachedRenderOptions } from '../ui/dialogs.mjs';
-
+import { FLAGS, HOOKS, MODULE, TEMPLATES } from '../constants.mjs';
+import { buildClassSpellKey } from '../data/class-spell-key.mjs';
+import { Loadouts, SpellManager } from '../managers/_module.mjs';
+import { detachedRenderOptions } from '../ui/_module.mjs';
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /** Dialog for managing spell loadouts (save/apply/overwrite/delete). */
@@ -99,8 +92,9 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
    * @param {object} actor - The actor document
    * @param {string} classIdentifier - The class identifier
    * @param {string[]} loadoutUuids - UUIDs to mark prepared
+   * @param {object} [loadout] - The loadout being applied, for hook identity
    */
-  static async applySpellConfiguration(actor, classIdentifier, loadoutUuids) {
+  static async applySpellConfiguration(actor, classIdentifier, loadoutUuids, loadout = null) {
     const flag = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
     const currentKeys = Array.isArray(flag) ? [] : flag[classIdentifier] || [];
     const current = new Set(currentKeys.map((k) => k.split(':').slice(1).join(':')));
@@ -110,7 +104,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
     for (const uuid of allUuids) {
       const spell = fromUuidSync(uuid);
       if (!spell) continue;
-      const key = `${classIdentifier}:${uuid}`;
+      const key = buildClassSpellKey(classIdentifier, uuid);
       classSpellData[key] = {
         uuid,
         isPrepared: target.has(uuid),
@@ -121,11 +115,13 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
       };
     }
     await SpellManager.saveClassSpecificPreparedSpells(actor, classIdentifier, classSpellData);
+    ATLAS.log(3, `Applied loadout to ${actor.name}`, { classIdentifier, loadoutName: loadout?.name ?? null, spellCount: loadoutUuids.length });
+    Hooks.callAll(HOOKS.LOADOUT_APPLIED, { actor, classIdentifier, spellUuids: loadoutUuids, loadoutId: loadout?.id ?? null, loadoutName: loadout?.name ?? null });
   }
 
   /**
    * Save the actor's currently-prepared spells as a new named loadout.
-   * @this LoadoutSelector
+   * @this {LoadoutSelector}
    * @param {PointerEvent} _event - Click event
    * @param {HTMLElement} target - The save button
    */
@@ -151,7 +147,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Replace an existing loadout's spell configuration with the current prepared set.
-   * @this LoadoutSelector
+   * @this {LoadoutSelector}
    * @param {PointerEvent} _event - Click event
    * @param {HTMLElement} target - The overwrite button
    */
@@ -170,7 +166,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Delete a loadout after a confirmation prompt.
-   * @this LoadoutSelector
+   * @this {LoadoutSelector}
    * @param {PointerEvent} _event - Click event
    * @param {HTMLElement} target - The delete button
    */
@@ -178,7 +174,8 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
     const loadoutId = target.dataset.loadoutId;
     if (!loadoutId) return;
     const confirmed = await foundry.applications.api.DialogV2.confirm({
-      title: _loc('SPELLBOOK.Loadouts.ConfirmDelete'),
+      classes: ['spell-book'],
+      window: { title: _loc('SPELLBOOK.Loadouts.ConfirmDelete') },
       content: _loc('SPELLBOOK.Loadouts.ConfirmDeleteContent', { name: target.dataset.loadoutName }),
       renderOptions: detachedRenderOptions(this)
     });
@@ -189,7 +186,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * Apply a saved loadout to the actor's prepared spells and close the dialog.
-   * @this LoadoutSelector
+   * @this {LoadoutSelector}
    * @param {PointerEvent} _event - Click event
    * @param {HTMLElement} target - The apply button
    */
@@ -198,7 +195,7 @@ export class LoadoutSelector extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!loadoutId) return;
     const loadout = Loadouts.getLoadout(this.actor, loadoutId);
     if (!loadout?.spellConfiguration) return;
-    await LoadoutSelector.applySpellConfiguration(this.actor, this.classIdentifier, loadout.spellConfiguration);
+    await LoadoutSelector.applySpellConfiguration(this.actor, this.classIdentifier, loadout.spellConfiguration, loadout);
     await this.parentApp?.refreshClassTab?.(this.classIdentifier);
     this.close();
   }

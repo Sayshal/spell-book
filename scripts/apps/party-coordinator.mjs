@@ -1,7 +1,6 @@
 import { FLAGS, MODULE, TEMPLATES } from '../constants.mjs';
 import { SynergyAnalysis } from '../dialogs/_module.mjs';
-import { PartyMode } from '../managers/party-mode.mjs';
-
+import { PartyMode } from '../managers/_module.mjs';
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /** Party spell coordination App — displays the shared spell matrix and per-member filters. */
@@ -55,9 +54,9 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
     if (!this._comparisonData) this._comparisonData = PartyMode.analyzePartySpells(this.partyActors);
     context.comparison = this._comparisonData;
     context.isGM = game.user.isGM;
-    context.spellLevels = this._buildSpellLevelGroups(this._comparisonData.spellsByLevel);
-    context.groupName = this.groupActor?.name || _loc('SPELLBOOK.Party.DefaultGroupName');
-    this._decorateActors(context.comparison?.actors);
+    context.spellLevels = this.#buildSpellLevelGroups(this._comparisonData.spellsByLevel);
+    context.groupName = this.groupActor?.name || _loc('ATLAS.Common.Party');
+    this.#decorateActors(context.comparison?.actors);
     return context;
   }
 
@@ -65,13 +64,13 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
   _onFirstRender(context, options) {
     super._onFirstRender(context, options);
     this._onActorUpdate = (actor) => {
-      if (!this._isRelevantActor(actor)) return;
-      this._invalidateAndRender();
+      if (!this.#isRelevantActor(actor)) return;
+      this.#invalidateAndRender();
     };
     this._onItemChange = (item) => {
       if (item?.type !== 'spell') return;
-      if (!this._isRelevantActor(item.parent)) return;
-      this._invalidateAndRender();
+      if (!this.#isRelevantActor(item.parent)) return;
+      this.#invalidateAndRender();
     };
     Hooks.on('updateActor', this._onActorUpdate);
     Hooks.on('updateItem', this._onItemChange);
@@ -82,12 +81,12 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
   /** @override */
   _onRender(context, options) {
     super._onRender(context, options);
-    this._setupMemberHover();
-    this._setupMemberContextMenu();
-    this._restoreCollapsedLevels();
+    this.#setupMemberHover();
+    this.#setupMemberContextMenu();
+    this.#restoreCollapsedLevels();
     this._onDocumentClick = (event) => {
-      if (this._filteredActorId && this.element.contains(event.target) && !event.target.closest('.member-card')) this._clearSpellFilter();
-      if (this._contextMenu && !event.target.closest('.party-member-context-menu')) this._hideContextMenu();
+      if (this._filteredActorId && this.element.contains(event.target) && !event.target.closest('.member-card')) this.#clearSpellFilter();
+      if (this._contextMenu && !event.target.closest('.party-member-context-menu')) this.#hideContextMenu();
     };
     document.addEventListener('click', this._onDocumentClick);
   }
@@ -95,7 +94,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
   /** @override */
   _onClose(options) {
     if (this._onDocumentClick) document.removeEventListener('click', this._onDocumentClick);
-    this._hideContextMenu();
+    this.#hideContextMenu();
     if (this._onActorUpdate) Hooks.off('updateActor', this._onActorUpdate);
     if (this._onItemChange) {
       Hooks.off('updateItem', this._onItemChange);
@@ -111,7 +110,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @returns {boolean} Whether the change is relevant
    * @private
    */
-  _isRelevantActor(actor) {
+  #isRelevantActor(actor) {
     if (!actor) return false;
     if (actor.id === this.groupActor?.id) return true;
     return this.partyActors.some((a) => a.id === actor.id);
@@ -121,7 +120,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * Drop cached comparison data and re-render.
    * @private
    */
-  _invalidateAndRender() {
+  #invalidateAndRender() {
     this._comparisonData = null;
     this.render();
   }
@@ -131,7 +130,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @param {object[]|undefined} actors - Actor data from analyzePartySpells
    * @private
    */
-  _decorateActors(actors) {
+  #decorateActors(actors) {
     if (!actors) return;
     for (const actorData of actors) {
       const actor = game.actors.get(actorData.id);
@@ -141,11 +140,11 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Sort the level-keyed spell map into an array suitable for template rendering.
-   * @param {Object<string, Object>} spellsByLevel - Level-keyed spell data
+   * @param {Object<string, object>} spellsByLevel - Level-keyed spell data
    * @returns {Array<{level:number, levelName:string, spells:object[]}>} Spell level groups
    * @private
    */
-  _buildSpellLevelGroups(spellsByLevel) {
+  #buildSpellLevelGroups(spellsByLevel) {
     return Object.keys(spellsByLevel)
       .map((l) => parseInt(l))
       .sort((a, b) => a - b)
@@ -163,7 +162,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @returns {Promise<boolean>} Whether the value is now present
    * @private
    */
-  async _toggleUserFlagArray(flagKey, id) {
+  async #toggleUserFlagArray(flagKey, id) {
     const current = game.user.getFlag(MODULE.ID, flagKey) || [];
     const exists = current.includes(id);
     const next = exists ? current.filter((x) => x !== id) : [...current, id];
@@ -177,13 +176,17 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
     new SynergyAnalysis(this._comparisonData.synergy).render({ force: true });
   }
 
-  /** Drop cached analysis and re-render. */
+  /**
+   * Drop cached analysis and re-render.
+   * @this {PartyCoordinator}
+   */
   static #onRefreshData() {
-    this._invalidateAndRender();
+    this.#invalidateAndRender();
   }
 
   /**
    * Toggle collapsed state for a spell-level group.
+   * @this {PartyCoordinator}
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} target - The clicked header element
    */
@@ -191,7 +194,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
     const levelContainer = target.closest('.spell-level-group');
     const levelId = levelContainer?.dataset?.spellLevel;
     if (!levelId) return;
-    const isCollapsed = await this._toggleUserFlagArray(FLAGS.PARTY_COLLAPSED_LEVELS, levelId);
+    const isCollapsed = await this.#toggleUserFlagArray(FLAGS.PARTY_COLLAPSED_LEVELS, levelId);
     levelContainer.classList.toggle('collapsed', isCollapsed);
     const header = levelContainer.querySelector('.level-header');
     const spellList = levelContainer.querySelector('.spells-grid');
@@ -203,6 +206,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * Toggle the per-member spell filter.
+   * @this {PartyCoordinator}
    * @param {Event} event - The triggering event
    * @param {HTMLElement} target - The clicked member card
    */
@@ -210,15 +214,15 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
     event.stopPropagation();
     const actorId = target.dataset.actorId;
     if (!actorId) return;
-    if (this._filteredActorId === actorId) this._clearSpellFilter();
-    else this._applySpellFilter(actorId);
+    if (this._filteredActorId === actorId) this.#clearSpellFilter();
+    else this.#applySpellFilter(actorId);
   }
 
   /**
    * Highlight a member's prepared spells on card hover.
    * @private
    */
-  _setupMemberHover() {
+  #setupMemberHover() {
     for (const card of this.element.querySelectorAll('.member-card')) {
       const actorId = card.dataset.actorId;
       if (!actorId) continue;
@@ -242,7 +246,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * Bind right-click context menus on member cards.
    * @private
    */
-  _setupMemberContextMenu() {
+  #setupMemberContextMenu() {
     for (const card of this.element.querySelectorAll('.member-card')) {
       const actorId = card.dataset.actorId;
       if (!actorId) continue;
@@ -251,7 +255,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
       card.addEventListener('contextmenu', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        this._showContextMenu(event, actor);
+        this.#showContextMenu(event, actor);
       });
     }
   }
@@ -262,8 +266,8 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @param {object} actor - The actor for the clicked card
    * @private
    */
-  _showContextMenu(event, actor) {
-    this._hideContextMenu();
+  #showContextMenu(event, actor) {
+    this.#hideContextMenu();
     const menu = document.createElement('div');
     menu.className = 'party-member-context-menu';
     const item = document.createElement('div');
@@ -276,11 +280,11 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
     item.append(icon, label);
     item.addEventListener('click', async () => {
       if (actor.testUserPermission(game.user, 'LIMITED')) await actor.sheet.render(true);
-      this._hideContextMenu();
+      this.#hideContextMenu();
     });
     menu.appendChild(item);
     document.body.appendChild(menu);
-    this._positionContextMenu(event, menu);
+    this.#positionContextMenu(event, menu);
     this._contextMenu = menu;
   }
 
@@ -290,7 +294,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @param {HTMLElement} menu - The menu element
    * @private
    */
-  _positionContextMenu(event, menu) {
+  #positionContextMenu(event, menu) {
     const rect = menu.getBoundingClientRect();
     let x = event.clientX + 5;
     let y = event.clientY + 5;
@@ -304,7 +308,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * Remove the active context menu, if any.
    * @private
    */
-  _hideContextMenu() {
+  #hideContextMenu() {
     if (!this._contextMenu) return;
     this._contextMenu.remove();
     this._contextMenu = null;
@@ -314,7 +318,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * Restore collapsed spell-level headers from user flags.
    * @private
    */
-  _restoreCollapsedLevels() {
+  #restoreCollapsedLevels() {
     const collapsed = game.user.getFlag(MODULE.ID, FLAGS.PARTY_COLLAPSED_LEVELS) || [];
     for (const levelId of collapsed) {
       const container = this.element.querySelector(`.spell-level-group[data-spell-level="${levelId}"]`);
@@ -334,7 +338,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @param {string} actorId - Actor ID to filter by
    * @private
    */
-  _applySpellFilter(actorId) {
+  #applySpellFilter(actorId) {
     this._filteredActorId = actorId;
     for (const spellItem of this.element.querySelectorAll('.spell-comparison-item')) {
       const status = spellItem.querySelector(`.actor-spell-status[data-actor-id="${actorId}"]`);
@@ -347,8 +351,8 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
       status.classList.add('filtered-actor');
       for (const other of spellItem.querySelectorAll(`.actor-spell-status:not([data-actor-id="${actorId}"])`)) other.classList.add('dimmed');
     }
-    this._updateLevelHeadersForFilter();
-    this._updateMemberCardStates(actorId);
+    this.#updateLevelHeadersForFilter();
+    this.#updateMemberCardStates(actorId);
     this.element.classList.add('member-filter-active');
   }
 
@@ -356,15 +360,15 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * Restore full spell visibility.
    * @private
    */
-  _clearSpellFilter() {
+  #clearSpellFilter() {
     this._filteredActorId = null;
     for (const spellItem of this.element.querySelectorAll('.spell-comparison-item')) {
       spellItem.style.display = '';
       spellItem.classList.remove('member-filtered');
       for (const status of spellItem.querySelectorAll('.actor-spell-status')) status.classList.remove('filtered-actor', 'dimmed');
     }
-    this._updateLevelHeadersForFilter();
-    this._updateMemberCardStates(null);
+    this.#updateLevelHeadersForFilter();
+    this.#updateMemberCardStates(null);
     this.element.classList.remove('member-filter-active');
   }
 
@@ -373,7 +377,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * @param {string|null} filteredActorId - The currently filtered actor
    * @private
    */
-  _updateMemberCardStates(filteredActorId) {
+  #updateMemberCardStates(filteredActorId) {
     for (const card of this.element.querySelectorAll('.member-card')) {
       const actorId = card.dataset.actorId;
       card.classList.remove('filter-active', 'filter-inactive');
@@ -387,15 +391,18 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
    * Recompute level-header spell counts to reflect filtering.
    * @private
    */
-  _updateLevelHeadersForFilter() {
-    const spellsLabel = _loc('SPELLBOOK.Party.Spells');
+  #updateLevelHeadersForFilter() {
     for (const group of this.element.querySelectorAll('.spell-level-group')) {
       const spellItems = group.querySelectorAll('.spell-comparison-item');
       const visible = Array.from(spellItems).filter((item) => item.style.display !== 'none');
       const count = group.querySelector('.spell-count');
-      if (count) count.textContent = this._filteredActorId ? `(${visible.length}/${spellItems.length} ${spellsLabel})` : `(${spellItems.length} ${spellsLabel})`;
+      if (count) {
+        count.textContent = this._filteredActorId
+          ? _loc('SPELLBOOK.Party.SpellCountFiltered', { visible: visible.length, total: spellItems.length })
+          : _loc('SPELLBOOK.Party.SpellCount', { count: spellItems.length });
+      }
       group.style.display = visible.length === 0 ? 'none' : '';
     }
-    ATLAS.log(3, 'Party coordinator: level headers updated.');
+    ATLAS.log(3, 'Party coordinator: level headers updated');
   }
 }

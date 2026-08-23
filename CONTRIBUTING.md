@@ -1,129 +1,124 @@
 # Contributing to Spell Book
 
-Thanks for your interest in contributing to Spell Book. This document provides guidelines for contributing to the project.
+## Prerequisites
 
-## Getting Started
-
-### Prerequisites
-
-- Foundry VTT core version v13 or higher
-- D&D5e system version 5.1.10 or higher
+- [Node.js](https://nodejs.org/) 20+
+- [Foundry VTT](https://foundryvtt.com/) v14 or higher
+- [D&D5e](https://github.com/foundryvtt/dnd5e) system 5.3.0 or higher
+- [3DS-ATLAS](https://github.com/Sayshal/3ds-atlas), which provides the logger, theming and every localized string
 - A code editor (VS Code recommended)
 
-### Development Setup
-
-1. Clone the repository:
+## Getting Started
 
 ```bash
 git clone https://github.com/Sayshal/spell-book.git
 cd spell-book
+npm install
+npm run build
 ```
 
-2. Create a symbolic link to your Foundry modules directory:
+`npm run build` writes the module to `dist/`. Point a symlink from your Foundry `Data/modules/spell-book`
+at that folder, then enable Spell Book in a world. Use `npm run build:watch` while developing for
+incremental rebuilds.
 
-```bash
-# Windows (PowerShell as Admin)
-New-Item -ItemType SymbolicLink -Path "C:\Users\YourName\AppData\Local\FoundryVTT\Data\modules\spell-book" -Target "path\to\cloned\repo"
+For intellisense, the repo expects `foundry/` and `dnd5e/` alongside the source as sibling checkouts.
+Both are reference only — never edit them.
 
-# macOS/Linux
-ln -s /path/to/cloned/repo ~/Library/Application\ Support/FoundryVTT/Data/modules/spell-book
-```
+## Commands
 
-3. Enable Hot Reload module in Foundry (optional but recommended) for instant CSS/HTML updates
-
-4. Launch Foundry and enable Spell Book in a test world
+| Command                 | Description                         |
+| ----------------------- | ----------------------------------- |
+| `npm run build`         | Production build to `dist/`         |
+| `npm run build:watch`   | Watch mode rebuild                  |
+| `npm run dev`           | Development build (no minification) |
+| `npm run clean`         | Remove `dist/` except packs/storage |
+| `npm run lint`          | Run ESLint                          |
+| `npm run lint:fix`      | Run ESLint with auto-fix            |
+| `npm run format`        | Format with Prettier                |
+| `npm run format:check`  | Check formatting                    |
+| `npm run stylelint`     | Lint CSS                            |
+| `npm run stylelint:fix` | Lint CSS with auto-fix              |
+| `npm run validate`      | Run lint + format check + stylelint |
 
 ## Project Structure
 
 ```text
 spell-book/
-├── scripts/           # JavaScript modules (.mjs)
-├── styles/            # CSS stylesheets
+├── scripts/
+│   ├── apps/          # ApplicationV2 windows
+│   ├── data/          # Compendium and journal access
+│   ├── dialogs/       # DialogV2 and small ApplicationV2 dialogs
+│   ├── integrations/  # Optional third-party modules
+│   ├── managers/      # Domain logic
+│   ├── ui/            # Rendering and formatting helpers
+│   └── utils/         # Sheet buttons and cross-cutting helpers
+├── styles/            # CSS
 ├── templates/         # Handlebars templates (.hbs)
-├── lang/              # Localization files (JSON)
 ├── assets/            # Images and media
 ├── storage/           # Compendium data (not tracked)
 ├── .github/workflows/ # CI/CD automation
 └── module.json        # Module manifest
 ```
 
-## Making Changes
+Each `scripts/` subdirectory has a `_module.mjs` barrel. Import through the barrel unless doing so
+would create an import cycle.
 
-### Code Style
+## Code Style
 
-- Use ES6+ features and module syntax (.mjs)
-- Follow existing code patterns and naming conventions
-- Add JSDoc comments for functions and classes
-- Keep functions focused and single-purpose
-- Use meaningful variable and function names
+ESLint, Prettier and Stylelint configs live in the repo root and are authoritative. Run
+`npm run validate` before opening a pull request.
 
-### Testing
+- ES modules (`.mjs`) only
+- ApplicationV2 and DialogV2; no legacy Application or Dialog
+- Use meaningful names; no abbreviations that need a lookup
+- Module-invented class members are `#private`; a leading underscore means a Foundry hook
 
-Before submitting changes:
+## Localization
 
-1. Test in a clean Foundry world with only required modules
-2. Verify compatibility with both dnd5e Legacy (2014) and Modern (2024) rules
+Spell Book has no `lang/` directory. Every user-facing string lives in
+[3DS-ATLAS](https://github.com/Sayshal/3ds-atlas) under `lang/`, keyed `SPELLBOOK.*`, with shared
+strings under `ATLAS.Common.*`.
+
+- Add or change **English** keys in `3ds-atlas/lang/en.json` only; translations are handled separately
+- Removing a key means removing it from every language file in the same change
+- Run `npm run build` in `3ds-atlas` after editing — Foundry loads `dist/lang/en.json`, not the source
+
+## Testing
+
+There is no automated test suite. Before submitting changes:
+
+1. Test in a clean Foundry world with only the required modules
+2. Verify both dnd5e Legacy (2014) and Modern (2024) rule sets
 3. Test with multiclass characters if touching preparation logic
-4. Check console for errors or warnings
-5. Test both player and GM perspectives
+4. Check the console for errors or warnings
+5. Test from both player and GM perspectives
 
-### Workflow
+## Submitting Changes
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature-name`
-3. Make your changes
-4. Commit with clear messages: `git commit -m "Add feature: brief description"`
-5. Push to your fork: `git push origin feature/your-feature-name`
-6. Open a Pull Request against the `main` branch
+All pull requests **must** reference an open issue. Open one first if none exists.
 
-### Commit Messages
+1. Fork the repository and create a branch from `main`.
+2. Make your changes in focused, logical commits.
+3. Run `npm run validate`.
+4. Open a pull request against `main` and reference the issue (e.g. `Closes #123`).
 
-Keep commit messages clear and descriptive:
+## Reporting Issues
 
-- Use present tense: "Add feature" not "Added feature"
-- Reference issues when applicable: "Fix #123: Resolve preparation limit bug"
-- For releases, use semantic versioning in commit title: `1.2.3`
+Use [GitHub Issues](../../issues) with the appropriate template:
 
-### Pull Requests
+- **Bug Report** — defects or unexpected behavior
+- **Feature Request** — new functionality or enhancements
 
-- Provide a clear description of changes
-- Link related issues
-- Include screenshots for UI changes
-- Ensure all tests pass
-- Be responsive to feedback
+Include steps to reproduce, expected vs actual behavior, and your Foundry VTT and dnd5e versions.
 
-## Areas for Contribution
+## Releases
 
-### Bug Fixes
+Releases are cut by pushing a `release-*` tag; `.github/workflows/release.yml` triggers on that tag,
+not on commits to `main`.
 
-Check the Issues tab for reported bugs. Include steps to reproduce when reporting new bugs.
-
-### Features
-
-Discuss major features in an issue before implementing to ensure alignment with project goals.
-
-### Documentation
-
-Help improve wiki pages, code comments, or user guides.
-
-### Localization
-
-Contribute translations for the module. Language files are in `/lang`.
-
-## Building and Releases
-
-Releases are automated via GitHub Actions when version commits are pushed to `main`:
-
-- Commit message must include version number: `1.2.3`
-- Workflow updates `module.json`, creates zip, publishes release
-- Notifies Foundry package API and Discord webhook
-
-Do not manually edit version numbers in `module.json` - the workflow handles this.
-
-## Questions?
-
-Open an issue for questions about contributing or development setup.
+- Tag format is `release-X.Y.Z`, and the version must match `module.json`
+- The workflow builds, zips, publishes the GitHub release, notifies the Foundry package API and posts to Discord
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+By contributing, you agree that your contributions will be licensed under the project's [MIT License](LICENSE).

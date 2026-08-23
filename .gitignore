@@ -1,7 +1,7 @@
 /storage
 /packs
-/todos
 *.lock
 /todo
 README.html
-/.vscode
+/dist
+/node_modules

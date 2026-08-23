@@ -1,15 +1,9 @@
-/**
- * Spell Loadout Data Management
- * @module Managers/Loadouts
- * @author Tyler
- */
-
 import { FLAGS, MODULE } from '../constants.mjs';
 
 /** Loadout Manager — data layer for spell preparation presets. No DOM querying. */
 export class Loadouts {
-  /** @type {WeakMap<object, object>} */
-  static _cache = new WeakMap();
+  /** @type {WeakMap<object, object>} Actor -> stored loadouts, keyed by loadout id */
+  static #cache = new WeakMap();
 
   /**
    * Get all loadouts for an actor, optionally filtered by class.
@@ -18,10 +12,10 @@ export class Loadouts {
    * @returns {object[]} Array of loadout objects
    */
   static getLoadouts(actor, classIdentifier = null) {
-    if (!this._cache.has(actor)) {
-      this._cache.set(actor, actor.getFlag(MODULE.ID, FLAGS.SPELL_LOADOUTS) || {});
+    if (!this.#cache.has(actor)) {
+      this.#cache.set(actor, actor.getFlag(MODULE.ID, FLAGS.SPELL_LOADOUTS) || {});
     }
-    const all = Object.values(this._cache.get(actor));
+    const all = Object.values(this.#cache.get(actor));
     if (!classIdentifier) return all;
     return all.filter((l) => !l.classIdentifier || l.classIdentifier === classIdentifier);
   }
@@ -48,7 +42,7 @@ export class Loadouts {
    */
   static async saveLoadout(actor, classIdentifier, name, description, spellConfig) {
     if (!name?.trim()) {
-      ATLAS.log(2, 'Loadout name is required.', { actorName: actor.name });
+      ATLAS.log(2, 'Loadout name is required', { actorName: actor.name });
       return null;
     }
     const loadoutId = foundry.utils.randomID();
@@ -62,8 +56,8 @@ export class Loadouts {
       updatedAt: Date.now()
     };
     await actor.update({ [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.${loadoutId}`]: loadout });
-    this._cache.delete(actor);
-    ATLAS.log(3, 'Loadout saved.', { actorName: actor.name, loadoutId, name: loadout.name });
+    this.#cache.delete(actor);
+    ATLAS.log(3, 'Loadout saved', { actorName: actor.name, loadoutId, name: loadout.name });
     return loadoutId;
   }
 
@@ -76,12 +70,12 @@ export class Loadouts {
   static async deleteLoadout(actor, loadoutId) {
     const loadouts = actor.getFlag(MODULE.ID, FLAGS.SPELL_LOADOUTS) || {};
     if (!loadouts[loadoutId]) {
-      ATLAS.log(2, 'Loadout not found.', { actorName: actor.name, loadoutId });
+      ATLAS.log(2, 'Loadout not found', { actorName: actor.name, loadoutId });
       return false;
     }
-    await actor.update({ [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.-=${loadoutId}`]: null });
-    this._cache.delete(actor);
-    ATLAS.log(3, 'Loadout deleted.', { actorName: actor.name, loadoutId });
+    await actor.update({ [`flags.${MODULE.ID}.${FLAGS.SPELL_LOADOUTS}.${loadoutId}`]: _del });
+    this.#cache.delete(actor);
+    ATLAS.log(3, 'Loadout deleted', { actorName: actor.name, loadoutId });
     return true;
   }
 
@@ -90,6 +84,6 @@ export class Loadouts {
    * @param {object} actor - The actor document
    */
   static invalidateCache(actor) {
-    this._cache.delete(actor);
+    this.#cache.delete(actor);
   }
 }

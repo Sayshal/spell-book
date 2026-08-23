@@ -2,7 +2,7 @@
   <header class="party-header">
     <div class="party-info">
       <span class="party-name">{{groupName}}</span>
-      <span class="party-meta">{{comparison.actors.length}} {{localize "SPELLBOOK.Party.Members"}}</span>
+      <span class="party-meta">{{comparison.actors.length}} {{localize "ATLAS.Common.Members"}}</span>
     </div>
     <div class="party-actions">
       <button type="button" class="party-action-btn" data-action="refreshData"
@@ -36,7 +36,7 @@
           {{#if actor.hasPermission}}
             <div class="spell-counts">
               <span class="count-badge"
-                data-tooltip="{{localize 'SPELLBOOK.Party.Known'}}">{{actor.totalSpellsKnown}}</span>
+                data-tooltip="{{localize 'ATLAS.Common.Known'}}">{{actor.totalSpellsKnown}}</span>
               <span class="count-badge prepared"
                 data-tooltip="{{localize 'SPELLBOOK.Party.Prepared'}}">{{actor.totalSpellsPrepared}}</span>
             </div>
@@ -52,7 +52,7 @@
           aria-controls="spell-list-{{levelGroup.level}}">
           <i class="fas fa-caret-down collapse-indicator" aria-hidden="true"></i>
           <span class="level-name">{{levelGroup.levelName}}</span>
-          <span class="spell-count">({{levelGroup.spells.length}})</span>
+          <span class="spell-count">{{localize "SPELLBOOK.Party.SpellCount" count=levelGroup.spells.length}}</span>
         </h4>
         <div class="spells-grid" id="spell-list-{{levelGroup.level}}">
           {{#each levelGroup.spells as |spell|}}

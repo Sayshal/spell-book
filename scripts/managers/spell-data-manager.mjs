@@ -8,7 +8,7 @@ import { WizardBook } from './wizard-book.mjs';
 /** Manages per-class spell list caching, fetching, and level organization. */
 export class SpellDataManager {
   /** @type {WeakMap<object, Map<string, object[]>>} Cached full-class spell documents per actor per class */
-  static _cache = new WeakMap();
+  static #cache = new WeakMap();
 
   /**
    * Get the preparable spell list for a class tab.
@@ -17,14 +17,14 @@ export class SpellDataManager {
    * @returns {Promise<object[]>} Filtered spell documents
    */
   static async getPreparableSpellsForClass(actor, classIdentifier) {
-    const allClassSpells = await this._getFullClassList(actor, classIdentifier);
+    const allClassSpells = await this.#getFullClassList(actor, classIdentifier);
     const wizardClasses = ClassManager.getWizardEnabledClasses(actor);
     const isWizard = wizardClasses.some((w) => w.identifier === classIdentifier);
     if (!isWizard) return allClassSpells;
     const journal = await WizardBook.getWizardSpellbook(actor, classIdentifier);
     const journalSet = new Set(journal.map((uuid) => foundry.utils.parseUuid(uuid).uuid));
-    const grantedSet = this._collectGrantedSpellUuids(actor);
-    const hideCantrips = this._shouldHideCantrips(actor, classIdentifier);
+    const grantedSet = this.#collectGrantedSpellUuids(actor);
+    const hideCantrips = this.#shouldHideCantrips(actor, classIdentifier);
     return allClassSpells.filter((spell) => {
       const isCantrip = spell.system.level === 0;
       if (isCantrip) return !hideCantrips;
@@ -40,7 +40,7 @@ export class SpellDataManager {
    * @returns {Promise<object[]>} Spell documents (non-cantrips only)
    */
   static async getLearnableSpellsForClass(actor, classIdentifier) {
-    const allClassSpells = await this._getFullClassList(actor, classIdentifier);
+    const allClassSpells = await this.#getFullClassList(actor, classIdentifier);
     return allClassSpells.filter((spell) => spell.system.level !== 0);
   }
 
@@ -65,19 +65,19 @@ export class SpellDataManager {
    * @returns {Promise<object[]>} Array of spell documents
    * @private
    */
-  static async _getFullClassList(actor, classIdentifier) {
-    const cached = this._getFromCache(actor, classIdentifier);
+  static async #getFullClassList(actor, classIdentifier) {
+    const cached = this.#getFromCache(actor, classIdentifier);
     if (cached) return cached;
     const spellUuids = await getClassSpellList(classIdentifier, actor);
     if (!spellUuids?.size) {
-      ATLAS.log(3, 'No spell list assigned for class.', { actorName: actor.name, classIdentifier });
-      this._setCache(actor, classIdentifier, []);
+      ATLAS.log(3, 'No spell list assigned for class', { actorName: actor.name, classIdentifier });
+      this.#setCache(actor, classIdentifier, []);
       return [];
     }
     const maxLevel = this._calculateMaxSpellLevel(actor, classIdentifier);
     const spells = await fetchSpellsByUuids(spellUuids, maxLevel);
-    this._setCache(actor, classIdentifier, spells);
-    ATLAS.log(3, 'Class spell list loaded.', { actorName: actor.name, classIdentifier, count: spells.length, maxLevel });
+    this.#setCache(actor, classIdentifier, spells);
+    ATLAS.log(3, 'Class spell list loaded', { actorName: actor.name, classIdentifier, count: spells.length, maxLevel });
     return spells;
   }
 
@@ -88,7 +88,7 @@ export class SpellDataManager {
    * @returns {boolean} True if cantrips should be hidden
    * @private
    */
-  static _shouldHideCantrips(actor, classIdentifier) {
+  static #shouldHideCantrips(actor, classIdentifier) {
     const rules = RuleSet.getClassRules(actor, classIdentifier);
     if (rules && rules.showCantrips !== undefined) return !rules.showCantrips;
     return [CLASS_IDENTIFIERS.PALADIN, CLASS_IDENTIFIERS.RANGER].includes(classIdentifier);
@@ -100,7 +100,7 @@ export class SpellDataManager {
    * @returns {Set<string>} Canonical UUIDs
    * @private
    */
-  static _collectGrantedSpellUuids(actor) {
+  static #collectGrantedSpellUuids(actor) {
     const granted = new Set();
     for (const item of actor.itemTypes.spell) {
       const method = item.system?.method;
@@ -118,14 +118,14 @@ export class SpellDataManager {
    * @param {object} actor - The actor document
    */
   static invalidateCache(actor) {
-    this._cache.delete(actor);
-    ATLAS.log(3, 'SpellDataManager cache invalidated.', { actorName: actor.name });
+    this.#cache.delete(actor);
+    ATLAS.log(3, 'SpellDataManager cache invalidated', { actorName: actor.name });
   }
 
   /** Invalidate all cached spell data for every actor (e.g. when spell list definitions change). */
   static invalidateAllCaches() {
-    this._cache = new WeakMap();
-    ATLAS.log(3, 'SpellDataManager: all caches invalidated.');
+    this.#cache = new WeakMap();
+    ATLAS.log(3, 'SpellDataManager: all caches invalidated');
   }
 
   /**
@@ -134,7 +134,7 @@ export class SpellDataManager {
    * @param {string} classIdentifier - The class identifier
    */
   static invalidateClassCache(actor, classIdentifier) {
-    if (this._cache.has(actor)) this._cache.get(actor).delete(classIdentifier);
+    if (this.#cache.has(actor)) this.#cache.get(actor).delete(classIdentifier);
   }
 
   /**
@@ -175,8 +175,8 @@ export class SpellDataManager {
    * @returns {object[]|null} Cached spells or null
    * @private
    */
-  static _getFromCache(actor, classIdentifier) {
-    return this._cache.get(actor)?.get(classIdentifier) ?? null;
+  static #getFromCache(actor, classIdentifier) {
+    return this.#cache.get(actor)?.get(classIdentifier) ?? null;
   }
 
   /**
@@ -185,8 +185,8 @@ export class SpellDataManager {
    * @param {object[]} spells - Spell documents to cache
    * @private
    */
-  static _setCache(actor, classIdentifier, spells) {
-    if (!this._cache.has(actor)) this._cache.set(actor, new Map());
-    this._cache.get(actor).set(classIdentifier, spells);
+  static #setCache(actor, classIdentifier, spells) {
+    if (!this.#cache.has(actor)) this.#cache.set(actor, new Map());
+    this.#cache.get(actor).set(classIdentifier, spells);
   }
 }

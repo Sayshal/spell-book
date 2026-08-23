@@ -1,34 +1,10 @@
-import { MODULE, SETTINGS } from '../constants.mjs';
+import { MODULE, UI_ELEMENTS } from '../constants.mjs';
 import { formatMaterialComponents, formatSpellActivation, formatSpellComponents, formatSpellLevel, formatSpellRange, formatSpellSchool, hasSpellProperty } from './formatting.mjs';
 
-const PLAYER_ELEMENTS = ['compare', 'favorites', 'notes', 'spellLevel', 'components', 'school', 'castingTime', 'range', 'damageTypes', 'conditions', 'save', 'concentration', 'materialComponents'];
-const GM_ELEMENTS = ['compare', 'spellLevel', 'components', 'school', 'castingTime', 'range', 'damageTypes', 'conditions', 'save', 'concentration', 'materialComponents'];
-const METADATA_ELEMENTS = ['spellLevel', 'components', 'school', 'castingTime', 'range', 'damageTypes', 'conditions', 'save', 'concentration', 'materialComponents'];
-
-const SETTING_KEY_MAP = {
-  favorites: 'FAVORITES',
-  compare: 'COMPARE',
-  notes: 'NOTES',
-  spellLevel: 'SPELL_LEVEL',
-  components: 'COMPONENTS',
-  school: 'SCHOOL',
-  castingTime: 'CASTING_TIME',
-  range: 'RANGE',
-  damageTypes: 'DAMAGE_TYPES',
-  conditions: 'CONDITIONS',
-  save: 'SAVE',
-  concentration: 'CONCENTRATION',
-  materialComponents: 'MATERIAL_COMPONENTS'
-};
-
-/**
- * Convert element name to the SETTINGS constant key.
- * @param {string} element - Element name
- * @returns {string} Setting key suffix
- */
-function toSettingKey(element) {
-  return SETTING_KEY_MAP[element] || element.toUpperCase();
-}
+const PLAYER_ELEMENTS = UI_ELEMENTS.map((element) => element.key);
+const GM_ELEMENTS = UI_ELEMENTS.filter((element) => element.gm).map((element) => element.key);
+const METADATA_ELEMENTS = UI_ELEMENTS.filter((element) => element.metadata).map((element) => element.key);
+const BY_KEY = new Map(UI_ELEMENTS.map((element) => [element.key, element]));
 
 /**
  * Check if a player UI element is enabled.
@@ -36,8 +12,8 @@ function toSettingKey(element) {
  * @returns {boolean} Whether the element is enabled
  */
 export function isPlayerElementEnabled(element) {
-  const settingKey = `PLAYER_UI_${toSettingKey(element)}`;
-  return game.settings.get(MODULE.ID, SETTINGS[settingKey]) ?? true;
+  const setting = BY_KEY.get(element)?.player;
+  return setting ? (game.settings.get(MODULE.ID, setting) ?? true) : true;
 }
 
 /**
@@ -46,9 +22,8 @@ export function isPlayerElementEnabled(element) {
  * @returns {boolean} Whether the element is enabled
  */
 export function isGMElementEnabled(element) {
-  if (element === 'favorites' || element === 'notes') return false;
-  const settingKey = `GM_UI_${toSettingKey(element)}`;
-  return game.settings.get(MODULE.ID, SETTINGS[settingKey]) ?? true;
+  const setting = BY_KEY.get(element)?.gm;
+  return setting ? (game.settings.get(MODULE.ID, setting) ?? true) : false;
 }
 
 /**
@@ -58,7 +33,7 @@ export function isGMElementEnabled(element) {
 export function getEnabledPlayerElements() {
   const enabled = new Set();
   for (const element of PLAYER_ELEMENTS) if (isPlayerElementEnabled(element)) enabled.add(element);
-  ATLAS.log(3, 'Retrieved enabled player elements.', { count: enabled.size });
+  ATLAS.log(3, 'Retrieved enabled player elements', { count: enabled.size });
   return enabled;
 }
 
@@ -69,7 +44,7 @@ export function getEnabledPlayerElements() {
 export function getEnabledGMElements() {
   const enabled = new Set();
   for (const element of GM_ELEMENTS) if (isGMElementEnabled(element)) enabled.add(element);
-  ATLAS.log(3, 'Retrieved enabled GM elements.', { count: enabled.size });
+  ATLAS.log(3, 'Retrieved enabled GM elements', { count: enabled.size });
   return enabled;
 }
 

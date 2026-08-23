@@ -1,11 +1,10 @@
-import { RuleSet } from '../managers/_module.mjs';
+import { RuleSet } from '../managers/rule-set.mjs';
 
 /** @type {object} dnd5e SpellListRegistry reference */
 const spellLists = dnd5e.registry.spellLists;
 
 /**
  * Get the full spell UUID set for a class, pulling from the user-selected class and subclass lists.
- * No registry fallback: both lists are explicit per-actor config.
  * @param {string} classIdentifier - Class identifier (e.g. 'wizard')
  * @param {object} actor - The actor to resolve rules for
  * @returns {Promise<Set<string>>} Set of spell UUIDs available to the class
@@ -19,7 +18,7 @@ export async function getClassSpellList(classIdentifier, actor) {
   }
   const subclassUuids = await resolveCustomSpellLists(classRules.customSubclassSpellList);
   for (const uuid of subclassUuids) classUuids.add(uuid);
-  ATLAS.log(3, `Resolved spell list for ${classIdentifier} (${classUuids.size} spells).`);
+  ATLAS.log(3, `Resolved spell list for ${classIdentifier} (${classUuids.size} spells)`);
   return classUuids;
 }
 
@@ -34,13 +33,12 @@ export function findSpellListsByType(type) {
 
 /**
  * Resolve a UUID or array of UUIDs referring to spell list journal pages into a merged Set of spell UUIDs.
- * @param {string|string[]|null|undefined} customSpellList - UUID or array of UUIDs
+ * @param {string[]|null|undefined} customSpellList - Array of spell list page UUIDs
  * @returns {Promise<Set<string>>} Merged spell UUIDs from all valid referenced lists
  */
 async function resolveCustomSpellLists(customSpellList) {
-  const uuids = Array.isArray(customSpellList) ? customSpellList : customSpellList ? [customSpellList] : [];
   const merged = new Set();
-  for (const uuid of uuids) {
+  for (const uuid of customSpellList || []) {
     if (!uuid || typeof uuid !== 'string') continue;
     const doc = await fromUuid(uuid);
     if (!(doc?.system?.spells?.size > 0)) continue;

@@ -10,9 +10,9 @@
   "changelog": "https://github.com/Sayshal/spell-book/releases",
   "compatibility": {
     "minimum": "14",
-    "verified": "14.365"
+    "verified": "14.367"
   },
-  "description": "Because preparing spells shouldn't feel like an IRS audit. Spell Book replaces the cramped dnd5e prepare list with a dedicated window: one tab per casting class, filters, favorites, and loadouts you swap in with a click. GMs get a spell-list editor, wizards get a gold-and-time spellbook to copy into, and a party screen catches prep overlap.",
+  "description": "Because preparing your spells shouldn't feel like an IRS audit. Spell Book replaces the cramped dnd5e prepare list with a dedicated window: one tab per casting class, filters, favorites, and loadouts you swap in with a click. GMs get a spell-list editor, wizards get a gold-and-time spellbook to copy into, and a party screen catches prep overlap.",
   "download": "",
   "esmodules": ["spell-book.mjs"],
   "flags": {
@@ -29,7 +29,7 @@
       "flags": {},
       "loop": false,
       "type": "setup",
-      "url": "modules/spell-book/assets/Desk.webp"
+      "url": "modules/spell-book/assets/desk.webp"
     }
   ],
   "packFolders": [
@@ -68,6 +68,7 @@
       "banner": "modules/spell-book/assets/desk_03.webp",
       "label": "Spell Book Macros",
       "name": "spell-book-macros",
+      "path": "storage/spell-book-macros",
       "ownership": {
         "ASSISTANT": "OWNER",
         "PLAYER": "NONE"
@@ -96,7 +97,6 @@
       }
     ]
   },
-  "socket": true,
   "styles": ["styles/spell-book.css"],
   "title": "Spell Book",
   "url": "https://github.com/Sayshal/spell-book",

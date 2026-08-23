@@ -1,0 +1,38 @@
+{
+  "name": "spell-book",
+  "version": "1.0.0",
+  "description": "Spell preparation, loadouts and wizard spellbooks for FoundryVTT",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "stylelint": "stylelint \"**/*.css\"",
+    "stylelint:fix": "stylelint \"**/*.css\" --fix",
+    "build": "rollup -c rollup.config.mjs",
+    "build:watch": "rollup -c rollup.config.mjs --watch",
+    "dev": "rollup -c rollup.config.mjs --environment BUILD:development",
+    "clean": "node -e \"import('fs').then(f=>{if(!f.existsSync('dist'))return;for(const e of f.readdirSync('dist')) if(e!=='storage'&&e!=='packs') f.rmSync('dist/'+e,{recursive:true,force:true})})\"",
+    "validate": "npm run lint && npm run format:check && npm run stylelint"
+  },
+  "author": "Tyler",
+  "license": "MIT",
+  "private": true,
+  "bugs": {
+    "url": "https://github.com/Sayshal/spell-book/issues"
+  },
+  "homepage": "https://github.com/Sayshal/spell-book#readme",
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@rollup/plugin-terser": "^1.0.0",
+    "eslint": "^9.27.0",
+    "eslint-plugin-jsdoc": "^50.8.0",
+    "globals": "^15.15.0",
+    "prettier": "^3.3.3",
+    "rollup": "^4.59.0",
+    "rollup-plugin-copy": "^3.5.0",
+    "rollup-plugin-postcss": "^4.0.2",
+    "stylelint": "^16.19.1",
+    "stylelint-config-standard": "^37.0.0"
+  }
+}

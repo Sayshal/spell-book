@@ -1,4 +1,3 @@
-
 /** @type {object} Default filter state used when DOM is unavailable. */
 export const DEFAULT_FILTER_STATE = Object.freeze({
   name: '',
@@ -13,12 +12,11 @@ export const DEFAULT_FILTER_STATE = Object.freeze({
   requiresSave: '',
   prepared: false,
   favorited: false,
+  affordable: false,
   properties: {},
   materialCostly: false,
-  preparedByParty: false,
   target: '',
-  source: '',
-  spellSource: ''
+  source: ''
 });
 
 /** @type {object|null} Cached filter state */
@@ -53,13 +51,13 @@ export function getFilterState(formElement) {
     requiresSave: formElement.querySelector('[name="filter-requiresSave"]')?.value || '',
     prepared: formElement.querySelector('[name="filter-prepared"]')?.checked || false,
     favorited: formElement.querySelector('[name="filter-favorited"]')?.checked || false,
+    affordable: formElement.querySelector('[name="filter-affordable"]')?.checked || false,
     properties,
     materialCostly: formElement.querySelector('[name="filter-material-costly"]')?.checked || false,
     target: formElement.querySelector('[name="filter-target"]')?.value || '',
-    preparedByParty: formElement.querySelector('[name="filter-preparedByParty"]')?.checked || false,
     source: formElement.querySelector('[name="filter-source"]')?.value || ''
   };
-  ATLAS.log(3, 'Filter state read from DOM.');
+  ATLAS.log(3, 'Filter state read from DOM');
   return cachedState;
 }
 
@@ -68,7 +66,7 @@ export function getFilterState(formElement) {
  */
 export function clearFilterState() {
   cachedState = null;
-  ATLAS.log(3, 'Filter cache cleared.');
+  ATLAS.log(3, 'Filter cache cleared');
 }
 
 /**
@@ -93,7 +91,7 @@ export function bindFilterListeners(filterContainer) {
     },
     opts
   );
-  ATLAS.log(3, 'Filter listeners bound.');
+  ATLAS.log(3, 'Filter listeners bound');
 }
 
 /**

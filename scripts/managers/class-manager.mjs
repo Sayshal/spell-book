@@ -1,19 +1,13 @@
-/**
- * Class Detection and Configuration Manager
- * @module Managers/ClassManager
- * @author Tyler
- */
-
-import { CLASS_IDENTIFIERS, FLAGS, MODULE, SPELL_MODE } from '../constants.mjs';
+import { CLASS_IDENTIFIERS, FLAGS, MODULE, SOURCE_PREFIXES, SPELL_MODE, SWAP_MODES } from '../constants.mjs';
 import { RuleSet } from './rule-set.mjs';
 
 /** Manages spellcasting class detection, configuration, and identifier resolution. */
 export class ClassManager {
-  /** @type {WeakMap<object, Object<string, object>>} */
-  static _classCache = new WeakMap();
+  /** @type {WeakMap<object, Object<string, object>>} Actor -> detected spellcasting classes, keyed by identifier */
+  static #classCache = new WeakMap();
 
-  /** @type {WeakMap<object, object[]>} */
-  static _wizardCache = new WeakMap();
+  /** @type {WeakMap<object, object[]>} Actor -> classes that behave as wizards, natural or forced */
+  static #wizardCache = new WeakMap();
 
   /**
    * Detect spellcasting classes on an actor. Cached per actor reference.
@@ -21,17 +15,17 @@ export class ClassManager {
    * @returns {Object<string, object>} Map of identifier → class info
    */
   static detectSpellcastingClasses(actor) {
-    if (this._classCache.has(actor)) return this._classCache.get(actor);
-    ATLAS.log(3, 'Detecting spellcasting classes.', { actorName: actor.name });
+    if (this.#classCache.has(actor)) return this.#classCache.get(actor);
+    ATLAS.log(3, 'Detecting spellcasting classes', { actorName: actor.name });
     const classes = {};
     if (!actor.spellcastingClasses) {
-      this._classCache.set(actor, classes);
+      this.#classCache.set(actor, classes);
       return classes;
     }
     for (const [identifier, classItem] of Object.entries(actor.spellcastingClasses)) {
       const spellcastingConfig = classItem.spellcasting;
       if (!spellcastingConfig) continue;
-      const spellcastingSource = this._resolveSpellcastingSource(classItem);
+      const spellcastingSource = this.#resolveSpellcastingSource(classItem);
       classes[identifier] = {
         name: classItem.name,
         uuid: classItem.uuid,
@@ -45,8 +39,8 @@ export class ClassManager {
         ritualRules: this.getClassRitualRules(identifier)
       };
     }
-    this._classCache.set(actor, classes);
-    ATLAS.log(3, 'Spellcasting classes detected.', { actorName: actor.name, classCount: Object.keys(classes).length, classIds: Object.keys(classes) });
+    this.#classCache.set(actor, classes);
+    ATLAS.log(3, 'Spellcasting classes detected', { actorName: actor.name, classCount: Object.keys(classes).length, classIds: Object.keys(classes) });
     return classes;
   }
 
@@ -56,25 +50,23 @@ export class ClassManager {
    * @returns {object[]} Array of { identifier, classItem, isNaturalWizard, isForceWizard }
    */
   static getWizardEnabledClasses(actor) {
-    if (this._wizardCache.has(actor)) return this._wizardCache.get(actor);
+    if (this.#wizardCache.has(actor)) return this.#wizardCache.get(actor);
     const result = [];
-    const localizedWizardName = _loc('SPELLBOOK.Classes.Wizard').toLowerCase();
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     if (actor.spellcastingClasses) {
       for (const [identifier, classData] of Object.entries(actor.spellcastingClasses)) {
-        const isNaturalWizard = classData.name.toLowerCase() === localizedWizardName;
+        const isNaturalWizard = identifier === CLASS_IDENTIFIERS.WIZARD;
         const isForceWizard = classRules[identifier]?.forceWizardMode === true;
         if (isNaturalWizard || isForceWizard) result.push({ identifier, classItem: classData, isNaturalWizard, isForceWizard });
       }
     }
-    this._wizardCache.set(actor, result);
-    ATLAS.log(3, 'Wizard classes detected.', { actorName: actor.name, count: result.length });
+    this.#wizardCache.set(actor, result);
+    ATLAS.log(3, 'Wizard classes detected', { actorName: actor.name, count: result.length });
     return result;
   }
 
   /**
    * Get spellcasting configuration for a class.
-   * @todo this seems stupid.
    * @param {object} actor - The actor document
    * @param {string} classIdentifier - The class identifier
    * @returns {object|null} Spellcasting configuration or null
@@ -85,7 +77,6 @@ export class ClassManager {
 
   /**
    * Get the item that provides spellcasting for a class (main class or subclass).
-   * @todo this seems stupid.
    * @param {object} actor - The actor document
    * @param {string} classIdentifier - The class identifier
    * @returns {object|null} The source item or null
@@ -96,7 +87,6 @@ export class ClassManager {
 
   /**
    * Get effective class levels for spellcasting.
-   * @todo this seems stupid.
    * @param {object} actor - The actor document
    * @param {string} classIdentifier - The class identifier
    * @returns {number} Class levels or 0
@@ -107,7 +97,6 @@ export class ClassManager {
 
   /**
    * Determine the preparation mode from a spellcasting configuration.
-   * @todo this seems stupid.
    * @param {object} spellcastingConfig - The spellcasting configuration object
    * @returns {string} 'pact' or 'spell'
    */
@@ -141,10 +130,10 @@ export class ClassManager {
   static getClassSwapRules(actor, classIdentifier) {
     const classRules = RuleSet.getClassRules(actor, classIdentifier);
     return {
-      canSwapCantrips: classRules.cantripSwapping !== 'none',
-      cantripSwapMode: classRules.cantripSwapping || 'none',
-      canSwapSpells: classRules.spellSwapping !== 'none',
-      spellSwapMode: classRules.spellSwapping || 'none'
+      canSwapCantrips: classRules.cantripSwapping !== SWAP_MODES.NONE,
+      cantripSwapMode: classRules.cantripSwapping || SWAP_MODES.NONE,
+      canSwapSpells: classRules.spellSwapping !== SWAP_MODES.NONE,
+      spellSwapMode: classRules.spellSwapping || SWAP_MODES.NONE
     };
   }
 
@@ -156,7 +145,7 @@ export class ClassManager {
   static getSpellClassIdentifier(spell) {
     if (!spell) return '';
     const sourceItem = spell.system?.sourceItem;
-    if (typeof sourceItem === 'string' && sourceItem.startsWith('class:')) return sourceItem.slice(6);
+    if (typeof sourceItem === 'string' && sourceItem.startsWith(SOURCE_PREFIXES.CLASS)) return sourceItem.slice(SOURCE_PREFIXES.CLASS.length);
     if (typeof spell.system?.classIdentifier === 'string' && spell.system.classIdentifier) return spell.system.classIdentifier;
     if (typeof spell._classContext === 'string' && spell._classContext) return spell._classContext;
     return '';
@@ -167,9 +156,9 @@ export class ClassManager {
    * @param {object} actor - The actor document
    */
   static invalidateCache(actor) {
-    this._classCache.delete(actor);
-    this._wizardCache.delete(actor);
-    ATLAS.log(3, 'ClassManager cache invalidated.', { actorName: actor.name });
+    this.#classCache.delete(actor);
+    this.#wizardCache.delete(actor);
+    ATLAS.log(3, 'ClassManager cache invalidated', { actorName: actor.name });
   }
 
   /**
@@ -192,14 +181,6 @@ export class ClassManager {
     if (Object.keys(validPrepared).length !== Object.keys(preparedByClass).length) {
       await actor.unsetFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS);
       await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS, validPrepared);
-      const allPreparedUuids = Object.values(validPrepared)
-        .flat()
-        .map((key) => {
-          const [, ...uuidParts] = key.split(':');
-          return uuidParts.join(':');
-        });
-      await actor.unsetFlag(MODULE.ID, FLAGS.PREPARED_SPELLS);
-      await actor.setFlag(MODULE.ID, FLAGS.PREPARED_SPELLS, allPreparedUuids);
     }
     const cantripTracking = actorFlags[FLAGS.CANTRIP_SWAP_TRACKING] || {};
     const validCantrip = {};
@@ -215,19 +196,12 @@ export class ClassManager {
       await actor.unsetFlag(MODULE.ID, FLAGS.SWAP_TRACKING);
       await actor.setFlag(MODULE.ID, FLAGS.SWAP_TRACKING, validSwap);
     }
-    const wizardFlags = Object.keys(actorFlags).filter(
-      (key) =>
-        key.startsWith(`${FLAGS.WIZARD_COPIED_SPELLS}-`) ||
-        key.startsWith(`${FLAGS.WIZARD_COPIED_SPELLS}_`) ||
-        key.startsWith(`${FLAGS.WIZARD_RITUAL_CASTING}-`) ||
-        key.startsWith(`${FLAGS.WIZARD_RITUAL_CASTING}_`)
-    );
+    const wizardFlags = Object.keys(actorFlags).filter((key) => key.startsWith(`${FLAGS.WIZARD_COPIED_SPELLS}_`) || key.startsWith(`${FLAGS.WIZARD_RITUAL_CASTING}_`));
     for (const flagKey of wizardFlags) {
-      const separatorIndex = Math.max(flagKey.lastIndexOf('-'), flagKey.lastIndexOf('_'));
-      const classId = flagKey.substring(separatorIndex + 1);
+      const classId = flagKey.substring(flagKey.lastIndexOf('_') + 1);
       if (!currentClassIds.includes(classId)) await actor.unsetFlag(MODULE.ID, flagKey);
     }
-    ATLAS.log(3, 'Stale flags cleanup completed.', { actorName: actor.name });
+    ATLAS.log(3, 'Stale flags cleanup completed', { actorName: actor.name });
   }
 
   /**
@@ -236,7 +210,7 @@ export class ClassManager {
    * @returns {object} The class or subclass item that provides spellcasting
    * @private
    */
-  static _resolveSpellcastingSource(classItem) {
+  static #resolveSpellcastingSource(classItem) {
     const subclass = classItem.subclass ?? classItem._classLink;
     if (subclass?.system?.spellcasting?.progression && subclass.system.spellcasting.progression !== 'none') return subclass;
     return classItem;

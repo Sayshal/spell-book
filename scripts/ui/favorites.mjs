@@ -1,4 +1,3 @@
-
 /**
  * Add a spell to actor.system.favorites.
  * @param {string} spellUuid - The spell UUID
@@ -7,12 +6,15 @@
  */
 export async function addSpellToActorFavorites(spellUuid, actor) {
   const actorSpell = findActorSpellByUuid(spellUuid, actor);
-  if (!actorSpell) return false;
+  if (!actorSpell) {
+    ATLAS.log(2, `Cannot favorite ${spellUuid}; ${actor.name} has no matching spell item`);
+    return false;
+  }
   const currentFavorites = actor.system.favorites || [];
   const favoriteId = `.Item.${actorSpell.id}`;
   if (currentFavorites.some((fav) => fav.id === favoriteId)) return true;
   await actor.update({ 'system.favorites': [...currentFavorites, { type: 'item', id: favoriteId, sort: 100000 + currentFavorites.length }] });
-  ATLAS.log(3, 'Added spell to actor favorites.', { spell: actorSpell.name, actor: actor.name });
+  ATLAS.log(3, 'Added spell to actor favorites', { spell: actorSpell.name, actor: actor.name });
   return true;
 }
 
@@ -30,7 +32,7 @@ export async function removeSpellFromActorFavorites(spellUuid, actor) {
   const updatedFavorites = currentFavorites.filter((fav) => fav.id !== favoriteId);
   if (updatedFavorites.length !== currentFavorites.length) {
     await actor.update({ 'system.favorites': updatedFavorites });
-    ATLAS.log(3, 'Removed spell from actor favorites.', { spell: actorSpell.name, actor: actor.name });
+    ATLAS.log(3, 'Removed spell from actor favorites', { spell: actorSpell.name, actor: actor.name });
   }
   return true;
 }

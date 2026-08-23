@@ -1,22 +1,25 @@
-/**
- * Wizard Spellbook Management and Journal Integration
- * @module Managers/WizardBook
- * @author Tyler
- */
-
-import { FLAGS, MODULE, PACK, SETTINGS, WIZARD_DEFAULTS, WIZARD_SPELL_SOURCE } from '../constants.mjs';
+import { CLASS_IDENTIFIERS, CLASS_RULE_NAMES, FLAGS, FOLDER_TYPES, HOOKS, MODULE, PACK, SETTINGS, SPELL_LIST_TYPES, WIZARD_DEFAULTS, WIZARD_SPELL_SOURCE } from '../constants.mjs';
+import { getOrCreateSpellListFolder } from '../data/custom-lists.mjs';
+import { resolveLinkedScrollSpell } from '../data/scroll-processor.mjs';
 import { RuleSet } from './rule-set.mjs';
+
+/** @enum {string} Label key for each source a spell can be learned from. */
+const LEARNED_LABEL_KEYS = {
+  [WIZARD_SPELL_SOURCE.FREE]: 'SPELLBOOK.Wizard.LearnedFree',
+  [WIZARD_SPELL_SOURCE.COPIED]: 'SPELLBOOK.Wizard.LearnedPurchased',
+  [WIZARD_SPELL_SOURCE.SCROLL]: 'SPELLBOOK.Wizard.LearnedFromScroll'
+};
 
 /** Wizard Spellbook Manager — journal-based wizard spell management. */
 export class WizardBook {
-  /** @type {WeakMap<object, Map<string, object>>} */
-  static _journalCache = new WeakMap();
+  /** @type {WeakMap<object, Map<string, object>>} Actor -> class identifier -> spellbook journal */
+  static #journalCache = new WeakMap();
 
-  /** @type {WeakMap<object, Map<string, string[]>>} */
-  static _spellbookCache = new WeakMap();
+  /** @type {WeakMap<object, Map<string, string[]>>} Actor -> class identifier -> spell UUIDs in the spellbook */
+  static #spellbookCache = new WeakMap();
 
-  /** @type {WeakMap<object, Set<string>>} */
-  static _flagsInitialized = new WeakMap();
+  /** @type {WeakMap<object, Set<string>>} Actor -> class identifiers whose wizard flags have been seeded */
+  static #flagsInitialized = new WeakMap();
 
   /**
    * Get all spell UUIDs in a wizard's spellbook for a class.
@@ -25,15 +28,15 @@ export class WizardBook {
    * @returns {Promise<string[]>} Array of spell UUIDs
    */
   static async getWizardSpellbook(actor, classId) {
-    const cached = this._spellbookCache.get(actor)?.get(classId);
+    const cached = this.#spellbookCache.get(actor)?.get(classId);
     if (cached) return cached;
-    const journal = await this._getOrCreateSpellbookJournal(actor, classId);
+    const journal = await this.#getOrCreateSpellbookJournal(actor, classId);
     if (!journal) return [];
     const page = journal.pages?.find((p) => p.type === 'spells');
     if (!page) return [];
     const spells = Array.from(page.system?.spells || []);
-    if (!this._spellbookCache.has(actor)) this._spellbookCache.set(actor, new Map());
-    this._spellbookCache.get(actor).set(classId, spells);
+    if (!this.#spellbookCache.has(actor)) this.#spellbookCache.set(actor, new Map());
+    this.#spellbookCache.get(actor).set(classId, spells);
     return spells;
   }
 
@@ -59,11 +62,14 @@ export class WizardBook {
    * @returns {Promise<boolean>} Success state
    */
   static async addSpellToSpellbook(actor, classId, spellUuid, source = WIZARD_SPELL_SOURCE.FREE, metadata = null) {
-    ATLAS.log(3, 'Adding spell to spellbook.', { actorName: actor.name, classId, spellUuid, source });
-    await this._ensureFlagsInitialized(actor, classId);
-    const journal = await this._getOrCreateSpellbookJournal(actor, classId);
+    ATLAS.log(3, 'Adding spell to spellbook', { actorName: actor.name, classId, spellUuid, source });
+    await this.#ensureFlagsInitialized(actor, classId);
+    const journal = await this.#getOrCreateSpellbookJournal(actor, classId);
     const page = journal?.pages?.find((p) => p.type === 'spells');
-    if (!page) return false;
+    if (!page) {
+      ATLAS.log(2, `No spells page on the spellbook journal for ${actor.name}`, { classId });
+      return false;
+    }
     const spells = page.system.spells || new Set();
     spells.add(spellUuid);
     await page.update({ 'system.spells': spells });
@@ -74,7 +80,9 @@ export class WizardBook {
       copiedSpells.push(entry);
       await actor.setFlag(MODULE.ID, flag, copiedSpells);
     }
-    this._invalidateSpellbookCache(actor, classId);
+    this.#invalidateSpellbookCache(actor, classId);
+    const spell = fromUuidSync(spellUuid);
+    Hooks.callAll(HOOKS.SPELL_LEARNED, { actor, classId, spellUuid, source, name: spell?.name ?? null, school: spell?.system?.school ?? null, level: spell?.system?.level ?? null });
     return true;
   }
 
@@ -86,12 +94,18 @@ export class WizardBook {
    * @returns {Promise<boolean>} Success state
    */
   static async removeSpellFromSpellbook(actor, classId, spellUuid) {
-    ATLAS.log(3, 'Removing spell from spellbook.', { actorName: actor.name, classId, spellUuid });
-    await this._ensureFlagsInitialized(actor, classId);
-    const journal = await this._findSpellbookJournal(actor, classId);
-    if (!journal) return false;
+    ATLAS.log(3, 'Removing spell from spellbook', { actorName: actor.name, classId, spellUuid });
+    await this.#ensureFlagsInitialized(actor, classId);
+    const journal = await this.#findSpellbookJournal(actor, classId);
+    if (!journal) {
+      ATLAS.log(2, `No spellbook journal for ${actor.name}; nothing to remove`, { classId });
+      return false;
+    }
     const page = journal.pages?.find((p) => p.type === 'spells');
-    if (!page) return false;
+    if (!page) {
+      ATLAS.log(2, `No spells page on the spellbook journal for ${actor.name}`, { classId });
+      return false;
+    }
     const spells = page.system.spells || new Set();
     if (!spells.has(spellUuid)) return false;
     spells.delete(spellUuid);
@@ -100,29 +114,58 @@ export class WizardBook {
     const copiedSpells = actor.getFlag(MODULE.ID, flag) || [];
     const filtered = copiedSpells.filter((s) => s.spellUuid !== spellUuid);
     if (filtered.length !== copiedSpells.length) await actor.setFlag(MODULE.ID, flag, filtered);
-    this._invalidateSpellbookCache(actor, classId);
+    this.#invalidateSpellbookCache(actor, classId);
     return true;
   }
 
   /**
-   * Copy a spell to the spellbook, optionally deducting currency.
+   * Learn a spell: fires the cancellable `preLearnSpell` hook, deducts currency for paid copies, then adds the spell.
    * @param {object} actor - The actor document
    * @param {string} classId - The class identifier
    * @param {string} spellUuid - UUID of the spell to copy
    * @param {number} cost - Cost in base currency
-   * @param {number} time - Time in hours
-   * @param {boolean} [isFree] - Whether this is a free spell
+   * @param {number|string} time - Time spent copying
+   * @param {string} [source] - Source type (free, copied, scroll)
    * @returns {Promise<boolean>} Success state
    */
-  static async copySpell(actor, classId, spellUuid, cost, time, isFree = false) {
-    ATLAS.log(3, 'Copying spell to spellbook.', { actorName: actor.name, classId, spellUuid, cost, time, isFree });
-    if (!isFree && game.settings.get(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST) && cost > 0) {
-      const success = await this._deductCurrency(actor, cost);
+  static async copySpell(actor, classId, spellUuid, cost, time, source = WIZARD_SPELL_SOURCE.COPIED) {
+    ATLAS.log(3, 'Copying spell to spellbook', { actorName: actor.name, classId, spellUuid, cost, time, source });
+    const costs = { cost, time };
+    if (Hooks.call(HOOKS.PRE_LEARN_SPELL, { actor, classId, spellUuid, source, costs }) === false) return false;
+    if (source !== WIZARD_SPELL_SOURCE.FREE && game.settings.get(MODULE.ID, SETTINGS.DEDUCT_SPELL_LEARNING_COST) && costs.cost > 0) {
+      const success = await this.#deductCurrency(actor, costs.cost);
       if (!success) return false;
     }
-    const source = isFree ? WIZARD_SPELL_SOURCE.FREE : WIZARD_SPELL_SOURCE.COPIED;
-    const metadata = isFree ? null : { cost, timeSpent: time };
+    const metadata = source === WIZARD_SPELL_SOURCE.FREE ? null : { cost: costs.cost, timeSpent: costs.time };
     return this.addSpellToSpellbook(actor, classId, spellUuid, source, metadata);
+  }
+
+  /**
+   * Learn the spell a scroll is linked to, then optionally consume the scroll.
+   * @param {object} actor - The actor document
+   * @param {string} classId - The class identifier
+   * @param {object} scroll - The scroll item owned by the actor
+   * @param {object} [options] - Learn options
+   * @param {boolean} [options.consume] - Override the consume-scrolls setting
+   * @returns {Promise<boolean>} Success state
+   */
+  static async learnFromScroll(actor, classId, scroll, { consume } = {}) {
+    const linked = await resolveLinkedScrollSpell(scroll);
+    if (!linked) {
+      ATLAS.log(2, `Scroll "${scroll?.name}" has no resolvable linked spell`);
+      return false;
+    }
+    const charge = game.settings.get(MODULE.ID, SETTINGS.CHARGE_SCROLL_LEARNING_COST);
+    const cost = charge ? (await this.getCopyingCost(actor, classId, linked.spell)).cost : 0;
+    const time = this.getCopyingMinutes(actor, classId, linked.spell);
+    const learned = await this.copySpell(actor, classId, linked.spellUuid, cost, time, WIZARD_SPELL_SOURCE.SCROLL);
+    if (!learned) return false;
+    if (consume ?? game.settings.get(MODULE.ID, SETTINGS.CONSUME_SCROLLS_WHEN_LEARNING)) {
+      const qty = scroll.system?.quantity ?? 1;
+      if (qty <= 1) await scroll.delete();
+      else await scroll.update({ 'system.quantity': qty - 1 });
+    }
+    return true;
   }
 
   /**
@@ -135,22 +178,32 @@ export class WizardBook {
   static async getCopyingCost(actor, classId, spell) {
     const isFree = await this.isSpellFree(actor, classId, spell);
     if (isFree) return { cost: 0, isFree: true };
-    const multiplier = RuleSet.getClassRule(actor, classId, 'spellLearningCostMultiplier', WIZARD_DEFAULTS.SPELL_LEARNING_COST_MULTIPLIER);
+    const multiplier = RuleSet.getClassRule(actor, classId, CLASS_RULE_NAMES.SPELL_LEARNING_COST_MULTIPLIER, WIZARD_DEFAULTS.SPELL_LEARNING_COST_MULTIPLIER);
     const cost = spell.system.level === 0 ? 0 : spell.system.level * multiplier;
     return { cost, isFree: false };
   }
 
   /**
-   * Calculate and format time to copy a spell.
+   * Calculate the time to copy a spell, in minutes.
    * @param {object} actor - The actor document
    * @param {string} classId - The class identifier
    * @param {object} spell - The spell document
+   * @returns {number} Copy duration in minutes
+   */
+  static getCopyingMinutes(actor, classId, spell) {
+    const multiplier = RuleSet.getClassRule(actor, classId, CLASS_RULE_NAMES.SPELL_LEARNING_TIME_MULTIPLIER, WIZARD_DEFAULTS.SPELL_LEARNING_TIME_MULTIPLIER);
+    return spell.system.level === 0 ? 1 : spell.system.level * multiplier;
+  }
+
+  /**
+   * Format a copy duration for display. Legacy copy records store a pre-formatted string, which passes through unchanged.
+   * @param {number|string} minutes - Copy duration in minutes
    * @returns {string} Formatted time string
    */
-  static getCopyingTime(actor, classId, spell) {
-    const multiplier = RuleSet.getClassRule(actor, classId, 'spellLearningTimeMultiplier', WIZARD_DEFAULTS.SPELL_LEARNING_TIME_MULTIPLIER);
-    const totalMinutes = spell.system.level === 0 ? 1 : spell.system.level * multiplier;
-    return dnd5e.utils.formatTime(totalMinutes, 'minute');
+  static formatCopyingTime(minutes) {
+    if (typeof minutes !== 'number') return minutes ?? '';
+    const { value, unit } = dnd5e.utils.convertTime(minutes, 'minute');
+    return dnd5e.utils.formatTime(value, unit);
   }
 
   /**
@@ -163,8 +216,8 @@ export class WizardBook {
     const classData = actor.spellcastingClasses?.[classId];
     if (!classData) return 0;
     const wizardLevel = classData.system?.levels || 1;
-    const startingSpells = RuleSet.getClassRule(actor, classId, 'startingSpells', WIZARD_DEFAULTS.STARTING_SPELLS);
-    const spellsPerLevel = RuleSet.getClassRule(actor, classId, 'spellsPerLevel', WIZARD_DEFAULTS.SPELLS_PER_LEVEL);
+    const startingSpells = RuleSet.getClassRule(actor, classId, CLASS_RULE_NAMES.STARTING_SPELLS, WIZARD_DEFAULTS.STARTING_SPELLS);
+    const spellsPerLevel = RuleSet.getClassRule(actor, classId, CLASS_RULE_NAMES.SPELLS_PER_LEVEL, WIZARD_DEFAULTS.SPELLS_PER_LEVEL);
     return startingSpells + Math.max(0, wizardLevel - 1) * spellsPerLevel;
   }
 
@@ -223,21 +276,11 @@ export class WizardBook {
 
   /**
    * Get the localization key for a learning source label.
-   * @todo this seems so overkill for 4 localization keys? nearly 20 lines of code?
    * @param {string} source - The learning source
    * @returns {string} Localization key
    */
   static getLearnedLabelKey(source) {
-    switch (source) {
-      case WIZARD_SPELL_SOURCE.FREE:
-        return 'SPELLBOOK.Wizard.LearnedFree';
-      case WIZARD_SPELL_SOURCE.COPIED:
-        return 'SPELLBOOK.Wizard.LearnedPurchased';
-      case WIZARD_SPELL_SOURCE.SCROLL:
-        return 'SPELLBOOK.Wizard.LearnedFromScroll';
-      default:
-        return 'SPELLBOOK.Wizard.LearnedFree';
-    }
+    return LEARNED_LABEL_KEYS[source] ?? LEARNED_LABEL_KEYS[WIZARD_SPELL_SOURCE.FREE];
   }
 
   /**
@@ -245,9 +288,9 @@ export class WizardBook {
    * @param {object} actor - The actor document
    */
   static invalidateCache(actor) {
-    this._journalCache.delete(actor);
-    this._spellbookCache.delete(actor);
-    ATLAS.log(3, 'WizardBook cache invalidated.', { actorName: actor.name });
+    this.#journalCache.delete(actor);
+    this.#spellbookCache.delete(actor);
+    ATLAS.log(3, 'WizardBook cache invalidated', { actorName: actor.name });
   }
 
   /**
@@ -257,8 +300,8 @@ export class WizardBook {
    * @returns {Promise<object|null>} The journal document or null
    * @private
    */
-  static async _findSpellbookJournal(actor, classId) {
-    const cached = this._journalCache.get(actor)?.get(classId);
+  static async #findSpellbookJournal(actor, classId) {
+    const cached = this.#journalCache.get(actor)?.get(classId);
     if (cached) return cached;
     const pack = game.packs.get(PACK.SPELLS);
     const index = await pack.getIndex({ fields: ['flags'] });
@@ -266,8 +309,8 @@ export class WizardBook {
       const flags = entry.flags?.[MODULE.ID];
       if (flags?.actorId === actor.id && flags?.classIdentifier === classId) {
         const doc = await pack.getDocument(entry._id);
-        if (!this._journalCache.has(actor)) this._journalCache.set(actor, new Map());
-        this._journalCache.get(actor).set(classId, doc);
+        if (!this.#journalCache.has(actor)) this.#journalCache.set(actor, new Map());
+        this.#journalCache.get(actor).set(classId, doc);
         return doc;
       }
     }
@@ -281,16 +324,15 @@ export class WizardBook {
    * @returns {Promise<object>} The created journal
    * @private
    */
-  static async _createSpellbookJournal(actor, classId) {
-    ATLAS.log(3, 'Creating spellbook journal.', { actorName: actor.name, classId });
-    const pack = game.packs.get(PACK.SPELLS);
-    const folder = pack.folders.find((f) => f.name === 'Actor Spellbooks') || null;
+  static async #createSpellbookJournal(actor, classId) {
+    ATLAS.log(3, 'Creating spellbook journal', { actorName: actor.name, classId });
+    const folder = await getOrCreateSpellListFolder(FOLDER_TYPES.ACTOR_SPELLBOOK);
     const classData = actor.spellcastingClasses?.[classId];
     const className = classData?.name || classId;
-    const journalName = classId === 'wizard' ? actor.name : `${actor.name} (${className})`;
+    const journalName = classId === CLASS_IDENTIFIERS.WIZARD ? actor.name : `${actor.name} (${className})`;
     const actorOwnership = actor.ownership || {};
-    const ownerUserIds = Object.keys(actorOwnership).filter((id) => id !== 'default' && actorOwnership[id] === 3);
-    const ownership = { default: 0, [game.user.id]: 3 };
+    const ownerUserIds = Object.keys(actorOwnership).filter((id) => id !== 'default' && actorOwnership[id] === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
+    const ownership = { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.NONE, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
     for (const id of ownerUserIds) ownership[id] = 3;
     const cleanName = actor.name.toLowerCase().replace(/[^\da-z]/g, '-');
     const identifier = `${cleanName}-${classId}-spellbook`;
@@ -299,21 +341,21 @@ export class WizardBook {
         name: journalName,
         folder: folder?.id || null,
         ownership,
-        flags: { [MODULE.ID]: { actorId: actor.id, classIdentifier: classId, isActorSpellbook: true, creationDate: Date.now() } },
+        flags: { [MODULE.ID]: { actorId: actor.id, classIdentifier: classId, [FLAGS.IS_ACTOR_SPELLBOOK]: true, creationDate: Date.now() } },
         pages: [
           {
             name: _loc('SPELLBOOK.Journal.PageTitle', { name: journalName }),
             type: 'spells',
             ownership,
-            flags: { [MODULE.ID]: { isActorSpellbook: true, actorId: actor.id, classIdentifier: classId } },
-            system: { identifier, type: 'actor-spellbook', description: _loc('SPELLBOOK.Journal.SpellbookDescription', { name: journalName }), spells: new Set() }
+            flags: { [MODULE.ID]: { [FLAGS.IS_ACTOR_SPELLBOOK]: true, actorId: actor.id, classIdentifier: classId } },
+            system: { identifier, type: SPELL_LIST_TYPES.ACTOR_SPELLBOOK, description: _loc('SPELLBOOK.Journal.SpellbookDescription', { name: journalName }), spells: new Set() }
           }
         ]
       },
-      { pack: pack.collection }
+      { pack: PACK.SPELLS }
     );
-    if (!this._journalCache.has(actor)) this._journalCache.set(actor, new Map());
-    this._journalCache.get(actor).set(classId, journal);
+    if (!this.#journalCache.has(actor)) this.#journalCache.set(actor, new Map());
+    this.#journalCache.get(actor).set(classId, journal);
     return journal;
   }
 
@@ -324,10 +366,10 @@ export class WizardBook {
    * @returns {Promise<object|null>} The journal document
    * @private
    */
-  static async _getOrCreateSpellbookJournal(actor, classId) {
-    const existing = await this._findSpellbookJournal(actor, classId);
+  static async #getOrCreateSpellbookJournal(actor, classId) {
+    const existing = await this.#findSpellbookJournal(actor, classId);
     if (existing) return existing;
-    return this._createSpellbookJournal(actor, classId);
+    return this.#createSpellbookJournal(actor, classId);
   }
 
   /**
@@ -336,9 +378,9 @@ export class WizardBook {
    * @param {string} classId - The class identifier
    * @private
    */
-  static async _ensureFlagsInitialized(actor, classId) {
-    if (!this._flagsInitialized.has(actor)) this._flagsInitialized.set(actor, new Set());
-    const initialized = this._flagsInitialized.get(actor);
+  static async #ensureFlagsInitialized(actor, classId) {
+    if (!this.#flagsInitialized.has(actor)) this.#flagsInitialized.set(actor, new Set());
+    const initialized = this.#flagsInitialized.get(actor);
     if (initialized.has(classId)) return;
     const flag = `${FLAGS.WIZARD_COPIED_SPELLS}_${classId}`;
     if (!actor.flags?.[MODULE.ID]?.[flag]) await actor.update({ [`flags.${MODULE.ID}.${flag}`]: [] });
@@ -346,44 +388,44 @@ export class WizardBook {
   }
 
   /**
+   * Sum an actor's currency, converted to base currency units.
+   * @param {object} actor - The actor document
+   * @returns {number} Total wealth in base currency units
+   */
+  static getTotalWealth(actor) {
+    const actorCurrency = actor?.system?.currency || {};
+    let total = 0;
+    for (const [type, config] of Object.entries(CONFIG.DND5E.currencies)) if (config.conversion) total += (actorCurrency[type] || 0) / config.conversion;
+    return total;
+  }
+
+  /**
+   * Check whether an actor can pay a cost in the default currency, accounting for change-making.
+   * @param {object} actor - The actor document
+   * @param {number} cost - Cost in default currency units
+   * @returns {boolean} Whether the actor can pay
+   */
+  static canAfford(actor, cost) {
+    if (cost <= 0) return true;
+    return !dnd5e.applications.CurrencyManager.getActorCurrencyUpdates(actor, cost, CONFIG.DND5E.defaultCurrency).remainder;
+  }
+
+  /**
    * Deduct currency from the actor for spell copying costs.
    * @param {object} actor - The actor document
-   * @param {number} cost - Cost in base currency units
+   * @param {number} cost - Cost in default currency units
    * @returns {Promise<boolean>} Whether deduction succeeded
    * @private
    */
-  static async _deductCurrency(actor, cost) {
-    const currencies = CONFIG.DND5E.currencies;
-    const actorCurrency = actor.system.currency || {};
-    let baseCurrency = null;
-    const otherCurrencies = [];
-    for (const [type, config] of Object.entries(currencies)) {
-      if (config.conversion === 1) baseCurrency = type;
-      else otherCurrencies.push({ type, conversion: config.conversion });
-    }
-    otherCurrencies.sort((a, b) => a.conversion - b.conversion);
-    const deductionOrder = baseCurrency ? [baseCurrency, ...otherCurrencies.map((c) => c.type)] : otherCurrencies.map((c) => c.type);
-    let totalWealth = 0;
-    for (const [type, config] of Object.entries(currencies)) totalWealth += (actorCurrency[type] || 0) / config.conversion;
-    if (totalWealth < cost) {
-      ui.notifications.warn(_loc('SPELLBOOK.Wizard.InsufficientGold', { cost, current: totalWealth.toFixed(2) }));
+  static async #deductCurrency(actor, cost) {
+    const { remainder, system } = dnd5e.applications.CurrencyManager.getActorCurrencyUpdates(actor, cost, CONFIG.DND5E.defaultCurrency);
+    if (remainder) {
+      const wealth = this.getTotalWealth(actor);
+      ATLAS.log(2, `Insufficient currency to copy a spell: ${actor.name} needs ${cost} but holds ${wealth.toFixed(2)}`);
+      ui.notifications.warn(_loc('SPELLBOOK.Wizard.CannotAfford', { shortfall: Math.ceil(cost - wealth) }));
       return false;
     }
-    let remaining = cost;
-    const updateData = {};
-    for (const type of deductionOrder) {
-      if (remaining <= 0.001) break;
-      const available = actorCurrency[type] || 0;
-      if (available <= 0) continue;
-      const basePerUnit = 1 / currencies[type].conversion;
-      const needed = Math.ceil(remaining / basePerUnit);
-      const toDeduct = Math.min(available, needed);
-      if (toDeduct > 0) {
-        updateData[`system.currency.${type}`] = available - toDeduct;
-        remaining -= toDeduct * basePerUnit;
-      }
-    }
-    await actor.update(updateData);
+    await actor.update({ system });
     return true;
   }
 
@@ -393,7 +435,7 @@ export class WizardBook {
    * @param {string} classId - The class identifier
    * @private
    */
-  static _invalidateSpellbookCache(actor, classId) {
-    if (this._spellbookCache.has(actor)) this._spellbookCache.get(actor).delete(classId);
+  static #invalidateSpellbookCache(actor, classId) {
+    if (this.#spellbookCache.has(actor)) this.#spellbookCache.get(actor).delete(classId);
   }
 }

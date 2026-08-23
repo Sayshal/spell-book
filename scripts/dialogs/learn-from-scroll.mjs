@@ -19,18 +19,19 @@ export async function showLearnFromScrollDialog({ spell, cost, time, isFree, isA
   const content = await renderTemplate(TEMPLATES.DIALOGS.LEARN_FROM_SCROLL, { spell, costText, time, isAlreadyInSpellbook, shouldConsume });
   try {
     const result = await DialogV2.wait({
+      classes: ['spell-book'],
       window: { icon: 'fas fa-scroll', title: _loc('SPELLBOOK.Wizard.LearnSpellTitle', { name: spell.name }) },
       content,
       buttons: [
-        { icon: 'fas fa-book', label: _loc('SPELLBOOK.Wizard.LearnSpellButton'), action: 'confirm', className: 'dialog-button' },
-        { icon: 'fas fa-times', label: _loc('COMMON.Cancel'), action: 'cancel', className: 'dialog-button' }
+        { icon: 'fas fa-book', label: 'SPELLBOOK.Wizard.LearnSpellButton', action: 'confirm', className: 'dialog-button' },
+        { icon: 'fas fa-times', label: 'ATLAS.Common.Cancel', action: 'cancel', className: 'dialog-button' }
       ],
       default: 'confirm',
       rejectClose: false
     });
     return result === 'confirm';
   } catch (error) {
-    ATLAS.log(1, 'Error showing learn-from-scroll dialog.', { error });
+    ATLAS.log(1, 'Error showing learn-from-scroll dialog', error);
     return false;
   }
 }

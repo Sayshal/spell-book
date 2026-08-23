@@ -1,10 +1,10 @@
 <div class="spell-lists-sidebar" role="complementary">
   {{#if (eq sidebarMode "filters")}}
     <div class="sidebar-filter-header">
-      <h2>{{localize "SPELLMANAGER.Sidebar.AvailableSpells"}}</h2>
+      <h2>{{localize "SPELLBOOK.Manager.Sidebar.AvailableSpells"}}</h2>
       <button type="button" class="header-action-btn" data-action="switchSidebarMode" data-mode="lists">
         <i class="fas fa-arrow-left" aria-hidden="true"></i>
-        {{localize "SPELLMANAGER.Sidebar.BackToLists"}}
+        {{localize "SPELLBOOK.Manager.Sidebar.BackToLists"}}
       </button>
     </div>
     <div class="sidebar-filter-section">
@@ -37,22 +37,22 @@
         <div class="filter-checkbox">
           {{> "modules/spell-book/templates/components/filter-item.hbs" filterFormElements.ritual}}
         </div>
-        <button type="button" class="reset-filters" data-tooltip="{{localize 'SPELLMANAGER.Filters.Reset'}}">
-          <i class="fas fa-rotate-left" aria-hidden="true"></i> {{localize "SPELLMANAGER.Filters.Reset"}}
+        <button type="button" class="reset-filters" data-tooltip="{{localize 'SPELLBOOK.Manager.Filters.Reset'}}">
+          <i class="fas fa-rotate-left" aria-hidden="true"></i> {{localize "SPELLBOOK.Manager.Filters.Reset"}}
         </button>
       {{/if}}
     </div>
   {{else}}
     <div class="lists-header">
-      <h2>{{localize 'SPELLMANAGER.Columns.SpellLists'}}</h2>
+      <h2>{{localize 'SPELLBOOK.Manager.Columns.SpellLists'}}</h2>
       <div class="lists-header-actions">
         <button type="button" class="header-action-btn" data-action="createList"
-          data-tooltip="{{localize 'SPELLMANAGER.Tooltips.CreateNew'}}">
-          <i class="fas fa-plus" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.CreateNew"}}
+          data-tooltip="{{localize 'SPELLBOOK.Manager.Tooltips.CreateNew'}}">
+          <i class="fas fa-plus" aria-hidden="true"></i> {{localize "SPELLBOOK.Manager.Buttons.CreateNew"}}
         </button>
         <button type="button" class="header-action-btn" data-action="mergeLists"
-          data-tooltip="{{localize 'SPELLMANAGER.Tooltips.MergeLists'}}">
-          <i class="fas fa-code-merge" aria-hidden="true"></i> {{localize "SPELLMANAGER.Buttons.MergeLists"}}
+          data-tooltip="{{localize 'SPELLBOOK.Manager.Tooltips.MergeLists'}}">
+          <i class="fas fa-code-merge" aria-hidden="true"></i> {{localize "SPELLBOOK.Manager.Buttons.MergeLists"}}
         </button>
       </div>
     </div>
@@ -60,12 +60,12 @@
       {{#if hasActorOwnedLists}}
         {{#> "modules/spell-book/templates/components/folder-section.hbs"
     folderType="actor-lists" folderId="actor-lists" icon="fas fa-user"
-    folderHeader=(localize "SPELLMANAGER.Folders.PlayerSpellbooks")
-    folderTooltip=(localize "SPELLMANAGER.Tooltips.PlayerSpellbooksFolder")}}
+    folderHeader=(localize "SPELLBOOK.Manager.Folders.PlayerSpellbooks")
+    folderTooltip=(localize "SPELLBOOK.Manager.Tooltips.PlayerSpellbooksFolder")}}
           {{#each actorOwnedLists as |list|}}
             <li class="spell-list-item actor-owned-list" data-uuid="{{list.uuid}}" role="listitem"
               data-tooltip-direction="RIGHT"
-              data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
+              data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLBOOK.Manager.ListTooltip.SpellCount' count=list.spellCount}}</div>">
               <div class="list-item-header">
                 <div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
                   <div class="list-name">
@@ -81,12 +81,12 @@
       {{#if hasCustomLists}}
         {{#> "modules/spell-book/templates/components/folder-section.hbs"
     folderType="custom-lists" folderId="custom-lists" icon="fas fa-magic"
-    folderHeader=(localize "SPELLMANAGER.Folders.CustomLists")
-    folderTooltip=(localize "SPELLMANAGER.Tooltips.CustomListsFolder")}}
+    folderHeader=(localize "SPELLBOOK.Manager.Folders.CustomLists")
+    folderTooltip=(localize "SPELLBOOK.Manager.Tooltips.CustomListsFolder")}}
           {{#each customLists as |list|}}
             <li class="spell-list-item custom-list" data-uuid="{{list.uuid}}" role="listitem"
               data-tooltip-direction="RIGHT"
-              data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
+              data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLBOOK.Manager.ListTooltip.SpellCount' count=list.spellCount}}</div>">
               <div class="list-item-header">
                 <div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
                   <div class="list-name">
@@ -95,7 +95,7 @@
                   </div>
                 </div>
                 <button type="button" class="visibility-toggle" data-action="hideList" data-uuid="{{list.uuid}}"
-                  data-tooltip="{{localize 'SPELLMANAGER.HideList.HideTooltip'}}">
+                  data-tooltip="{{localize 'SPELLBOOK.Manager.HideList.HideTooltip'}}">
                   <i class="fas fa-eye" aria-hidden="true"></i>
                 </button>
               </div>
@@ -106,12 +106,12 @@
       {{#if hasMergedLists}}
         {{#> "modules/spell-book/templates/components/folder-section.hbs"
     folderType="merged-lists" folderId="merged-lists" icon="fas fa-code-merge"
-    folderHeader=(localize "SPELLMANAGER.Folders.MergedLists")
-    folderTooltip=(localize "SPELLMANAGER.Tooltips.MergedListsFolder")}}
+    folderHeader=(localize "SPELLBOOK.Manager.Folders.MergedLists")
+    folderTooltip=(localize "SPELLBOOK.Manager.Tooltips.MergedListsFolder")}}
           {{#each mergedLists as |list|}}
             <li class="spell-list-item merged-list" data-uuid="{{list.uuid}}" role="listitem"
               data-tooltip-direction="RIGHT"
-              data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
+              data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLBOOK.Manager.ListTooltip.SpellCount' count=list.spellCount}}</div>">
               <div class="list-item-header">
                 <div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
                   <div class="list-name">
@@ -120,7 +120,7 @@
                   </div>
                 </div>
                 <button type="button" class="visibility-toggle" data-action="hideList" data-uuid="{{list.uuid}}"
-                  data-tooltip="{{localize 'SPELLMANAGER.HideList.HideTooltip'}}">
+                  data-tooltip="{{localize 'SPELLBOOK.Manager.HideList.HideTooltip'}}">
                   <i class="fas fa-eye" aria-hidden="true"></i>
                 </button>
               </div>
@@ -131,12 +131,12 @@
       {{#if hasModifiedLists}}
         {{#> "modules/spell-book/templates/components/folder-section.hbs"
     folderType="modified-lists" folderId="modified-lists" icon="fas fa-pen"
-    folderHeader=(localize "SPELLMANAGER.Folders.ModifiedLists")
-    folderTooltip=(localize "SPELLMANAGER.Tooltips.ModifiedListsFolder")}}
+    folderHeader=(localize "SPELLBOOK.Manager.Folders.ModifiedLists")
+    folderTooltip=(localize "SPELLBOOK.Manager.Tooltips.ModifiedListsFolder")}}
           {{#each modifiedLists as |list|}}
             <li class="spell-list-item modified-list" data-uuid="{{list.uuid}}" role="listitem"
               data-tooltip-direction="RIGHT"
-              data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
+              data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLBOOK.Manager.ListTooltip.SpellCount' count=list.spellCount}}</div>">
               <div class="list-item-header">
                 <div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
                   <div class="list-name">
@@ -145,7 +145,7 @@
                   </div>
                 </div>
                 <button type="button" class="visibility-toggle" data-action="hideList" data-uuid="{{list.uuid}}"
-                  data-tooltip="{{localize 'SPELLMANAGER.HideList.HideTooltip'}}">
+                  data-tooltip="{{localize 'SPELLBOOK.Manager.HideList.HideTooltip'}}">
                   <i class="fas fa-eye" aria-hidden="true"></i>
                 </button>
               </div>
@@ -156,11 +156,11 @@
       {{#if hasStandardLists}}
         {{#> "modules/spell-book/templates/components/folder-section.hbs"
     folderType="standard-lists" folderId="standard-lists" icon="fas fa-scroll"
-    folderHeader=(localize "SPELLMANAGER.Folders.SpellLists")
-    folderTooltip=(localize "SPELLMANAGER.Tooltips.StandardListsFolder")}}
+    folderHeader=(localize "SPELLBOOK.Manager.Folders.SpellLists")
+    folderTooltip=(localize "SPELLBOOK.Manager.Tooltips.StandardListsFolder")}}
           {{#each standardLists as |list|}}
             <li class="spell-list-item" data-uuid="{{list.uuid}}" role="listitem" data-tooltip-direction="RIGHT"
-              data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
+              data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLBOOK.Manager.ListTooltip.SpellCount' count=list.spellCount}}</div>">
               <div class="list-item-header">
                 <div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
                   <div class="list-name">
@@ -169,7 +169,7 @@
                   </div>
                 </div>
                 <button type="button" class="visibility-toggle" data-action="hideList" data-uuid="{{list.uuid}}"
-                  data-tooltip="{{localize 'SPELLMANAGER.HideList.HideTooltip'}}">
+                  data-tooltip="{{localize 'SPELLBOOK.Manager.HideList.HideTooltip'}}">
                   <i class="fas fa-eye" aria-hidden="true"></i>
                 </button>
               </div>
@@ -180,12 +180,12 @@
       {{#if hasHiddenLists}}
         {{#> "modules/spell-book/templates/components/folder-section.hbs"
     folderType="hidden-lists" folderId="hidden-lists" icon="fas fa-eye-slash"
-    folderHeader=(localize "SPELLMANAGER.Folders.HiddenLists")
-    folderTooltip=(localize "SPELLMANAGER.Tooltips.HiddenListsFolder")}}
+    folderHeader=(localize "SPELLBOOK.Manager.Folders.HiddenLists")
+    folderTooltip=(localize "SPELLBOOK.Manager.Tooltips.HiddenListsFolder")}}
           {{#each hiddenSpellLists as |list|}}
             <li class="spell-list-item hidden-list" data-uuid="{{list.uuid}}" role="listitem"
               data-tooltip-direction="RIGHT"
-              data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLMANAGER.ListTooltip.SpellCount' count=list.spellCount}}</div>">
+              data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLBOOK.Manager.ListTooltip.SpellCount' count=list.spellCount}}</div>">
               <div class="list-item-header">
                 <div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
                   <div class="list-name">
@@ -194,7 +194,7 @@
                   </div>
                 </div>
                 <button type="button" class="visibility-toggle" data-action="hideList" data-uuid="{{list.uuid}}"
-                  data-tooltip="{{localize 'SPELLMANAGER.HideList.UnhideTooltip'}}">
+                  data-tooltip="{{localize 'SPELLBOOK.Manager.HideList.UnhideTooltip'}}">
                   <i class="fas fa-eye-slash" aria-hidden="true"></i>
                 </button>
               </div>
@@ -203,7 +203,7 @@
           {{/"modules/spell-book/templates/components/folder-section.hbs"}}
       {{/if}}
       {{#unless availableSpellLists.length}}
-        {{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize "SPELLMANAGER.Columns.NoLists")}}
+        {{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize "SPELLBOOK.Manager.Columns.NoLists")}}
       {{/unless}}
     </div>
   {{/if}}

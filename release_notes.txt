@@ -1,3 +1,39 @@
+## Breaking Changes
+
+- Module hooks are now namespaced with the module id. Macros or modules listening for `spellBookOpened` or `spellBookClosed` must switch to `spell-book.spellBookOpened` and `spell-book.spellBookClosed`.
+
+## New Features
+
+- Added `learnFromScroll` and `getSpellLearningCost` to the module API for other modules to drive scroll learning.
+- Added `openPartyCoordinator` to the module API, which opens the Party Coordinator for a supplied actor array or group actor, filtering the roster to spellcasters and returning null when none remain.
+- Added module hooks for other modules to react to: cancellable `spell-book.preLearnSpell` (with mutable gold cost and copy time), `spell-book.spellLearned`, `spell-book.spellCopied`, `spell-book.preparationSaved`, and `spell-book.loadoutApplied`.
+- Added the "Charge Cost for Scroll Copying" world setting, off by default, which applies the normal gold cost when copying from a scroll. It takes effect only while "Deduct Spell Learning Costs" is enabled.
+- Added the "GM Approval for Spell Copying" world setting, off by default, which queues a player's paid spell copy as a pending request on the actor instead of copying it immediately, and holds the request until a GM logs in.
+- Added the "Log Spell Copying to Downtime Note" world setting, off by default, which appends each copied spell and the time it took to that day's Calendaria note. Requires Calendaria.
+- Approving a copy request copies the spell and advances world time by the copying duration, with a skip-time checkbox to approve without spending time. The requester is whispered the outcome and their open Spell Book refreshes.
+- Buying a spell scroll through Peddler now whispers the buyer a chat card offering to copy the linked spell into their wizard spellbook, with a class picker when more than one wizard-enabled class is present.
+- The learn tab footer shows the character's wallet total, and an "Affordable Only" sidebar filter appears while spell learning costs are deducted.
+- The learn tab now shows each spell's copying cost next to the Learn button, with a free badge for cantrips and remaining free spells, a red cost when the character cannot pay it, and the Learn button disabled behind a tooltip naming the shortfall.
+
 ## Bug Fixes
 
-- Fixed spells prepared under one class incorrectly showing as prepared on other class tabs for multiclass characters, which inflated preparation counts and could save duplicate spell entries.
+- Fixed several runtime defects: class lookups that broke in the minified build, missing dialog window titles, a non-functional close action, module compendiums being unlocked from player clients, notifications that never cleared, and caches that were never invalidated.
+- Fixed the "no spell list assigned" warning showing a raw localization key instead of the translated message.
+- The over-limit preparation warning now uses separate cantrip and spell strings, so the word "cantrips" or "spells" is translated instead of being injected as an English literal.
+
+## Changes
+
+- Bumped verified Foundry compatibility to 14.366.
+- Class rule custom spell list assignments are always stored as arrays. A startup migration run by the primary GM converts worlds that still hold a single UUID string.
+- Currency deduction for spell copying now runs through the system's currency manager, so mixed coin types are converted and spent correctly.
+- Custom spell list pages now carry a single kind marker (custom, duplicate, merged) instead of four overlapping flags, and a startup migration run by the primary GM restamps existing pages in the module pack. Rename and edit permissions in the spell list manager follow that marker.
+- Every dialog the module opens now carries the module's theme instead of falling back to the system or core Foundry look.
+- Free, paid, and scroll wizard learning now run through one shared path, so cost deduction and learn hooks behave the same in all three cases.
+- Module windows now map Foundry's own surface, text, form, button and input colour variables onto the ATLAS palette, so core-rendered form controls, selects, fieldsets, links and scrollbars match the rest of the interface in both themes.
+- Removed the legacy per-actor flat `preparedSpells` flag. Prepared spell state lives only in `preparedSpellsByClass`, which party mode spell lookups now read exclusively.
+- Restored the Actor Spellbooks compendium folder and re-filed module journals stranded at the pack root.
+- Saving class rules now refreshes the cached wizard class list.
+- Spell copy approval requests, the pending-request sweep, the downtime note, the spellcasting list notice, and the Peddler trade handler now run on a single designated primary GM, so multi-GM worlds no longer see duplicate approval prompts, notices, or downtime entries.
+- Spell copying time now displays in the largest whole unit instead of always in minutes.
+- The spell slot tracker macro now lists Pact Magic slots and labels rows with the system's spell level names instead of bare numbers.
+- User spell notes and favorites now load only from stored flag data. The fallback that rebuilt them by scraping journal page text was removed.
