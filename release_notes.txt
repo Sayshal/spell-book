@@ -19,6 +19,7 @@
 
 - Fixed several runtime defects: class lookups that broke in the minified build, missing dialog window titles, a non-functional close action, module compendiums being unlocked from player clients, notifications that never cleared, and caches that were never invalidated.
 - Fixed the "no spell list assigned" warning showing a raw localization key instead of the translated message.
+- Fixed the Spell Book not listing newly unlocked spell levels until the world was reloaded, and class lists silently dropping spells from compendium sources disabled in the Compendium Browser.
 - The over-limit preparation warning now uses separate cantrip and spell strings, so the word "cantrips" or "spells" is translated instead of being injected as an English literal.
 
 ## Changes
@@ -35,5 +36,6 @@
 - Saving class rules now refreshes the cached wizard class list.
 - Spell copy approval requests, the pending-request sweep, the downtime note, the spellcasting list notice, and the Peddler trade handler now run on a single designated primary GM, so multi-GM worlds no longer see duplicate approval prompts, notices, or downtime entries.
 - Spell copying time now displays in the largest whole unit instead of always in minutes.
+- The Spell Book sidebar buttons are larger, making the save button easier to see and hit on small screens.
 - The spell slot tracker macro now lists Pact Magic slots and labels rows with the system's spell level names instead of bare numbers.
 - User spell notes and favorites now load only from stored flag data. The fallback that rebuilt them by scraping journal page text was removed.
