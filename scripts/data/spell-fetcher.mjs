@@ -82,13 +82,38 @@ export async function fetchAllSpells({ maxLevel, onProgress } = {}) {
  */
 export async function fetchSpellsByUuids(uuids, maxLevel) {
   if (!uuids?.size) return [];
-  const allSpells = await CompendiumBrowser.fetch(Item, {
-    types: new Set(['spell']),
-    filters: [{ k: 'system.level', o: 'lte', v: maxLevel }],
-    indexFields: new Set(DEFAULT_INDEX_FIELDS)
-  });
-  applyLabelsFallback(allSpells);
-  return allSpells.filter((spell) => uuids.has(spell.uuid));
+  const SourceField = dnd5e?.dataModels?.shared?.SourceField;
+  const fields = Array.from(DEFAULT_INDEX_FIELDS);
+  const byPack = new Map();
+  let unresolved = 0;
+  for (const uuid of uuids) {
+    const { collection, documentId } = foundry.utils.parseUuid(uuid) ?? {};
+    if (!collection?.getIndex || !documentId) {
+      unresolved++;
+      continue;
+    }
+    if (!byPack.has(collection)) byPack.set(collection, []);
+    byPack.get(collection).push(documentId);
+  }
+  const results = [];
+  for (const [pack, ids] of byPack) {
+    const index = await pack.getIndex({ fields });
+    for (const id of ids) {
+      const entry = index.get(id);
+      if (!entry) {
+        unresolved++;
+        continue;
+      }
+      if ((entry.system?.level ?? 0) > maxLevel) continue;
+      const source = foundry.utils.getProperty(entry, 'system.source');
+      if (foundry.utils.getType(source) === 'Object' && entry.uuid) SourceField.prepareData.call(source, entry.uuid);
+      results.push(entry);
+    }
+  }
+  results.sort((a, b) => a.name.localeCompare(b.name, game.i18n.lang));
+  applyLabelsFallback(results);
+  if (unresolved) ATLAS.log(2, `${unresolved} spell list entries could not be resolved from their compendiums`);
+  return results;
 }
 
 /**

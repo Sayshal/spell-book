@@ -76,7 +76,7 @@ export class SpellDataManager {
     }
     const maxLevel = this._calculateMaxSpellLevel(actor, classIdentifier);
     const spells = await fetchSpellsByUuids(spellUuids, maxLevel);
-    this.#setCache(actor, classIdentifier, spells);
+    if (spells.length) this.#setCache(actor, classIdentifier, spells);
     ATLAS.log(3, 'Class spell list loaded', { actorName: actor.name, classIdentifier, count: spells.length, maxLevel });
     return spells;
   }
