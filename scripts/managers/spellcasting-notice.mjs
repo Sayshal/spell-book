@@ -2,6 +2,7 @@ import { SpellBook } from '../apps/_module.mjs';
 import { FLAGS, MESSAGE_TYPES, MODULE, TEMPLATES } from '../constants.mjs';
 import { getClassSpellList } from '../data/spell-list-resolver.mjs';
 import { ClassRules } from '../dialogs/_module.mjs';
+import { invalidateActorCaches } from '../utils/invalidation.mjs';
 import { ClassManager } from './class-manager.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
@@ -52,7 +53,9 @@ async function checkSpellcastingLists(actor) {
  * @param {object} item - The created item document
  */
 export function onSpellcastingItemCreate(item) {
-  if (item.actor && (item.type === 'class' || item.type === 'subclass')) scheduleCheck(item.actor);
+  if (!item.actor || (item.type !== 'class' && item.type !== 'subclass')) return;
+  invalidateActorCaches(item.actor);
+  scheduleCheck(item.actor);
 }
 
 /**
@@ -60,7 +63,9 @@ export function onSpellcastingItemCreate(item) {
  * @param {object} manager - The dnd5e advancement manager
  */
 export function onAdvancementComplete(manager) {
-  if (manager?.actor) scheduleCheck(manager.actor);
+  if (!manager?.actor) return;
+  invalidateActorCaches(manager.actor);
+  scheduleCheck(manager.actor);
 }
 
 /**

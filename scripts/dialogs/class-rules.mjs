@@ -1,9 +1,9 @@
 import { FLAGS, LIST_KINDS, MODULE, RITUAL_CASTING_MODES, RULE_SETS, SETTINGS, SWAP_MODES, TEMPLATES, WIZARD_DEFAULTS } from '../constants.mjs';
 import { getJournalDocumentsFromPack, isSourceHiddenSpellList } from '../data/_module.mjs';
 import { getPackTopLevelFolderName } from '../data/compendium-packs.mjs';
-import { ClassManager, RuleSet, SpellDataManager, SpellManager } from '../managers/_module.mjs';
+import { ClassManager, RuleSet, SpellManager } from '../managers/_module.mjs';
 import { detachedRenderOptions } from '../ui/_module.mjs';
-import { refreshOpenSpellBooks } from '../utils/copy-approval.mjs';
+import { invalidateActorCaches } from '../utils/invalidation.mjs';
 import { DetailsCustomization } from './details-customization.mjs';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -258,11 +258,7 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
       flagUpdates[`flags.${MODULE.ID}.${FLAGS.CLASS_RULES}`] = classRules;
     }
     await actor.update(flagUpdates);
-    RuleSet.invalidateCache(actor);
-    ClassManager.invalidateCache(actor);
-    SpellDataManager.invalidateCache(actor);
-    SpellManager.invalidateCache(actor);
-    refreshOpenSpellBooks(actor);
+    invalidateActorCaches(actor);
     this._saved = true;
     await this._onSave?.();
     ATLAS.log(3, `Class rules saved for ${actor.name}`);

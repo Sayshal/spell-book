@@ -5,7 +5,7 @@ import { initializePeddler, onRenderScrollPurchase, onSpellLearned, onTidy5eGrou
 import { SpellDataManager } from './managers/_module.mjs';
 import { onAdvancementComplete, onRenderSpellcastingNotice, onSpellcastingItemCreate } from './managers/spellcasting-notice.mjs';
 import { DescriptionInjector } from './ui/_module.mjs';
-import { onActorSheetRender, onCompendiumDirectoryRender, onGroupActorRender, onRestCompleted, onUpdateActor } from './utils/_module.mjs';
+import { invalidateActorCaches, onActorSheetRender, onCompendiumDirectoryRender, onGroupActorRender, onRestCompleted, onUpdateActor } from './utils/_module.mjs';
 
 /** Register all hooks for the Spell Book module. */
 export function registerHooks() {
@@ -32,6 +32,12 @@ export function registerHooks() {
   Hooks.on('updateItem', DescriptionInjector.onUpdateItem.bind(DescriptionInjector));
   Hooks.on('createItem', DescriptionInjector.onCreateItem.bind(DescriptionInjector));
   Hooks.on('createItem', onSpellcastingItemCreate);
+  Hooks.on('updateItem', (item, changes) => {
+    if (item.actor && (item.type === 'class' || item.type === 'subclass') && changes.system?.levels !== undefined) invalidateActorCaches(item.actor);
+  });
+  Hooks.on('deleteItem', (item) => {
+    if (item.actor && (item.type === 'class' || item.type === 'subclass')) invalidateActorCaches(item.actor);
+  });
   Hooks.on('dnd5e.advancementManagerComplete', onAdvancementComplete);
   Hooks.on('renderChatMessageHTML', onRenderSpellcastingNotice);
   Hooks.on('updateActor', onUpdateActor);
