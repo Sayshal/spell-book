@@ -935,6 +935,7 @@
   .sidebar-controls {
     gap: var(--sb-space-sm);
     display: flex;
+    flex-wrap: wrap;
     flex-shrink: 0;
     justify-content: center;
     margin-top: auto;
@@ -945,8 +946,8 @@
   .sidebar-btn {
     place-content: center;
     display: grid;
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 2.1rem;
+    height: 2.1rem;
     border: 0.0625rem solid var(--sb-border-medium);
     border-radius: var(--sb-radius-md);
     color: var(--sb-text-muted);
@@ -976,7 +977,7 @@
     }
 
     i {
-      font-size: var(--sb-font-md);
+      font-size: 1rem;
     }
   }
 
