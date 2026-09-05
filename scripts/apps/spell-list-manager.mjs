@@ -66,7 +66,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     header: { template: TEMPLATES.APPS.SPELL_LIST_MANAGER.HEADER },
     main: { template: TEMPLATES.APPS.SPELL_LIST_MANAGER.MAIN },
     sidebar: { template: TEMPLATES.APPS.SPELL_LIST_MANAGER.SPELL_LISTS, scrollable: ['.lists-container', '.sidebar-filter-section'] },
-    content: { template: TEMPLATES.APPS.SPELL_LIST_MANAGER.LIST_CONTENT, scrollable: ['.available-spells-panel', '.current-list-panel'] },
+    content: { template: TEMPLATES.APPS.SPELL_LIST_MANAGER.LIST_CONTENT, scrollable: ['.available-spells-panel .panel-scroll', '.current-list-panel .panel-scroll'] },
     footer: { template: TEMPLATES.APPS.SPELL_LIST_MANAGER.FOOTER }
   };
 
@@ -75,6 +75,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /** @type {number} Pixels from the bottom of the scroll container that trigger the next batch. */
   static SCROLL_MARGIN = 100;
+
+  /** @type {number} Upper bound on rows carried across a content re-render. */
+  static MAX_CARRIED_ROWS = 500;
 
   /** @type {boolean} Whether initial data load has run. */
   #preInitialized = false;
@@ -111,6 +114,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /** @type {object[]} Full filtered available-spell list (only the first batch is in the DOM). */
   _filteredAll = [];
+
+  /** @type {string} Serialized filter state the current batch index belongs to. */
+  _filterSignature = '';
 
   /** @type {number} How many filtered spells have been mounted into the DOM so far. */
   _batchIndex = 0;
@@ -500,8 +506,11 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       context.compareInfo = await compareListVersions(flags.originalUuid, this.selectedList.document.uuid);
     }
     const filtered = this._filterAvailableSpells();
+    const signature = JSON.stringify(this.filterState);
+    const carried = signature === this._filterSignature ? Math.min(this._batchIndex, SpellListManager.MAX_CARRIED_ROWS) : 0;
+    this._filterSignature = signature;
     this._filteredAll = filtered.spells;
-    this._batchIndex = Math.min(SpellListManager.BATCH_SIZE, filtered.spells.length);
+    this._batchIndex = Math.min(Math.max(carried, SpellListManager.BATCH_SIZE), filtered.spells.length);
     const firstBatch = filtered.spells.slice(0, this._batchIndex).map((spell) => this.#enrichSpellForDisplay(spell));
     context.filteredSpells = { spells: firstBatch, totalFiltered: filtered.totalFiltered };
   }

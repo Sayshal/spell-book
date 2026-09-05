@@ -35,9 +35,19 @@ export function registerHooks() {
   Hooks.on('updateItem', (item, changes) => {
     if (item.actor && (item.type === 'class' || item.type === 'subclass') && changes.system?.levels !== undefined) invalidateActorCaches(item.actor);
   });
-  Hooks.on('deleteItem', (item) => {
-    if (item.actor && (item.type === 'class' || item.type === 'subclass')) invalidateActorCaches(item.actor);
+  Hooks.on('createItem', (item) => {
+    if (item.actor && item.effects.size) invalidateActorCaches(item.actor);
   });
+  Hooks.on('deleteItem', (item) => {
+    if (item.actor && (item.type === 'class' || item.type === 'subclass' || item.effects.size)) invalidateActorCaches(item.actor);
+  });
+  const invalidateFromEffect = (effect) => {
+    const actor = effect.parent?.actor ?? effect.parent;
+    if (actor?.documentName === 'Actor') invalidateActorCaches(actor);
+  };
+  Hooks.on('createActiveEffect', invalidateFromEffect);
+  Hooks.on('updateActiveEffect', invalidateFromEffect);
+  Hooks.on('deleteActiveEffect', invalidateFromEffect);
   Hooks.on('dnd5e.advancementManagerComplete', onAdvancementComplete);
   Hooks.on('renderChatMessageHTML', onRenderSpellcastingNotice);
   Hooks.on('updateActor', onUpdateActor);

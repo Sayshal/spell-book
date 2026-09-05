@@ -19,9 +19,7 @@ const DEFAULT_INDEX_FIELDS = new Set([
   'system.range.units',
   'system.range.value',
   'system.school',
-  'system.source.book',
-  'system.source.bookPlaceholder',
-  'system.source.custom',
+  'system.source',
   'system.target'
 ]);
 
@@ -52,7 +50,7 @@ export async function fetchAllSpells({ maxLevel, onProgress } = {}) {
   }
   const Filter = dnd5e?.Filter;
   const SourceField = dnd5e?.dataModels?.shared?.SourceField;
-  const fields = Array.from(new Set([...DEFAULT_INDEX_FIELDS, ...Filter.uniqueKeys(filters)])).filter((f) => f !== 'system.source.slug');
+  const fields = Array.from(new Set([...DEFAULT_INDEX_FIELDS, ...Filter.uniqueKeys(filters)])).filter((f) => !f.startsWith('system.source.'));
   const eligiblePacks = getEligibleSpellPacks();
   const results = [];
   for (const pack of eligiblePacks) {

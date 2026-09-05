@@ -744,7 +744,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (scrollOnly.length) results = [...scrollOnly, ...results];
     }
     this.#state.set(tabId, { results, allResults: results, loaded: true });
-    await this.#renderClassResults(tabId);
+    await this.#applyFilters(tabId, { preserveScroll: true });
     if (isLearn) await this.#updateWizardCounters(tabId);
     else {
       this.#updateCantripCounter(tabId);
@@ -755,8 +755,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Render the first batch of results for a class into its panel.
    * @param {string} tabId - The tab id whose panel should be populated
+   * @param {object} [options] - Render options
+   * @param {boolean} [options.preserveScroll] - Restore the list's scroll offset after the rebuild
    */
-  async #renderClassResults(tabId) {
+  async #renderClassResults(tabId, { preserveScroll = false } = {}) {
     const panel = this.#getPanelEl(tabId);
     const state = this.#state.get(tabId);
     if (!panel || !state) return;
@@ -788,8 +790,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       fragment.appendChild(levelEl);
     }
     if (spinner) spinner.hidden = true;
+    const savedScroll = preserveScroll ? listEl?.scrollTop || 0 : 0;
     listEl?.replaceChildren(fragment);
     this.#restorePendingChanges(tabId);
+    if (savedScroll && listEl) listEl.scrollTop = Math.min(savedScroll, listEl.scrollHeight - listEl.clientHeight);
   }
 
   /**
@@ -1179,12 +1183,15 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * Apply search query and dropdown filters to a class's full result set, then re-render its panel.
    * @param {string} tabId - The tab id whose filters should be applied
+   * @param {object} [options] - Filter options
+   * @param {boolean} [options.preserveScroll] - Keep the current scroll offset and result index (reload, not a filter change)
+   * @returns {Promise<void>} Resolves once the panel has been re-rendered
    */
-  #applyFilters(tabId) {
+  async #applyFilters(tabId, { preserveScroll = false } = {}) {
     const state = this.#state.get(tabId);
-    if (!state?.allResults?.length) return;
+    if (!state) return;
     const sidebar = this.element?.querySelector('.spell-book-sidebar');
-    if (!sidebar) return;
+    if (!state.allResults?.length || !sidebar) return this.#renderClassResults(tabId, { preserveScroll });
     const query = sidebar.querySelector('[name="filter-name"]')?.value?.trim() || '';
     const filterState = getFilterState(sidebar.querySelector('.sidebar-filter-section'));
     const nameQuery = query.toLowerCase();
@@ -1228,8 +1235,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       if (filterState.affordable && state.costData && !this.#getSpellCost(spell, state.costData).affordable) return false;
       return true;
     });
-    state.resultIndex = 0;
-    this.#renderClassResults(tabId);
+    if (!preserveScroll) state.resultIndex = 0;
+    await this.#renderClassResults(tabId, { preserveScroll });
   }
 
   /**
