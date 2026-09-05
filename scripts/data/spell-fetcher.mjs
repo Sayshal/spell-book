@@ -57,8 +57,7 @@ export async function fetchAllSpells({ maxLevel, onProgress } = {}) {
   const results = [];
   for (const pack of eligiblePacks) {
     const index = await pack.getIndex({ fields });
-    const art = game.dnd5e.moduleArt.apply(index);
-    for (const entry of art) {
+    for (const entry of index) {
       const src = foundry.utils.getProperty(entry, 'system.source');
       if (foundry.utils.getType(src) === 'Object' && entry.uuid) SourceField.prepareData.call(src, entry.uuid);
       if (entry.type !== 'spell') continue;
