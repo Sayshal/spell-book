@@ -1,5 +1,5 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
-import { createMergedSpellList, createNewSpellList, findSpellListsByType } from '../data/_module.mjs';
+import { createMergedSpellList, createNewSpellList, findSpellListsByType, isSourceHiddenSpellList } from '../data/_module.mjs';
 import { detachedRenderOptions } from '../ui/_module.mjs';
 
 const { DialogV2 } = foundry.applications.api;
@@ -166,8 +166,9 @@ export class CreationController {
   static #getMergeCandidates(app) {
     const hidden = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
     const visible = (list) => !hidden.includes(list.uuid);
+    const sourceConfig = game.settings.get('dnd5e', 'packSourceConfiguration') ?? {};
     return {
-      standard: app.availableLists.filter((l) => !l.isActorOwned && !l.isCustom && !l.isMerged && visible(l)),
+      standard: app.availableLists.filter((l) => !l.isActorOwned && !l.isCustom && !l.isMerged && visible(l) && !isSourceHiddenSpellList(l.system?.spells, false, sourceConfig)),
       custom: app.availableLists.filter((l) => !l.isActorOwned && !l.isMerged && l.isCustom && visible(l)),
       merged: app.availableLists.filter((l) => !l.isActorOwned && l.isMerged && visible(l)),
       actorOwned: app.availableLists.filter((l) => l.isActorOwned && visible(l))
