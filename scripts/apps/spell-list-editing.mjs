@@ -360,6 +360,82 @@ export class EditingController {
   }
 
   /**
+   * Apply the selected spells' membership across every eligible list in one pass.
+   * @param {SpellListManager} app - The parent spell-list-manager app
+   * @param {string[]} spellUuids - The spells being assigned
+   * @param {string[]} targetUuids - List UUIDs the spells should end up on
+   */
+  static async applySpellToLists(app, spellUuids, targetUuids) {
+    if (!spellUuids.length) return;
+    const target = new Set(targetUuids);
+    const membership = app.spellListMembership;
+    const isStock = (list) => !list.isCustom && !list.isMerged && !list.isActorOwned;
+    const plans = [];
+    for (const list of app.availableLists) {
+      const wanted = target.has(list.uuid);
+      const adds = wanted ? spellUuids.filter((uuid) => !membership.get(uuid)?.has(list.uuid)) : [];
+      const removes = wanted ? [] : spellUuids.filter((uuid) => membership.get(uuid)?.has(list.uuid));
+      if (adds.length || removes.length) plans.push({ list, adds, removes });
+    }
+    if (!plans.length) return;
+    const addCount = plans.reduce((total, plan) => total + plan.adds.length, 0);
+    const removeCount = plans.reduce((total, plan) => total + plan.removes.length, 0);
+    const duplicating = plans.filter((plan) => isStock(plan.list)).length;
+    let msg = '';
+    if (addCount && removeCount) msg = _loc('SPELLBOOK.Manager.SpellFirst.ConfirmAddAndRemove', { addCount, removeCount });
+    else if (addCount) msg = _loc('SPELLBOOK.Manager.SpellFirst.ConfirmAdd', { count: addCount });
+    else msg = _loc('SPELLBOOK.Manager.SpellFirst.ConfirmRemove', { count: removeCount });
+    if (duplicating) msg += ` ${_loc('SPELLBOOK.Manager.SpellFirst.ConfirmDuplicate', { count: duplicating })}`;
+    const confirmed = await confirmDialog({
+      title: 'SPELLBOOK.Manager.SpellFirst.ConfirmTitle',
+      content: msg,
+      confirmLabel: 'SPELLBOOK.Manager.BulkOps.SaveChanges',
+      confirmIcon: 'fas fa-save',
+      confirmCssClass: 'dialog-button-success',
+      parent: app
+    });
+    if (!confirmed) return;
+    const hiddenAdditions = [];
+    const failed = [];
+    let applied = 0;
+    for (const { list, adds, removes } of plans) {
+      let doc = await fromUuid(list.uuid);
+      if (!doc) {
+        failed.push(list.name);
+        continue;
+      }
+      const flags = doc.flags?.[MODULE.ID] || {};
+      if (!flags.kind && !flags.actorId) {
+        const originalUuid = doc.uuid;
+        const duplicate = await duplicateSpellList(doc);
+        if (!duplicate) {
+          failed.push(list.name);
+          continue;
+        }
+        doc = duplicate;
+        hiddenAdditions.push(originalUuid);
+      }
+      const spells = new Set(Array.from(doc.system.spells || []));
+      for (const uuid of adds) spells.add(uuid);
+      for (const uuid of removes) spells.delete(uuid);
+      await doc.update({ 'system.spells': Array.from(spells) });
+      await ensureListRegistered(doc.uuid);
+      applied++;
+    }
+    if (hiddenAdditions.length) {
+      const hidden = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
+      const merged = [...new Set([...hidden, ...hiddenAdditions])];
+      if (merged.length !== hidden.length) await game.settings.set(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS, merged);
+    }
+    app.availableLists = await findAllSpellLists();
+    app.buildSpellListMembership();
+    app.seedSpellListTargets();
+    if (failed.length) ui.notifications.warn(_loc('SPELLBOOK.Manager.SpellFirst.PartialFailure', { count: failed.length, names: failed.join(', ') }));
+    if (applied) ui.notifications.info(_loc('SPELLBOOK.Manager.SpellFirst.Completed', { count: applied }));
+    app.render(false, { parts: ['sidebar', 'content', 'footer'] });
+  }
+
+  /**
    * Cancel the current bulk selection without applying.
    * @param {SpellListManager} app - The parent spell-list-manager app
    */

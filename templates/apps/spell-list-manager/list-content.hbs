@@ -139,6 +139,87 @@
         </div>
       </div>
     </div>
+  {{else if spellFirst}}
+    <div class="selected-list-header">
+      <div class="header-title">
+        <h2>{{localize "SPELLBOOK.Manager.SpellFirst.Title"}}</h2>
+      </div>
+      <div class="header-buttons" role="toolbar">
+        <button type="button" class="action-button" data-action="applySpellLists"
+          {{#unless spellFirst.canApply}}disabled{{/unless}}
+          data-tooltip="{{localize 'SPELLBOOK.Manager.SpellFirst.ApplyHint'}}">
+          <i class="fas fa-save" aria-hidden="true"></i> {{localize "SPELLBOOK.Manager.SpellFirst.Apply"}}
+        </button>
+      </div>
+    </div>
+    <div class="split-view">
+      <div class="available-spells-panel">
+        <h3 class="panel-header">{{localize "SPELLBOOK.Manager.Sidebar.AvailableSpells"}}
+          ({{filteredSpells.totalFiltered}})</h3>
+        <div class="panel-scroll">
+          {{#if filteredSpells.spells.length}}
+            <ul class="spell-list-items" role="list">
+              {{#each filteredSpells.spells as |spell|}}
+                <li class="spell-item available selectable{{#if spell.isSelectedForAdd}} selected{{/if}}"
+                  data-uuid="{{spell.uuid}}">
+                  <div class="spell-name">
+                    {{{spell.enrichedIcon}}}
+                    <div class="name-stacked">
+                      <span class="title">{{spell.name}}</span>
+                      <span class="subtitle">{{spell.formattedDetails}}</span>
+                    </div>
+                  </div>
+                  <span class="spell-list-count"
+                    data-tooltip="{{localize 'SPELLBOOK.Manager.SpellFirst.OnLists' count=spell.listCount}}">{{spell.listCount}}</span>
+                  <button type="button" class="add-spell select-toggle" data-action="selectSpellForLists"
+                    data-uuid="{{spell.uuid}}"
+                    data-tooltip="{{localize 'SPELLBOOK.Manager.SpellFirst.SelectSpell' name=spell.name}}">
+                    <i class="{{#if spell.isSelectedForAdd}}fa-solid fa-square-check{{else}}fa-regular fa-square{{/if}}"
+                      aria-hidden="true"></i>
+                  </button>
+                </li>
+              {{/each}}
+            </ul>
+          {{else}}
+            {{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize "SPELLBOOK.Manager.Columns.NoMatchingSpells")}}
+          {{/if}}
+        </div>
+      </div>
+      <div class="current-list-panel">
+        <h3 class="panel-header">{{localize "SPELLBOOK.Manager.Columns.SpellLists"}} ({{spellFirst.listCount}})</h3>
+        <div class="panel-scroll">
+          {{#unless spellFirst.selectedCount}}
+            <p class="spell-first-hint">{{localize "SPELLBOOK.Manager.SpellFirst.NoSpellSelected"}}</p>
+          {{/unless}}
+          {{#if spellFirst.lists.length}}
+            <ul class="spell-list spell-first-list{{#unless spellFirst.selectedCount}} is-inert{{/unless}}" role="list">
+              {{#each spellFirst.lists as |list|}}
+                <li class="spell-item spell-first-target{{#if list.isTargeted}} selected{{/if}}"
+                  data-uuid="{{list.uuid}}">
+                  <button type="button" class="select-toggle" data-action="toggleSpellListTarget"
+                    data-uuid="{{list.uuid}}" aria-pressed="{{#if list.isTargeted}}true{{else}}false{{/if}}"
+                    {{#unless @root.spellFirst.selectedCount}}disabled{{/unless}}>
+                    <i class="{{#if list.isTargeted}}fa-solid fa-square-check{{else}}{{#if list.isPartial}}fa-solid fa-square-minus{{else}}fa-regular fa-square{{/if}}{{/if}}"
+                      aria-hidden="true"></i>
+                  </button>
+                  <div class="spell-name">
+                    <div class="name-stacked">
+                      <span class="title">{{list.name}}</span>
+                      <span
+                        class="subtitle">{{localize "SPELLBOOK.Manager.ListTooltip.SpellCount" count=list.count}}</span>
+                    </div>
+                  </div>
+                  <i class="{{list.icon}} spell-first-kind-icon" aria-hidden="true"
+                    data-tooltip="{{list.iconTooltip}}"></i>
+                </li>
+              {{/each}}
+            </ul>
+          {{else}}
+            {{> "modules/spell-book/templates/components/empty-state.hbs" message=(localize "SPELLBOOK.Manager.SpellFirst.NoLists")}}
+          {{/if}}
+        </div>
+      </div>
+    </div>
   {{else}}
     <div class="no-selection">
       <p>{{localize "SPELLBOOK.Manager.Columns.NoListSelected"}}</p>

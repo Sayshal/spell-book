@@ -808,16 +808,19 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const listAssigned = [rules.customSpellList, rules.customSubclassSpellList].some((l) => l?.length > 0);
     const li = document.createElement('li');
     li.className = 'spell-list-notice no-list-notice';
+    const className = classId ? (this.actor.classes?.[classId]?.name ?? classId) : '';
     const button = game.user.isGM
-      ? `<button type="button" data-action="openSettings" data-scroll-class="${classId}">
+      ? `<button type="button" class="action-button" data-action="openSettings" data-scroll-class="${classId}">
         <i class="fas fa-gear" aria-hidden="true"></i>
         <span>${_loc('SPELLBOOK.NoListAssigned.OpenSettings')}</span>
       </button>`
       : '';
-    const title = listAssigned ? 'SPELLBOOK.NoListAssigned.SourceHiddenTitle' : 'SPELLBOOK.NoListAssigned.Title';
-    const hint = listAssigned ? 'SPELLBOOK.NoListAssigned.SourceHiddenHint' : 'SPELLBOOK.NoListAssigned.Hint';
+    const title = listAssigned ? 'SPELLBOOK.NoListAssigned.SourceHiddenTitle' : 'SPELLBOOK.NoListAssigned.NoticeTitle';
+    const why = listAssigned ? 'SPELLBOOK.NoListAssigned.SourceHiddenWhy' : 'SPELLBOOK.NoListAssigned.Why';
+    const hint = listAssigned ? 'SPELLBOOK.NoListAssigned.SourceHiddenHint' : game.user.isGM ? 'SPELLBOOK.NoListAssigned.HintGM' : 'SPELLBOOK.NoListAssigned.Hint';
     li.innerHTML = `
-      <p><strong>${_loc(title)}</strong></p>
+      <p><strong>${_loc(title, { class: className })}</strong></p>
+      <p>${_loc(why, { class: className })}</p>
       <p>${_loc(hint)}</p>
       ${button}`;
     return li;

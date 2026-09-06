@@ -34,6 +34,9 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     position: { width: 1100, height: 800 },
     actions: {
       switchSidebarMode: SpellListManager.#onSwitchSidebarMode,
+      selectSpellForLists: SpellListManager.#onSelectSpellForLists,
+      toggleSpellListTarget: SpellListManager.#onToggleSpellListTarget,
+      applySpellLists: SpellListManager.#onApplySpellLists,
       toggleFolder: SpellListManager.#onToggleFolder,
       selectList: SpellListManager.#onSelectList,
       hideList: SpellListManager.#onHideList,
@@ -94,8 +97,20 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   /** @type {object|null} Currently selected spell list and its spells. */
   selectedList = null;
 
-  /** @type {'lists'|'filters'} Active sidebar view mode. */
+  /** @type {'lists'|'filters'|'spells'} Active sidebar view mode. */
   sidebarMode = 'lists';
+
+  /** @type {Set<string>} Spells selected in spell-first mode. */
+  selectedSpellUuids = new Set();
+
+  /** @type {boolean} Whether spell-first mode omits player spell books from the target list. */
+  hideActorSpellbooks = false;
+
+  /** @type {Set<string>} List UUIDs ticked for the selected spell in spell-first mode. */
+  spellListTargets = new Set();
+
+  /** @type {Map<string, Set<string>>} Reverse index of spell UUID to the list UUIDs holding it. */
+  spellListMembership = new Map();
 
   /** @type {{ added: Set<string>, removed: Set<string> }} Pending edits. */
   pendingChanges = { added: new Set(), removed: new Set() };
@@ -182,7 +197,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       this.#addSelectedListContext(context);
       if (this.availableSpells.length) await this.#addEditingContext(context);
     }
-    if (this.sidebarMode === 'filters') context.filterFormElements = this.#buildFilterFormData();
+    if (this.sidebarMode === 'filters' || this.sidebarMode === 'spells') context.filterFormElements = this.#buildFilterFormData();
+    if (this.sidebarMode === 'spells') await this.#addSpellFirstContext(context);
     context.detached = options.window?.attach ? false : options.window?.detach ? true : !!this.window.windowId;
     return context;
   }
@@ -286,6 +302,62 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     list.insertAdjacentHTML('beforeend', next.map((spell) => this.#buildAvailableSpellRow(this.#enrichSpellForDisplay(spell))).join(''));
   }
 
+  /** Rebuild the spell-to-lists reverse index from the current available lists. */
+  buildSpellListMembership() {
+    const index = new Map();
+    for (const list of this.availableLists) {
+      for (const uuid of list.system?.spells ?? []) {
+        if (!index.has(uuid)) index.set(uuid, new Set());
+        index.get(uuid).add(list.uuid);
+      }
+    }
+    this.spellListMembership = index;
+  }
+
+  /**
+   * Build the spell-first split view.
+   * @param {object} context - The render context being assembled
+   * @private
+   */
+  async #addSpellFirstContext(context) {
+    if (!this.spellListMembership.size && this.availableLists.length) this.buildSpellListMembership();
+    this.#addFilteredSpellsContext(context);
+    const selected = [...this.selectedSpellUuids];
+    const candidates = CreationController.getSpellListCandidates(this);
+    const stateFor = (listUuid) => {
+      if (!selected.length) return 'none';
+      const held = selected.filter((uuid) => this.spellListMembership.get(uuid)?.has(listUuid)).length;
+      return held === 0 ? 'none' : held === selected.length ? 'all' : 'some';
+    };
+    const KINDS = {
+      standard: { icon: 'fas fa-scroll', tooltip: 'SPELLBOOK.Manager.SpellFirst.KindStandard' },
+      custom: { icon: 'fas fa-magic', tooltip: 'SPELLBOOK.Manager.SpellFirst.KindCustom' },
+      merged: { icon: 'fas fa-code-merge', tooltip: 'SPELLBOOK.Manager.SpellFirst.KindMerged' },
+      actorOwned: { icon: 'fas fa-user', tooltip: 'SPELLBOOK.Manager.SpellFirst.KindActor' }
+    };
+    const toRow = (list, kind) => {
+      const state = stateFor(list.uuid);
+      return {
+        uuid: list.uuid,
+        name: list.name,
+        count: list.spellCount ?? list.system?.spells?.size ?? 0,
+        isTargeted: this.spellListTargets.has(list.uuid),
+        isPartial: state === 'some',
+        icon: KINDS[kind].icon,
+        iconTooltip: _loc(KINDS[kind].tooltip)
+      };
+    };
+    const kinds = this.hideActorSpellbooks ? Object.keys(KINDS).filter((kind) => kind !== 'actorOwned') : Object.keys(KINDS);
+    const lists = kinds.flatMap((kind) => candidates[kind].map((list) => toRow(list, kind))).sort((a, b) => a.name.localeCompare(b.name));
+    const targetsChanged = lists.some((row) => row.isTargeted !== (stateFor(row.uuid) === 'all'));
+    context.spellFirst = {
+      lists,
+      selectedCount: selected.length,
+      listCount: lists.length,
+      canApply: selected.length > 0 && targetsChanged
+    };
+  }
+
   /**
    * Build the HTML for a single available-spell row. Mirrors the template markup.
    * @param {object} spell - Enriched spell (with `isSelectedForAdd`, etc.)
@@ -294,7 +366,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   #buildAvailableSpellRow(spell) {
     const classes = ['spell-item', 'available'];
-    if (this.selectionMode) classes.push('selectable');
+    if (this.selectionMode || this.sidebarMode === 'spells') classes.push('selectable');
     if (spell.isSelectedForAdd) classes.push('selected');
     const nameEscaped = foundry.utils.escapeHTML(spell.name);
     const addTooltip = foundry.utils.escapeHTML(_loc('SPELLBOOK.Manager.Buttons.AddSpell', { name: spell.name }));
@@ -304,13 +376,17 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       const activeClass = spell.isInComparison ? ' active' : '';
       compareIcon = `<i class="fa-solid fa-scale-balanced spell-compare-icon${activeClass}" data-action="compareSpell" data-uuid="${spell.uuid}" data-tooltip="${compareTooltip}" aria-label="${compareTooltip}"></i>`;
     }
-    const selectable = this.selectionMode;
+    const spellFirst = this.sidebarMode === 'spells';
+    const selectable = spellFirst || this.selectionMode;
     const btnClass = selectable ? 'add-spell select-toggle' : 'add-spell';
-    const iconHtml = selectable ? `<i class="fas fa-${spell.isSelectedForAdd ? 'check-square' : 'square'}" aria-hidden="true"></i>` : `<i class="fas fa-plus" aria-hidden="true"></i>`;
-    return `<li class="${classes.join(' ')}" data-uuid="${spell.uuid}" draggable="true">
+    const checkIcon = spell.isSelectedForAdd ? 'fa-solid fa-square-check' : 'fa-regular fa-square';
+    const iconHtml = selectable ? `<i class="${checkIcon}" aria-hidden="true"></i>` : `<i class="fas fa-plus" aria-hidden="true"></i>`;
+    const action = spellFirst ? 'selectSpellForLists' : 'addSpell';
+    const countBadge = spellFirst ? `<span class="spell-list-count">${spell.listCount ?? 0}</span>` : '';
+    return `<li class="${classes.join(' ')}" data-uuid="${spell.uuid}"${spellFirst ? '' : ' draggable="true"'}>
       <div class="spell-name">${spell.enrichedIcon ?? ''}<div class="name-stacked"><span class="title">${nameEscaped}</span><span class="subtitle">${spell.formattedDetails ?? ''}</span></div></div>
-      ${compareIcon}
-      <button type="button" class="${btnClass}" data-action="addSpell" data-uuid="${spell.uuid}" data-tooltip="${addTooltip}">${iconHtml}</button>
+      ${compareIcon}${countBadge}
+      <button type="button" class="${btnClass}" data-action="${action}" data-uuid="${spell.uuid}" data-tooltip="${addTooltip}">${iconHtml}</button>
     </li>`;
   }
 
@@ -505,6 +581,15 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       context.originalUuid = flags.originalUuid;
       context.compareInfo = await compareListVersions(flags.originalUuid, this.selectedList.document.uuid);
     }
+    this.#addFilteredSpellsContext(context);
+  }
+
+  /**
+   * Populate `context.filteredSpells` with the current filter's first batch.
+   * @param {object} context - The render context being assembled
+   * @private
+   */
+  #addFilteredSpellsContext(context) {
     const filtered = this._filterAvailableSpells();
     const signature = JSON.stringify(this.filterState);
     const carried = signature === this._filterSignature ? Math.min(this._batchIndex, SpellListManager.MAX_CARRIED_ROWS) : 0;
@@ -529,14 +614,13 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       showCompare: !!this.enabledElements?.has('compare'),
       isInComparison: this.comparisonSet.has(spell.uuid),
       showCompareLink: true,
-      isSelectedForAdd: this.selectionMode ? this.selectedToAdd.has(spell.uuid) : false
+      isSelectedForAdd: this.sidebarMode === 'spells' ? this.selectedSpellUuids.has(spell.uuid) : this.selectionMode ? this.selectedToAdd.has(spell.uuid) : false,
+      listCount: this.spellListMembership.get(spell.uuid)?.size ?? 0
     };
   }
 
   /**
    * Build the data objects consumed by the `filter-item.hbs` partial.
-   * Each entry matches the partial's expected shape: `{ name, id, type,
-   * label?, options?, value?, checked?, placeholder?, ariaLabel, disabled }`.
    * @returns {object} Map of filter key → filter-item data
    * @private
    */
@@ -618,6 +702,15 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         disabled
       },
       ritual: { name: 'spell-ritual', id: 'spell-ritual', type: 'checkbox', label: 'SPELLBOOK.Filters.RitualOnly', ariaLabel: 'SPELLBOOK.Filters.RitualOnly', checked: !!f.ritual, disabled },
+      hideActorSpellbooks: {
+        name: 'hide-actor-spellbooks',
+        id: 'hide-actor-spellbooks',
+        type: 'checkbox',
+        label: 'SPELLBOOK.Manager.SpellFirst.HideActorBooks',
+        ariaLabel: 'SPELLBOOK.Manager.SpellFirst.HideActorBooks',
+        checked: this.hideActorSpellbooks,
+        disabled
+      },
       minRange: {
         name: 'spell-min-range',
         id: 'spell-min-range',
@@ -843,8 +936,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   _filterAvailableSpells() {
-    if (!this.selectedList) return { spells: [], totalFiltered: 0 };
-    const selectedUuids = new Set(this.selectedList.spells?.map((s) => s.uuid).filter(Boolean) ?? []);
+    if (!this.selectedList && this.sidebarMode !== 'spells') return { spells: [], totalFiltered: 0 };
+    const selectedUuids = new Set(this.selectedList?.spells?.map((s) => s.uuid).filter(Boolean) ?? []);
     const f = this.filterState;
     const name = f.name?.trim().toLowerCase() || '';
     const minRange = parseFloat(f.minRange);
@@ -900,7 +993,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @private
    */
   #setupFilterListeners() {
-    if (this.sidebarMode !== 'filters') return;
+    if (this.sidebarMode !== 'filters' && this.sidebarMode !== 'spells') return;
     const nameInput = this.element.querySelector('input[name="spell-search"]');
     if (nameInput) {
       nameInput.addEventListener('input', (event) => {
@@ -933,6 +1026,13 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     if (ritualCb) {
       ritualCb.addEventListener('change', (event) => {
         this.filterState.ritual = event.target.checked;
+        this.render(false, { parts: ['content'] });
+      });
+    }
+    const hideActorCb = this.element.querySelector('dnd5e-checkbox[name="hide-actor-spellbooks"]');
+    if (hideActorCb) {
+      hideActorCb.addEventListener('change', (event) => {
+        this.hideActorSpellbooks = event.target.checked;
         this.render(false, { parts: ['content'] });
       });
     }
@@ -1000,6 +1100,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
 
   /** Set up drag-and-drop between the available and current spell panels. */
   #setupDragDrop() {
+    if (this.sidebarMode === 'spells') return;
     const available = this.element.querySelector('.available-spells-panel');
     const current = this.element.querySelector('.current-list-panel');
     if (!available || !current) return;
@@ -1134,11 +1235,71 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   static #onSwitchSidebarMode(_event, target) {
     this.sidebarMode = target.dataset.mode || 'lists';
-    if (this.sidebarMode === 'lists') {
+    if (this.sidebarMode === 'lists' || this.sidebarMode === 'spells') {
       this.selectedList = null;
       this.pendingChanges = { added: new Set(), removed: new Set() };
     }
+    if (this.sidebarMode === 'spells') {
+      this.selectedSpellUuids = new Set();
+      this.spellListTargets = new Set();
+      this.buildSpellListMembership();
+    }
     this.render(false, { parts: ['sidebar', 'content', 'footer'] });
+  }
+
+  /**
+   * Choose a spell in spell-first mode and seed its target list selection.
+   * @this {SpellListManager}
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} target - The element carrying data-uuid
+   */
+  static #onSelectSpellForLists(event, target) {
+    const uuid = target.closest('[data-uuid]')?.dataset?.uuid;
+    if (!uuid) return;
+    const order = this._filteredAll ?? [];
+    const index = order.findIndex((spell) => spell.uuid === uuid);
+    if (event?.shiftKey && this._lastSpellPick != null && index > -1) {
+      const [from, to] = this._lastSpellPick < index ? [this._lastSpellPick, index] : [index, this._lastSpellPick];
+      for (let i = from; i <= to; i++) this.selectedSpellUuids.add(order[i].uuid);
+    } else if (this.selectedSpellUuids.has(uuid)) this.selectedSpellUuids.delete(uuid);
+    else this.selectedSpellUuids.add(uuid);
+    if (index > -1) this._lastSpellPick = index;
+    this.seedSpellListTargets();
+    this.render(false, { parts: ['content', 'footer'] });
+  }
+
+  /**
+   * Tick every list that already holds all of the selected spells.
+   * @private
+   */
+  seedSpellListTargets() {
+    const selected = [...this.selectedSpellUuids];
+    this.spellListTargets = new Set();
+    if (!selected.length) return;
+    const shared = selected.map((uuid) => this.spellListMembership.get(uuid) ?? new Set());
+    for (const listUuid of shared[0]) if (shared.every((set) => set.has(listUuid))) this.spellListTargets.add(listUuid);
+  }
+
+  /**
+   * Tick or untick one target list for the selected spell.
+   * @this {SpellListManager}
+   * @param {Event} _event - The triggering event
+   * @param {HTMLElement} target - The element carrying data-uuid
+   */
+  static #onToggleSpellListTarget(_event, target) {
+    const uuid = target.dataset.uuid;
+    if (!uuid) return;
+    if (this.spellListTargets.has(uuid)) this.spellListTargets.delete(uuid);
+    else this.spellListTargets.add(uuid);
+    this.render(false, { parts: ['content', 'footer'] });
+  }
+
+  /**
+   * Commit the selected spell's membership across every ticked list.
+   * @this {SpellListManager}
+   */
+  static async #onApplySpellLists() {
+    await EditingController.applySpellToLists(this, [...this.selectedSpellUuids], [...this.spellListTargets]);
   }
 
   /**

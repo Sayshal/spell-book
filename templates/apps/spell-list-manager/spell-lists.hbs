@@ -1,5 +1,5 @@
 <div class="spell-lists-sidebar" role="complementary">
-  {{#if (eq sidebarMode "filters")}}
+  {{#if (or (eq sidebarMode "filters") (eq sidebarMode "spells"))}}
     <div class="sidebar-filter-header">
       <h2>{{localize "SPELLBOOK.Manager.Sidebar.AvailableSpells"}}</h2>
       <button type="button" class="header-action-btn" data-action="switchSidebarMode" data-mode="lists">
@@ -37,6 +37,11 @@
         <div class="filter-checkbox">
           {{> "modules/spell-book/templates/components/filter-item.hbs" filterFormElements.ritual}}
         </div>
+        {{#if (eq sidebarMode "spells")}}
+          <div class="filter-checkbox">
+            {{> "modules/spell-book/templates/components/filter-item.hbs" filterFormElements.hideActorSpellbooks}}
+          </div>
+        {{/if}}
         <button type="button" class="reset-filters" data-tooltip="{{localize 'SPELLBOOK.Manager.Filters.Reset'}}">
           <i class="fas fa-rotate-left" aria-hidden="true"></i> {{localize "SPELLBOOK.Manager.Filters.Reset"}}
         </button>
@@ -44,7 +49,15 @@
     </div>
   {{else}}
     <div class="lists-header">
-      <h2>{{localize 'SPELLBOOK.Manager.Columns.SpellLists'}}</h2>
+      <div class="sidebar-mode-toggle" role="group" aria-label="{{localize 'SPELLBOOK.Manager.SpellFirst.ModeLabel'}}">
+        <button type="button" class="mode-pill" data-action="switchSidebarMode" data-mode="lists" aria-pressed="true">
+          {{localize "SPELLBOOK.Manager.Columns.SpellLists"}}
+        </button>
+        <button type="button" class="mode-pill" data-action="switchSidebarMode" data-mode="spells" aria-pressed="false"
+          data-tooltip="{{localize 'SPELLBOOK.Manager.SpellFirst.Tooltip'}}">
+          {{localize "SPELLBOOK.Manager.SpellFirst.Button"}}
+        </button>
+      </div>
       <div class="lists-header-actions">
         <button type="button" class="header-action-btn" data-action="createList"
           data-tooltip="{{localize 'SPELLBOOK.Manager.Tooltips.CreateNew'}}">
