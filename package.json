@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Spell preparation, loadouts and wizard spellbooks for FoundryVTT",
   "scripts": {
+    "setup": "node dev/tools/setup-links.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -14,6 +15,17 @@
     "dev": "rollup -c rollup.config.mjs --environment BUILD:development",
     "clean": "node -e \"import('fs').then(f=>{if(!f.existsSync('dist'))return;for(const e of f.readdirSync('dist')) if(e!=='storage'&&e!=='packs') f.rmSync('dist/'+e,{recursive:true,force:true})})\"",
     "validate": "npm run lint && npm run format:check && npm run stylelint"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.css": [
+      "prettier --write",
+      "stylelint --fix"
+    ],
+    "*.{yml,yaml}": "prettier --write"
   },
   "author": "Tyler",
   "license": "MIT",
@@ -28,6 +40,7 @@
     "eslint": "^9.27.0",
     "eslint-plugin-jsdoc": "^50.8.0",
     "globals": "^15.15.0",
+    "lint-staged": "^16.4.0",
     "prettier": "^3.3.3",
     "rollup": "^4.59.0",
     "rollup-plugin-copy": "^3.5.0",

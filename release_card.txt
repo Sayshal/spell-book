@@ -1,0 +1,15 @@
+## Breaking Changes
+
+- Module hooks are now namespaced with the module id. Macros or modules listening for spellBookOpened or spellBookClosed must switch to spell-book.spellBookOpened and spell-book.spellBookClosed.
+
+## New Features
+
+- The learn tab shows each spell's copying cost next to the Learn button, the character's wallet total in the footer, and an Affordable Only filter while learning costs are deducted.
+- A GM Approval for Spell Copying setting holds a player's paid copy as a pending request; approving it copies the spell and advances world time by the copying duration, with a skip-time checkbox.
+- Two new settings: Charge Cost for Scroll Copying applies the normal gold cost to scroll copies, and Log Spell Copying to Downtime Note appends each copied spell to that day's Calendaria note.
+- Buying a spell scroll through Peddler whispers the buyer a chat card offering to copy the linked spell into their wizard spellbook, with a class picker when several wizard classes qualify.
+- New API methods learnFromScroll, getSpellLearningCost and openPartyCoordinator, plus cancellable preLearnSpell and spellLearned, spellCopied, preparationSaved and loadoutApplied hooks for other modules.
+
+## Bug Fixes
+
+- 4 bugs squashed
