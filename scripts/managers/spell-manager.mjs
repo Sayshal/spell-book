@@ -688,9 +688,10 @@ export class SpellManager {
     const scaleValues = this.#getScaleValuesForClass(actor, classIdentifier);
     if (scaleValues) {
       for (const key of cantripScaleKeys) {
-        const cantripValue = scaleValues[key]?.value;
-        if (cantripValue !== undefined) {
-          baseCantrips = Number(cantripValue);
+        const entry = scaleValues[key];
+        const cantripValue = Number(entry?.value ?? entry);
+        if (Number.isFinite(cantripValue)) {
+          baseCantrips = cantripValue;
           break;
         }
       }
@@ -729,6 +730,9 @@ export class SpellManager {
     if (classItem?.scaleValues) merged = { ...merged, ...classItem.scaleValues };
     if (spellcastingData._classLink?.scaleValues) merged = { ...merged, ...spellcastingData._classLink.scaleValues };
     if (spellcastingData.scaleValues) merged = { ...merged, ...spellcastingData.scaleValues };
+    const linkIdentifier = spellcastingData._classLink?.identifier;
+    if (linkIdentifier && actor.system?.scale?.[linkIdentifier]) merged = { ...merged, ...actor.system.scale[linkIdentifier] };
+    if (actor.system?.scale?.[classIdentifier]) merged = { ...merged, ...actor.system.scale[classIdentifier] };
     return Object.keys(merged).length > 0 ? merged : null;
   }
 

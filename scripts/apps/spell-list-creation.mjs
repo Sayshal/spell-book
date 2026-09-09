@@ -1,5 +1,5 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
-import { createMergedSpellList, createNewSpellList, findSpellListsByType } from '../data/_module.mjs';
+import { createMergedSpellList, createNewSpellList, findSpellListsByType, isSourceHiddenSpellList } from '../data/_module.mjs';
 import { detachedRenderOptions } from '../ui/_module.mjs';
 
 const { DialogV2 } = foundry.applications.api;
@@ -79,7 +79,7 @@ export class CreationController {
    */
   static async mergeLists(app) {
     if (app.availableLists.length < 2) return;
-    const content = await renderTemplate(TEMPLATES.DIALOGS.MERGE_SPELL_LISTS, { lists: this.#getMergeCandidates(app) });
+    const content = await renderTemplate(TEMPLATES.DIALOGS.MERGE_SPELL_LISTS, { lists: this.getSpellListCandidates(app) });
     let formData = null;
     const result = await DialogV2.wait({
       window: { title: 'SPELLBOOK.Manager.MergeLists.DialogTitle', icon: 'fas fa-code-merge', resizable: false, minimizable: false },
@@ -163,11 +163,12 @@ export class CreationController {
    * @returns {object} { standard, custom, merged, actorOwned }
    * @private
    */
-  static #getMergeCandidates(app) {
+  static getSpellListCandidates(app) {
     const hidden = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
     const visible = (list) => !hidden.includes(list.uuid);
+    const sourceConfig = game.settings.get('dnd5e', 'packSourceConfiguration') ?? {};
     return {
-      standard: app.availableLists.filter((l) => !l.isActorOwned && !l.isCustom && !l.isMerged && visible(l)),
+      standard: app.availableLists.filter((l) => !l.isActorOwned && !l.isCustom && !l.isMerged && visible(l) && !isSourceHiddenSpellList(l.system?.spells, false, sourceConfig)),
       custom: app.availableLists.filter((l) => !l.isActorOwned && !l.isMerged && l.isCustom && visible(l)),
       merged: app.availableLists.filter((l) => !l.isActorOwned && l.isMerged && visible(l)),
       actorOwned: app.availableLists.filter((l) => l.isActorOwned && visible(l))

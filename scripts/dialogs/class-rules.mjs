@@ -189,9 +189,15 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
   _onRender(context, options) {
     super._onRender(context, options);
     if (!this.scrollToClass) return;
-    const target = this.element.querySelector(`.class-section[data-class="${this.scrollToClass}"]`);
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const section = this.element.querySelector(`.class-section[data-class="${this.scrollToClass}"]`);
+    const target = section?.querySelector('.spell-list-group') ?? section;
     this.scrollToClass = null;
+    if (!target) return;
+    target.classList.add('rules-highlight');
+    requestAnimationFrame(() => {
+      const scroller = target.closest('.class-rules-content') ?? target.closest('.window-content') ?? this.element;
+      scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'smooth' });
+    });
   }
 
   /**
