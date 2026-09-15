@@ -1,8 +1,3 @@
-## New Features
-
-- A By Spell mode in the Spell List Manager selects spells first and ticks the lists they belong to, with shift-click ranges, partial-membership marks and a single confirmation showing add, remove and duplication counts.
-- The empty spell book notice names the class, explains why the tab is empty, and takes a GM straight to the Class Spell List field.
-
 ## Bug Fixes
 
-- 5 bugs squashed
+- 2 bugs squashed

@@ -1,16 +1,4 @@
-## New Features
-
-- Added a By Spell mode to the Spell List Manager that selects spells first and ticks the lists they belong to, with shift-click ranges, partial-membership marks, a Hide Actor Spell Books filter, and a single confirmation showing add, remove and duplication counts.
-- The empty spell book notice now names the class, explains why the tab is empty, and takes a GM straight to the Class Spell List field.
-
 ## Bug Fixes
 
-- Active effects that raise a class's cantrip maximum now count toward the limit.
-- Spell fetching no longer calls the removed dnd5e module art API, and spell indexing requests the full system source object so source filters no longer throw on dnd5e 6.0.
-- The merge dialog now hides spell lists from packs disabled in the source configuration, matching the sidebar.
-- The Spell Book keeps its scroll position and active sidebar filters when a class reloads after learning a spell.
-- The Spell List Manager keeps its scroll position and already-loaded rows across re-renders.
-
-## Changes
-
-- dnd5e 5.3.3 is now the minimum supported system version, and 6.0.0 is the verified version.
+- Fixed a crash when rendering spells whose range is a formula. The Spell List Manager and the Spell Book failed to open when the system's range formula resolution threw "ReferenceError: error is not defined".
+- Range display now uses the system's prepared range label and falls back to resolving the formula with the actor's or spell's roll data.
