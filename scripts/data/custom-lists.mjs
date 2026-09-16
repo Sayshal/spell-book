@@ -1,4 +1,5 @@
 import { FLAGS, FOLDER_TYPES, LIST_KINDS, MODULE, PACK, SETTINGS } from '../constants.mjs';
+import { ensureListRegistered } from './spell-list-registry.mjs';
 
 /**
  * Create a new spell list in the custom pack.
@@ -229,6 +230,38 @@ export async function createMergedSpellList(spellListUuids, mergedListName) {
   const page = journal?.pages?.contents[0];
   ATLAS.log(3, `Merged ${lists.length} spell lists into "${mergedListName}"`, { spellCount: mergedSpells.length, uuid: page?.uuid });
   return page ?? null;
+}
+
+/**
+ * Add the spells of source lists to an existing merged list in place.
+ * @param {string} targetUuid - UUID of the merged list to extend
+ * @param {string[]} sourceUuids - UUIDs of spell lists to add
+ * @returns {Promise<object|null>} The updated merged list page or null
+ */
+export async function appendToMergedSpellList(targetUuid, sourceUuids) {
+  const target = await fromUuid(targetUuid);
+  if (target?.flags?.[MODULE.ID]?.[FLAGS.KIND] !== LIST_KINDS.MERGED) return null;
+  const allSourceUuids = Array.from(new Set([...(target.flags[MODULE.ID].sourceListUuids || []), ...sourceUuids]));
+  const loaded = new Map(await Promise.all(allSourceUuids.map(async (uuid) => [uuid, await fromUuid(uuid)])));
+  const spells = new Set(Array.from(target.system.spells || []));
+  const mismatched = [];
+  for (const uuid of sourceUuids) {
+    const source = loaded.get(uuid);
+    if (!source) throw new Error(`Unable to load spell list: ${uuid}`);
+    for (const spellUuid of source.system.spells || []) spells.add(spellUuid);
+    if (source.system.identifier && source.system.identifier.toLowerCase() !== target.system.identifier) mismatched.push(source.name);
+  }
+  if (mismatched.length) ui.notifications.warn(_loc('SPELLBOOK.Manager.MergeLists.IdentifierMismatch', { lists: mismatched.join(', '), target: target.name }));
+  const sources = [...loaded.values()].filter(Boolean);
+  const listNames = sources.map((l) => l.name).join(', ');
+  await target.update({
+    'system.spells': Array.from(spells),
+    'system.description': _loc('SPELLBOOK.Manager.CreateList.MultiMergedDescription', { listNames, count: sources.length }),
+    [`flags.${MODULE.ID}.sourceListUuids`]: allSourceUuids
+  });
+  await ensureListRegistered(target.uuid);
+  ATLAS.log(3, `Merged ${sourceUuids.length} spell lists into "${target.name}"`, { spellCount: spells.size, uuid: target.uuid });
+  return target;
 }
 
 /**

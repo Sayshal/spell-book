@@ -1,5 +1,5 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
-import { createMergedSpellList, createNewSpellList, findSpellListsByType, isSourceHiddenSpellList } from '../data/_module.mjs';
+import { appendToMergedSpellList, createMergedSpellList, createNewSpellList, findSpellListsByType, isSourceHiddenSpellList } from '../data/_module.mjs';
 import { detachedRenderOptions } from '../ui/_module.mjs';
 
 const { DialogV2 } = foundry.applications.api;
@@ -23,16 +23,7 @@ export class CreationController {
       position: { width: 650, height: 'auto' },
       content,
       renderOptions: detachedRenderOptions(app),
-      render: (_event, dialog) => {
-        const identifierSelect = dialog.element.querySelector('[name="identifier"]');
-        const customInput = dialog.element.querySelector('[name="customIdentifier"]');
-        if (!identifierSelect || !customInput) return;
-        const sync = () => {
-          customInput.disabled = identifierSelect.value !== 'custom';
-        };
-        identifierSelect.addEventListener('change', sync);
-        sync();
-      },
+      render: (_event, dialog) => this.#bindDisableToggle(dialog.element, 'identifier', 'customIdentifier', 'custom'),
       buttons: [
         {
           label: 'SPELLBOOK.Manager.Buttons.CreateNew',
@@ -74,7 +65,7 @@ export class CreationController {
   }
 
   /**
-   * Open the "merge lists" dialog and create a merged list.
+   * Open the "merge lists" dialog and create or extend a merged list.
    * @param {SpellListManager} app - The parent spell-list-manager app
    */
   static async mergeLists(app) {
@@ -87,6 +78,7 @@ export class CreationController {
       position: { width: 650, height: 'auto' },
       content,
       renderOptions: detachedRenderOptions(app),
+      render: (_event, dialog) => this.#bindDisableToggle(dialog.element, 'mergeTarget', 'mergedListName', 'new'),
       buttons: [
         {
           label: 'SPELLBOOK.Manager.Buttons.MergeLists',
@@ -97,10 +89,13 @@ export class CreationController {
             const multi = el.querySelector('[name="spellListsToMerge"]');
             const nameInput = el.querySelector('[name="mergedListName"]');
             const hideSource = !!el.querySelector('[name="hideSourceLists"]')?.checked;
-            const uuids = Array.isArray(multi?.value) ? multi.value : [];
+            const target = el.querySelector('[name="mergeTarget"]')?.value || 'new';
+            const targetUuid = target === 'new' ? null : target;
+            const uuids = (Array.isArray(multi?.value) ? multi.value : []).filter((uuid) => uuid !== targetUuid);
             const name = nameInput?.value?.trim();
-            if (uuids.length < 2 || !name) return false;
-            formData = { spellListUuids: uuids, mergedListName: name, hideSourceLists: hideSource };
+            if (targetUuid && !uuids.length) return false;
+            if (!targetUuid && (uuids.length < 2 || !name)) return false;
+            formData = { spellListUuids: uuids, mergedListName: name, hideSourceLists: hideSource, targetUuid };
             return 'merge';
           }
         },
@@ -110,7 +105,7 @@ export class CreationController {
       rejectClose: false
     });
     if (result !== 'merge' || !formData) return;
-    const merged = await createMergedSpellList(formData.spellListUuids, formData.mergedListName);
+    const merged = formData.targetUuid ? await appendToMergedSpellList(formData.targetUuid, formData.spellListUuids) : await createMergedSpellList(formData.spellListUuids, formData.mergedListName);
     if (!merged) return;
     if (formData.hideSourceLists) {
       const hidden = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
@@ -122,6 +117,25 @@ export class CreationController {
     }
     await app._refreshLists();
     await app.selectSpellList(merged.uuid);
+  }
+
+  /**
+   * Enable an input only while a select holds a given value.
+   * @param {HTMLElement} root - Dialog element containing both fields
+   * @param {string} selectName - Name of the controlling select
+   * @param {string} inputName - Name of the input to toggle
+   * @param {string} enabledValue - Select value that enables the input
+   * @private
+   */
+  static #bindDisableToggle(root, selectName, inputName, enabledValue) {
+    const select = root.querySelector(`[name="${selectName}"]`);
+    const input = root.querySelector(`[name="${inputName}"]`);
+    if (!select || !input) return;
+    const sync = () => {
+      input.disabled = select.value !== enabledValue;
+    };
+    select.addEventListener('change', sync);
+    sync();
   }
 
   /**
