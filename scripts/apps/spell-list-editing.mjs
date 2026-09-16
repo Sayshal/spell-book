@@ -152,10 +152,13 @@ export class EditingController {
           label: 'ATLAS.Common.Rename',
           icon: 'fas fa-check',
           action: 'rename',
-          callback: (_event, _target, form) => {
-            const el = form?.querySelector ? form : form.element;
-            const value = el.querySelector('[name="newName"]')?.value?.trim();
-            if (!value || value === currentName || this.#isDuplicateName(app, value)) return false;
+          callback: (_event, _target, dialog) => {
+            const value = dialog.element.querySelector('[name="newName"]').value.trim();
+            if (!value || value === currentName) return false;
+            if (this.#isDuplicateName(app, value)) {
+              ui.notifications.warn('SPELLBOOK.Manager.Rename.DuplicateName', { localize: true });
+              return false;
+            }
             newName = value;
             return 'rename';
           }
@@ -175,15 +178,15 @@ export class EditingController {
   }
 
   /**
-   * Check whether a proposed name already exists (excluding the current list).
+   * Check whether another module-owned list already uses a proposed name.
    * @param {SpellListManager} app - The parent spell-list-manager app
    * @param {string} name - Proposed name to check
-   * @returns {boolean} True if another list already has this name
+   * @returns {boolean} True if another module-owned list already has this name
    * @private
    */
   static #isDuplicateName(app, name) {
     const lower = name.toLowerCase();
-    return app.availableLists.some((l) => l.name.toLowerCase() === lower && l.uuid !== app.selectedList?.uuid);
+    return app.availableLists.some((l) => l.document.flags[MODULE.ID]?.kind && l.uuid !== app.selectedList.uuid && l.name.toLowerCase() === lower);
   }
 
   /**
