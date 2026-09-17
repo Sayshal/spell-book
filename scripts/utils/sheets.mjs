@@ -144,7 +144,7 @@ async function promptLongRestSwap(actor, longRestClasses) {
  */
 export function onActorSheetRender(_app, element, data) {
   const actor = data.actor;
-  if (!hasSpellcastingClasses(actor)) return;
+  if (!PartyMode.isSpellcaster(actor)) return;
   if (!element.querySelector('section.tab[data-tab="spells"]')) return;
   tryAddButton({
     element,

@@ -560,6 +560,27 @@
     margin-left: auto;
   }
 
+  .granted-spell-status {
+    gap: var(--sb-space-sm);
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    font-size: 0.8em;
+    white-space: nowrap;
+
+    .granted-ability {
+      padding: 0.1rem 0.35rem;
+      border-radius: var(--sb-radius-md);
+      color: var(--sb-tag-innate);
+      font-weight: bold;
+      background: var(--atlas-surface-dim-10, rgb(255 255 255 / 5%));
+    }
+
+    .granted-casting {
+      color: var(--sb-text-secondary);
+    }
+  }
+
   .spell-cost-tag {
     color: var(--sb-text-secondary);
     font-size: 0.8em;

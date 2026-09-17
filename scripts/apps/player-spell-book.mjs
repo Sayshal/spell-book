@@ -1,5 +1,20 @@
-import { ASSETS, CLASS_RULE_NAMES, FLAGS, HOOKS, MODULE, RITUAL_CASTING_MODES, SEARCH_DEBOUNCE_DELAY, SETTINGS, TAB_PREFIXES, TEMPLATES, WIZARD_DEFAULTS, WIZARD_SPELL_SOURCE } from '../constants.mjs';
-import { buildClassSpellKey, fetchAllSpells, getConfigLabel, getSpellSourceDocument, getTargetUserId, loadUserSpellData, scanForScrollSpells } from '../data/_module.mjs';
+import {
+  ASSETS,
+  CLASS_RULE_NAMES,
+  FLAGS,
+  HOOKS,
+  MODULE,
+  RITUAL_CASTING_MODES,
+  SEARCH_DEBOUNCE_DELAY,
+  SETTINGS,
+  SOURCE_PREFIXES,
+  TAB_IDS,
+  TAB_PREFIXES,
+  TEMPLATES,
+  WIZARD_DEFAULTS,
+  WIZARD_SPELL_SOURCE
+} from '../constants.mjs';
+import { buildClassSpellKey, fetchAllSpells, getConfigLabel, getSpellSourceDocument, getTargetUserId, isGrantedSpell, loadUserSpellData, scanForScrollSpells } from '../data/_module.mjs';
 import { ClassRules, LoadoutSelector, SpellComparison, SpellNotes } from '../dialogs/_module.mjs';
 import { refreshChrisPremades } from '../integrations/chris-premades.mjs';
 import { ClassManager, Loadouts, PartyMode, RuleSet, SpellDataManager, SpellManager, WizardBook } from '../managers/_module.mjs';
@@ -118,6 +133,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const classes = ClassManager.detectSpellcastingClasses(this.actor);
     for (const id of Object.keys(classes)) parts[id] = { template: TEMPLATES.APPS.PLAYER.TAB_PREPARE, templates: [] };
     for (const wiz of ClassManager.getWizardEnabledClasses(this.actor)) parts[`wizardbook-${wiz.identifier}`] = { template: TEMPLATES.APPS.PLAYER.TAB_LEARN, templates: [] };
+    if (this.#hasGrantedSpells()) parts[TAB_IDS.GRANTED] = { template: TEMPLATES.APPS.PLAYER.TAB_GRANTED, templates: [] };
     return parts;
   }
 
@@ -134,7 +150,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     const tabs = {};
     const classes = ClassManager.detectSpellcastingClasses(this.actor);
     const classIds = Object.keys(classes);
-    this.tabGroups.primary ??= classIds[0] ?? null;
+    const hasGranted = this.#hasGrantedSpells();
+    this.tabGroups.primary ??= classIds[0] ?? (hasGranted ? TAB_IDS.GRANTED : null);
     for (const id of classIds) {
       const active = this.tabGroups.primary === id;
       tabs[id] = { id, group: 'primary', active, cssClass: active ? 'active' : '', label: classes[id].name, img: classes[id].img, mode: 'prepare', classIdentifier: id };
@@ -151,6 +168,19 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         img: ASSETS.MODULE_ICON,
         mode: 'learn',
         classIdentifier: wiz.identifier
+      };
+    }
+    if (hasGranted) {
+      const active = this.tabGroups.primary === TAB_IDS.GRANTED;
+      tabs[TAB_IDS.GRANTED] = {
+        id: TAB_IDS.GRANTED,
+        group: 'primary',
+        active,
+        cssClass: active ? 'active' : '',
+        label: _loc('SPELLBOOK.Granted.TabLabel'),
+        img: ASSETS.MODULE_ICON,
+        mode: 'granted',
+        classIdentifier: ''
       };
     }
     return tabs;
@@ -372,6 +402,23 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   #resolveClassId(tabId) {
     return tabId?.startsWith(TAB_PREFIXES.WIZARD_BOOK) ? tabId.slice(TAB_PREFIXES.WIZARD_BOOK.length) : tabId;
+  }
+
+  /**
+   * Whether the actor owns any species or feat granted spells.
+   * @returns {boolean} True when the granted tab should render
+   */
+  #hasGrantedSpells() {
+    return this.actor.itemTypes.spell.some(isGrantedSpell);
+  }
+
+  /**
+   * Whether a given tab id is the granted spells tab.
+   * @param {string} tabId - The tab id
+   * @returns {boolean} True for the granted spells tab
+   */
+  #isGrantedTab(tabId) {
+    return tabId === TAB_IDS.GRANTED;
   }
 
   /**
@@ -725,7 +772,12 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!panel) return;
     const baseClass = this.#resolveClassId(tabId);
     const isLearn = this.#isLearnTab(tabId);
-    let results = isLearn ? await SpellDataManager.getLearnableSpellsForClass(this.actor, baseClass) : await SpellDataManager.getPreparableSpellsForClass(this.actor, baseClass);
+    const isGranted = this.#isGrantedTab(tabId);
+    let results = isGranted
+      ? this.actor.itemTypes.spell.filter(isGrantedSpell)
+      : isLearn
+        ? await SpellDataManager.getLearnableSpellsForClass(this.actor, baseClass)
+        : await SpellDataManager.getPreparableSpellsForClass(this.actor, baseClass);
     if (isLearn) {
       const maxLevel = SpellDataManager._calculateMaxSpellLevel(this.actor, baseClass);
       const scrollEntries = await scanForScrollSpells(this.actor, maxLevel);
@@ -746,7 +798,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.#state.set(tabId, { results, allResults: results, loaded: true });
     await this.#applyFilters(tabId, { preserveScroll: true });
     if (isLearn) await this.#updateWizardCounters(tabId);
-    else {
+    else if (!isGranted) {
       this.#updateCantripCounter(tabId);
       this.#updatePreparationFooter(tabId);
     }
@@ -776,7 +828,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       return;
     }
     const rc = await this.#buildRenderContext(tabId);
-    const groups = this.#groupByLevel(state.results);
+    const groups = this.#isGrantedTab(tabId) ? this.#groupBySource(state.results) : this.#groupByLevel(state.results);
     const fragment = document.createDocumentFragment();
     for (const group of groups) {
       if (!group.spells.length) continue;
@@ -868,12 +920,56 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
+   * Group granted spells by the species or feat that granted them, ordered by level within each group.
+   * @param {object[]} spells - Granted spell items
+   * @returns {object[]} Source groups shaped like level groups
+   */
+  #groupBySource(spells) {
+    const groups = new Map();
+    for (const spell of spells) {
+      const sourceItem = spell.system.sourceItem;
+      if (!groups.has(sourceItem)) {
+        const typeLabel = _loc(sourceItem.startsWith(SOURCE_PREFIXES.FEAT) ? 'ATLAS.Common.Feat' : 'ATLAS.Common.Species');
+        const name = getSpellSourceDocument(spell, this.actor)?.name ?? sourceItem.slice(sourceItem.indexOf(':') + 1);
+        groups.set(sourceItem, { level: sourceItem, levelName: `${typeLabel}: ${name}`, spells: [], isCollapsed: false, isWizardContext: false, cantripCounter: { enabled: false } });
+      }
+      groups.get(sourceItem).spells.push(spell);
+    }
+    const bySource = [...groups.values()].sort((a, b) => b.level.localeCompare(a.level) || a.levelName.localeCompare(b.levelName));
+    for (const group of bySource) group.spells.sort((a, b) => (a.system.level ?? 0) - (b.system.level ?? 0) || a.name.localeCompare(b.name));
+    return bySource;
+  }
+
+  /**
+   * Describe how a granted spell is cast: its spellcasting ability and casting method, preparation and uses.
+   * @param {object} spell - Granted spell item
+   * @returns {{ability: string, abilityLabel: string, casting: string}} Display strings for the row badges
+   */
+  #grantedSpellInfo(spell) {
+    const system = spell.system;
+    const ability = CONFIG.DND5E.abilities[system.ability];
+    const casting = [getConfigLabel(CONFIG.DND5E.spellcasting, system.method)];
+    if (system.prepared === CONFIG.DND5E.spellPreparationStates.always.value) casting.push(CONFIG.DND5E.spellPreparationStates.always.label);
+    const period = getConfigLabel(CONFIG.DND5E.limitedUsePeriods, system.uses?.recovery?.[0]?.period);
+    if (system.uses?.max && period) casting.push(`${system.uses.max}/${_loc(period)}`);
+    return {
+      ability: ability ? _loc(ability.abbreviation).toUpperCase() : '',
+      abilityLabel: ability ? _loc(ability.label) : '',
+      casting: casting
+        .filter(Boolean)
+        .map((label) => _loc(label))
+        .join(' · ')
+    };
+  }
+
+  /**
    * Build the shared render context computed once per batch for a given class tab.
    * @param {string} tabId - The tab id being rendered
    * @returns {Promise<object>} Render context object for `#renderResult`
    */
   async #buildRenderContext(tabId) {
-    const baseClass = this.#resolveClassId(tabId);
+    const isGranted = this.#isGrantedTab(tabId);
+    const baseClass = isGranted ? null : this.#resolveClassId(tabId);
     const isLearn = this.#isLearnTab(tabId);
     let scrollSpellMap = null;
     if (isLearn) {
@@ -1016,6 +1112,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         ...enriched,
         compendiumUuid: spellUuid,
         wizardAction,
+        grantedInfo: isGrantedSpell(spell) ? this.#grantedSpellInfo(spell) : null,
         preparation: {
           identifier: prepId,
           prepared: status.prepared,
@@ -1267,7 +1364,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     clearFilterState();
     if (event.shiftKey) {
       for (const tabId of this.#state.keys()) {
-        if (this.#isLearnTab(tabId)) continue;
+        if (this.#isLearnTab(tabId) || this.#isGrantedTab(tabId)) continue;
         const panel = this.#getPanelEl(tabId);
         const pending = this.#pendingChanges.get(tabId) ?? new Map();
         for (const cb of panel?.querySelectorAll('input[type="checkbox"][data-uuid]:not(:disabled)') ?? []) {
@@ -1279,7 +1376,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     this.#applyFiltersForActive();
     if (event.shiftKey) {
       for (const tabId of this.#state.keys()) {
-        if (this.#isLearnTab(tabId)) continue;
+        if (this.#isLearnTab(tabId) || this.#isGrantedTab(tabId)) continue;
         this.#updateCantripCounter(tabId);
         this.#updatePreparationFooter(tabId);
       }

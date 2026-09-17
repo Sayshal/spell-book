@@ -498,7 +498,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   #organizeSidebarLists(context) {
     const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
-    const actorOwned = this.availableLists.filter((l) => l.isActorOwned);
+    const actorOwned = this.availableLists.filter((l) => l.isActorOwned && !l.isGranted);
+    const granted = this.availableLists.filter((l) => l.isGranted);
     const hidden = this.availableLists.filter((l) => !l.isActorOwned && hiddenLists.includes(l.uuid));
     const modified = this.availableLists.filter((l) => !l.isActorOwned && l.isModified && !hiddenLists.includes(l.uuid));
     const merged = this.availableLists.filter((l) => !l.isActorOwned && l.isMerged && !hiddenLists.includes(l.uuid));
@@ -510,8 +511,11 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const byActor = (a, b) => (a.actorName && b.actorName ? a.actorName.localeCompare(b.actorName) : a.actorName ? -1 : b.actorName ? 1 : a.name.localeCompare(b.name));
     const byName = (a, b) => a.name.localeCompare(b.name);
     actorOwned.sort(byActor);
+    granted.sort(byActor);
     [custom, merged, modified, standard, hidden].forEach((arr) => arr.sort(byName));
     context.actorOwnedLists = actorOwned;
+    context.grantedLists = granted;
+    context.hasGrantedLists = granted.length > 0;
     context.customLists = custom;
     context.mergedLists = merged;
     context.modifiedLists = modified;

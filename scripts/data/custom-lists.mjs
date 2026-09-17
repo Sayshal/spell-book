@@ -1,4 +1,4 @@
-import { FLAGS, FOLDER_TYPES, LIST_KINDS, MODULE, PACK, SETTINGS } from '../constants.mjs';
+import { FLAGS, FOLDER_TYPES, LIST_KINDS, MODULE, PACK, SETTINGS, SOURCE_PREFIXES, SPELL_LIST_TYPES } from '../constants.mjs';
 import { ensureListRegistered } from './spell-list-registry.mjs';
 
 /**
@@ -265,6 +265,84 @@ export async function appendToMergedSpellList(targetUuid, sourceUuids) {
 }
 
 /**
+ * Whether a spell item was granted by a species or feat.
+ * @param {object} spell - The spell item
+ * @returns {boolean} True when the spell's source item is a species or feat
+ */
+export function isGrantedSpell(spell) {
+  const sourceItem = spell?.system?.sourceItem ?? '';
+  return sourceItem.startsWith(SOURCE_PREFIXES.FEAT) || sourceItem.startsWith(SOURCE_PREFIXES.RACE);
+}
+
+/**
+ * Find the actor's granted spell list page in the custom pack.
+ * @param {object} actor - The actor document
+ * @returns {Promise<object|null>} The granted list page or null
+ */
+export async function findGrantedSpellList(actor) {
+  const pack = game.packs.get(PACK.SPELLS);
+  if (!pack) return null;
+  const index = await pack.getIndex({ fields: ['flags'] });
+  const entry = index.find((e) => e.flags?.[MODULE.ID]?.actorId === actor.id && e.flags[MODULE.ID][FLAGS.KIND] === LIST_KINDS.GRANTED);
+  if (!entry) return null;
+  const journal = await pack.getDocument(entry._id);
+  return journal?.pages.find((p) => p.type === 'spells') ?? null;
+}
+
+/**
+ * Mirror the actor's species and feat granted spells into its granted spell list.
+ * @param {object} actor - The actor document
+ * @param {object} [options] - Sync options
+ * @param {boolean} [options.create] - Create the list when the actor has none
+ * @returns {Promise<object|null>} The granted list page, or null when absent or the user is not a GM
+ */
+export async function syncGrantedSpellList(actor, { create = false } = {}) {
+  if (!game.user.isGM || !actor) return null;
+  const spells = new Set();
+  for (const spell of actor.itemTypes.spell) {
+    if (!isGrantedSpell(spell)) continue;
+    const uuid = spell._stats?.compendiumSource ?? spell.flags?.core?.sourceId;
+    if (uuid) spells.add(uuid);
+  }
+  const page = await findGrantedSpellList(actor);
+  if (page) {
+    const current = page.system.spells ?? new Set();
+    if (current.size !== spells.size || [...spells].some((uuid) => !current.has(uuid))) await page.update({ 'system.spells': [...spells] });
+    return page;
+  }
+  if (!create || !spells.size) return null;
+  const name = _loc('SPELLBOOK.Journal.GrantedListName', { name: actor.name });
+  const folder = await getOrCreateSpellListFolder(FOLDER_TYPES.GRANTED);
+  const flags = { [MODULE.ID]: { actorId: actor.id, [FLAGS.KIND]: LIST_KINDS.GRANTED, creationDate: Date.now() } };
+  const ownership = { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
+  const journal = await JournalEntry.create(
+    {
+      name,
+      folder: folder?.id ?? null,
+      ownership,
+      flags,
+      pages: [
+        {
+          name,
+          type: 'spells',
+          ownership,
+          flags,
+          system: {
+            identifier: `${actor.name.toLowerCase().replace(/[^\da-z]/g, '-')}-granted`,
+            type: SPELL_LIST_TYPES.ACTOR_SPELLBOOK,
+            description: _loc('SPELLBOOK.Journal.GrantedListDescription', { name: actor.name }),
+            spells: [...spells]
+          }
+        }
+      ]
+    },
+    { pack: PACK.SPELLS }
+  );
+  ATLAS.log(3, `Created granted spell list for "${actor.name}"`, { spellCount: spells.size });
+  return journal?.pages?.contents[0] ?? null;
+}
+
+/**
  * Get or create a folder in the custom spell lists pack.
  * @param {string} folderType - Folder type ('custom', 'merged', 'modified', or 'actorSpellbook')
  * @returns {Promise<object|null>} The folder document or null
@@ -272,6 +350,7 @@ export async function appendToMergedSpellList(targetUuid, sourceUuids) {
 export async function getOrCreateSpellListFolder(folderType) {
   const locKeys = {
     [FOLDER_TYPES.CUSTOM]: 'SPELLBOOK.Manager.Folders.CustomSpellListsFolder',
+    [FOLDER_TYPES.GRANTED]: 'SPELLBOOK.Manager.Folders.GrantedSpellListsFolder',
     [FOLDER_TYPES.MERGED]: 'SPELLBOOK.Manager.Folders.MergedSpellListsFolder',
     [FOLDER_TYPES.MODIFIED]: 'SPELLBOOK.Manager.Folders.ModifiedSpellListsFolder',
     [FOLDER_TYPES.ACTOR_SPELLBOOK]: 'SPELLBOOK.Manager.Folders.ActorSpellbooksFolder'
@@ -379,6 +458,7 @@ async function harvestPackLists(pack, lists, isCustomPack) {
         spellCount: page.system.spells?.size,
         identifier: page.system.identifier,
         isCustom: flags[FLAGS.KIND] === LIST_KINDS.CUSTOM,
+        isGranted: flags[FLAGS.KIND] === LIST_KINDS.GRANTED,
         isMerged: flags[FLAGS.KIND] === LIST_KINDS.MERGED,
         isModified,
         document: page

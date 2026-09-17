@@ -107,7 +107,12 @@ export async function migrateSpellListFolders() {
     return;
   }
   if (!unfiled.length) return;
-  const KIND_FOLDERS = { [LIST_KINDS.CUSTOM]: FOLDER_TYPES.CUSTOM, [LIST_KINDS.MERGED]: FOLDER_TYPES.MERGED, [LIST_KINDS.DUPLICATE]: FOLDER_TYPES.MODIFIED };
+  const KIND_FOLDERS = {
+    [LIST_KINDS.CUSTOM]: FOLDER_TYPES.CUSTOM,
+    [LIST_KINDS.GRANTED]: FOLDER_TYPES.GRANTED,
+    [LIST_KINDS.MERGED]: FOLDER_TYPES.MERGED,
+    [LIST_KINDS.DUPLICATE]: FOLDER_TYPES.MODIFIED
+  };
   const wanted = new Map();
   for (const id of unfiled) {
     const journal = await pack.getDocument(id);

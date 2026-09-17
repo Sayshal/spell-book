@@ -1,5 +1,6 @@
 import { CLASS_IDENTIFIERS, CLASS_RULE_NAMES, FLAGS, HOOKS, MESSAGE_TYPES, MODULE, RITUAL_CASTING_MODES, SETTINGS, SPELL_MODE, SWAP_MODES, SWAP_PERIODS, TEMPLATES } from '../constants.mjs';
 import { buildClassSpellKey, parseClassSpellKey } from '../data/class-spell-key.mjs';
+import { syncGrantedSpellList } from '../data/custom-lists.mjs';
 import { ClassManager } from './class-manager.mjs';
 import { RuleSet } from './rule-set.mjs';
 
@@ -260,6 +261,7 @@ export class SpellManager {
    * @returns {Promise<void>}
    */
   static async handleSpellbookOpen(actor) {
+    await syncGrantedSpellList(actor);
     const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
     const hasLongRestSwapping = Object.values(classRules).some((rules) => rules.cantripSwapping === SWAP_MODES.LONG_REST || rules.spellSwapping === SWAP_MODES.LONG_REST);
     if (!hasLongRestSwapping) return;

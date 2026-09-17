@@ -211,10 +211,10 @@ export const RULE_SETS = { GLOBAL: 'global', LEGACY: 'legacy', MODERN: 'modern' 
  * Folder names the module maintains in the custom spell list pack.
  * @enum {string}
  */
-export const FOLDER_TYPES = { ACTOR_SPELLBOOK: 'actorSpellbook', CUSTOM: 'custom', MERGED: 'merged', MODIFIED: 'modified' };
+export const FOLDER_TYPES = { ACTOR_SPELLBOOK: 'actorSpellbook', CUSTOM: 'custom', GRANTED: 'granted', MERGED: 'merged', MODIFIED: 'modified' };
 
 /** @enum {string} Module-owned spell list page kinds */
-export const LIST_KINDS = { CUSTOM: 'custom', DUPLICATE: 'duplicate', MERGED: 'merged' };
+export const LIST_KINDS = { CUSTOM: 'custom', DUPLICATE: 'duplicate', GRANTED: 'granted', MERGED: 'merged' };
 
 /** @enum {string} Spell/cantrip swap timing */
 export const SWAP_MODES = { NONE: 'none', LEVEL_UP: 'levelUp', LONG_REST: 'longRest' };
@@ -252,6 +252,9 @@ export const SOURCE_PREFIXES = { CLASS: 'class:', FEAT: 'feat:', RACE: 'race:' }
 
 /** @enum {string} Prefixes for generated tab ids */
 export const TAB_PREFIXES = { WIZARD_BOOK: 'wizardbook-' };
+
+/** @enum {string} Fixed tab ids in the player spell book */
+export const TAB_IDS = { GRANTED: 'granted-spells' };
 
 /** @enum {string} Per-class rule names stored under the CLASS_RULES flag */
 export const CLASS_RULE_NAMES = {
@@ -302,7 +305,8 @@ export const TEMPLATES = {
       HEADER: `${MODULE.TEMPLATES_PATH}/apps/player/header.hbs`,
       SIDEBAR: `${MODULE.TEMPLATES_PATH}/apps/player/sidebar.hbs`,
       TAB_PREPARE: `${MODULE.TEMPLATES_PATH}/apps/player/tab-prepare.hbs`,
-      TAB_LEARN: `${MODULE.TEMPLATES_PATH}/apps/player/tab-learn.hbs`
+      TAB_LEARN: `${MODULE.TEMPLATES_PATH}/apps/player/tab-learn.hbs`,
+      TAB_GRANTED: `${MODULE.TEMPLATES_PATH}/apps/player/tab-granted.hbs`
     },
     SPELL_LIST_MANAGER: {
       HEADER: `${MODULE.TEMPLATES_PATH}/apps/spell-list-manager/header.hbs`,

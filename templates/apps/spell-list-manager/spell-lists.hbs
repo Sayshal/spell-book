@@ -91,6 +91,27 @@
           {{/each}}
           {{/"modules/spell-book/templates/components/folder-section.hbs"}}
       {{/if}}
+      {{#if hasGrantedLists}}
+        {{#> "modules/spell-book/templates/components/folder-section.hbs"
+    folderType="granted-lists" folderId="granted-lists" icon="fas fa-hand-sparkles"
+    folderHeader=(localize "SPELLBOOK.Manager.Folders.GrantedLists")
+    folderTooltip=(localize "SPELLBOOK.Manager.Tooltips.GrantedListsFolder")}}
+          {{#each grantedLists as |list|}}
+            <li class="spell-list-item actor-owned-list" data-uuid="{{list.uuid}}" role="listitem"
+              data-tooltip-direction="RIGHT"
+              data-tooltip-html="<div style='text-align:center;'><strong>{{list.name}}</strong><hr>{{list.pack}}<br>{{localize 'SPELLBOOK.Manager.ListTooltip.SpellCount' count=list.spellCount}}</div>">
+              <div class="list-item-header">
+                <div class="list-item-content" data-action="selectList" data-uuid="{{list.uuid}}">
+                  <div class="list-name">
+                    <i class="{{list.icon}}" aria-hidden="true"></i>
+                    <span>{{list.name}}</span>
+                  </div>
+                </div>
+              </div>
+            </li>
+          {{/each}}
+          {{/"modules/spell-book/templates/components/folder-section.hbs"}}
+      {{/if}}
       {{#if hasCustomLists}}
         {{#> "modules/spell-book/templates/components/folder-section.hbs"
     folderType="custom-lists" folderId="custom-lists" icon="fas fa-magic"

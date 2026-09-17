@@ -1,8 +1,8 @@
 import { PartyCoordinator, SpellBook } from './apps/_module.mjs';
 import { MODULE } from './constants.mjs';
-import { fetchAllSpells, findAllSpellLists, getEligibleSpellPacks } from './data/_module.mjs';
+import { fetchAllSpells, findAllSpellLists, getEligibleSpellPacks, syncGrantedSpellList as syncGrantedList } from './data/_module.mjs';
 import { ClassRules } from './dialogs/_module.mjs';
-import { PartyMode, SpellManager, WizardBook } from './managers/_module.mjs';
+import { PartyMode, RuleSet, SpellManager, WizardBook } from './managers/_module.mjs';
 import { extractSpellFilterData } from './ui/_module.mjs';
 
 const { DialogV2 } = foundry.applications.api;
@@ -342,6 +342,27 @@ export async function getSpellLearningCost(actor, classId, spell) {
   return WizardBook.getCopyingCost(actor, classId, spell);
 }
 
+/**
+ * Create or update the actor's list of spells granted by species and feats.
+ * @param {object} actor - The actor document
+ * @returns {Promise<object|null>} The granted list page, or null when there are no granted spells or the user is not a GM
+ */
+export async function syncGrantedSpellList(actor) {
+  return syncGrantedList(actor, { create: true });
+}
+
+/**
+ * Set the spell lists a class draws from on an actor.
+ * @param {object} actor - The actor document
+ * @param {string} classIdentifier - The class identifier
+ * @param {string[]} uuids - Spell list page UUIDs
+ * @returns {Promise<boolean>} True if the rules were updated, false if cancelled
+ */
+export async function setClassSpellLists(actor, classIdentifier, uuids) {
+  if (!actor || !classIdentifier || !Array.isArray(uuids)) return false;
+  return RuleSet.updateClassRules(actor, classIdentifier, { customSpellList: uuids });
+}
+
 /** Wire up the public API surface and expose it on the SPELLBOOK global. */
 export function exposeApi() {
   const api = {
@@ -352,10 +373,12 @@ export function exposeApi() {
     openClassRulesForActor,
     openPartyCoordinator,
     openSpellBookForActor,
+    setClassSpellLists,
     spellBookQuickAccess,
     spellSlotTracker,
     scrollScanner,
     spellsNotInLists,
+    syncGrantedSpellList,
     debugSpell
   };
   globalThis.SPELLBOOK = { api };

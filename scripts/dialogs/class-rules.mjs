@@ -1,5 +1,5 @@
 import { FLAGS, LIST_KINDS, MODULE, RITUAL_CASTING_MODES, RULE_SETS, SETTINGS, SWAP_MODES, TEMPLATES, WIZARD_DEFAULTS } from '../constants.mjs';
-import { getJournalDocumentsFromPack, isSourceHiddenSpellList } from '../data/_module.mjs';
+import { getJournalDocumentsFromPack, isSourceHiddenSpellList, syncGrantedSpellList } from '../data/_module.mjs';
 import { getPackTopLevelFolderName } from '../data/compendium-packs.mjs';
 import { ClassManager, RuleSet, SpellManager } from '../managers/_module.mjs';
 import { detachedRenderOptions } from '../ui/_module.mjs';
@@ -31,10 +31,11 @@ const RITUAL_OPTIONS = [
 
 /**
  * Load available spell list options for the custom spell list multi-select.
+ * @param {object} actor - The actor whose rules are being edited
  * @param {Set<string>} [assignedUuids] - UUIDs already assigned to a class; kept in the list even if source-hidden so a save can't drop them
  * @returns {Promise<object[]>} Array of { value, label, group } option objects
  */
-async function loadSpellListOptions(assignedUuids = new Set()) {
+async function loadSpellListOptions(actor, assignedUuids = new Set()) {
   const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
   const sourceConfig = game.settings.get('dnd5e', 'packSourceConfiguration') ?? {};
   const allPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
@@ -48,13 +49,15 @@ async function loadSpellListOptions(assignedUuids = new Set()) {
           if (page.type !== 'spells' || page.system?.type === 'other') continue;
           if (hiddenLists.includes(page.uuid)) continue;
           const flags = page.flags?.[MODULE.ID] || {};
+          const isGranted = flags.kind === LIST_KINDS.GRANTED;
+          if (isGranted && flags.actorId !== actor.id && !assignedUuids.has(page.uuid)) continue;
           const isActorOwned = !!flags.actorId;
           const isModuleList = flags.kind === LIST_KINDS.CUSTOM || flags.kind === LIST_KINDS.MERGED;
           const exempt = isActorOwned || isModuleList;
           const sourceHidden = isSourceHiddenSpellList(page.system?.spells, exempt, sourceConfig);
           if (sourceHidden && !assignedUuids.has(page.uuid)) continue;
           let label = page.name;
-          if (isActorOwned && flags.actorId) {
+          if (isActorOwned && !isGranted) {
             const owner = game.actors.get(flags.actorId);
             label = `${page.name} (${owner?.name ?? _loc('ATLAS.Common.Character')})`;
           } else if (!isActorOwned && !isModuleList) {
@@ -175,7 +178,7 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
       const rules = RuleSet.getClassRules(this.actor, classId);
       for (const key of ['customSpellList', 'customSubclassSpellList']) for (const uuid of rules[key] || []) if (uuid) assignedUuids.add(uuid);
     }
-    const spellListOptions = await loadSpellListOptions(assignedUuids);
+    const spellListOptions = await loadSpellListOptions(this.actor, assignedUuids);
     context.classes = buildClassContexts(this.actor, spellListOptions);
     context.swapOptions = SWAP_OPTIONS;
     context.spellSwapOptions = SPELL_SWAP_OPTIONS;
@@ -241,6 +244,7 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
     // Per-class rules
     if (data.class) {
       const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
+      const firstAssigned = [];
       for (const [classId, raw] of Object.entries(data.class)) {
         const previous = classRules[classId] || {};
         const rules = {};
@@ -255,11 +259,21 @@ export class ClassRules extends HandlebarsApplicationMixin(ApplicationV2) {
         if (raw.spellLearningTimeMultiplier !== undefined) rules.spellLearningTimeMultiplier = parseFloat(raw.spellLearningTimeMultiplier) || WIZARD_DEFAULTS.SPELL_LEARNING_TIME_MULTIPLIER;
         if (raw.startingSpells !== undefined) rules.startingSpells = parseInt(raw.startingSpells) || WIZARD_DEFAULTS.STARTING_SPELLS;
         if (raw.spellsPerLevel !== undefined) rules.spellsPerLevel = parseInt(raw.spellsPerLevel) || WIZARD_DEFAULTS.SPELLS_PER_LEVEL;
-        if (raw.customSpellList !== undefined) rules.customSpellList = raw.customSpellList.filter((v) => v?.trim());
+        if (raw.customSpellList !== undefined) {
+          rules.customSpellList = raw.customSpellList.filter((v) => v?.trim());
+          if (!previous.customSpellList?.length && rules.customSpellList.length) firstAssigned.push(classId);
+        }
         if (raw.customSubclassSpellList !== undefined) rules.customSubclassSpellList = raw.customSubclassSpellList.filter((v) => v?.trim());
         const wasShowing = previous.showCantrips !== false;
         if (wasShowing && !rules.showCantrips) await ClassRules.#removeCantripsForClass(actor, classId);
         classRules[classId] = { ...classRules[classId], ...rules };
+      }
+      const grantedList = await syncGrantedSpellList(actor, { create: firstAssigned.length > 0 });
+      if (grantedList) {
+        for (const classId of firstAssigned) {
+          const lists = classRules[classId].customSpellList;
+          if (!lists.includes(grantedList.uuid)) lists.push(grantedList.uuid);
+        }
       }
       flagUpdates[`flags.${MODULE.ID}.${FLAGS.CLASS_RULES}`] = classRules;
     }

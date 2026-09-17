@@ -97,6 +97,15 @@
         </button>
       {{/if}}
     </div>
+  {{else if spell.grantedInfo}}
+    <div class="granted-spell-status">
+      {{#if spell.grantedInfo.ability}}
+        <span class="granted-ability" data-tooltip="{{spell.grantedInfo.abilityLabel}}">{{spell.grantedInfo.ability}}</span>
+      {{/if}}
+      {{#if spell.grantedInfo.casting}}
+        <span class="granted-casting">{{spell.grantedInfo.casting}}</span>
+      {{/if}}
+    </div>
   {{else}}
     <div class="spell-preparation">
       {{> "modules/spell-book/templates/components/preparation-checkbox.hbs"}}
