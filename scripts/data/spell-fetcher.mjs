@@ -3,6 +3,9 @@ import { getEligibleSpellPacks } from './compendium-packs.mjs';
 /** @type {object} dnd5e CompendiumBrowser class reference */
 const CompendiumBrowser = dnd5e.applications.CompendiumBrowser;
 
+/** @type {object} dnd5e SourceField class reference */
+const SourceField = dnd5e.dataModels.shared.SourceField;
+
 /** @type {Set<string>} System fields required for spell filtering and display */
 const DEFAULT_INDEX_FIELDS = new Set([
   'system.activation.type',
@@ -28,7 +31,7 @@ const DEFAULT_INDEX_FIELDS = new Set([
  * @param {object} [options] - Fetch options
  * @param {number} [options.maxLevel] - Maximum spell level to include
  * @param {Function} [options.onProgress] - Invoked after each pack's spells are indexed.
- * @returns {Promise<object[]>} Array of spell index entries
+ * @returns {Promise<object[]>} Spell views built from index entries
  */
 export async function fetchAllSpells({ maxLevel, onProgress } = {}) {
   const filters = [
@@ -44,29 +47,24 @@ export async function fetchAllSpells({ maxLevel, onProgress } = {}) {
       indexFields: new Set(DEFAULT_INDEX_FIELDS),
       sort
     });
-    applyLabelsFallback(results);
     ATLAS.log(3, `Fetched ${results.length} spells`);
-    return results;
+    return results.map(createSpellView);
   }
   const Filter = dnd5e?.Filter;
-  const SourceField = dnd5e?.dataModels?.shared?.SourceField;
   const fields = Array.from(new Set([...DEFAULT_INDEX_FIELDS, ...Filter.uniqueKeys(filters)])).filter((f) => !f.startsWith('system.source.'));
   const eligiblePacks = getEligibleSpellPacks();
   const results = [];
   for (const pack of eligiblePacks) {
     const index = await pack.getIndex({ fields });
     for (const entry of index) {
-      const src = foundry.utils.getProperty(entry, 'system.source');
-      if (foundry.utils.getType(src) === 'Object' && entry.uuid) SourceField.prepareData.call(src, entry.uuid);
       if (entry.type !== 'spell') continue;
       if (pack.metadata.flags.dnd5e?.types && !pack.metadata.flags.dnd5e.types.includes('spell')) continue;
       if (!Filter.performCheck(entry, filters)) continue;
-      results.push(entry);
+      results.push(createSpellView(entry));
     }
     onProgress(pack.collection, results.length);
   }
   results.sort(sort);
-  applyLabelsFallback(results);
   ATLAS.log(3, `Fetched ${results.length} spells across ${eligiblePacks.length} packs`);
   return results;
 }
@@ -75,11 +73,10 @@ export async function fetchAllSpells({ maxLevel, onProgress } = {}) {
  * Fetch spells from compendiums matching a set of UUIDs, filtered by max level.
  * @param {Set<string>} uuids - Spell UUIDs to match
  * @param {number} maxLevel - Maximum spell level to include
- * @returns {Promise<object[]>} Matching spell index entries
+ * @returns {Promise<object[]>} Spell views built from matching index entries
  */
 export async function fetchSpellsByUuids(uuids, maxLevel) {
   if (!uuids?.size) return [];
-  const SourceField = dnd5e?.dataModels?.shared?.SourceField;
   const fields = Array.from(DEFAULT_INDEX_FIELDS);
   const byPack = new Map();
   let unresolved = 0;
@@ -102,57 +99,60 @@ export async function fetchSpellsByUuids(uuids, maxLevel) {
         continue;
       }
       if ((entry.system?.level ?? 0) > maxLevel) continue;
-      const source = foundry.utils.getProperty(entry, 'system.source');
-      if (foundry.utils.getType(source) === 'Object' && entry.uuid) SourceField.prepareData.call(source, entry.uuid);
-      results.push(entry);
+      results.push(createSpellView(entry));
     }
   }
   results.sort((a, b) => a.name.localeCompare(b.name, game.i18n.lang));
-  applyLabelsFallback(results);
   if (unresolved) ATLAS.log(2, `${unresolved} spell list entries could not be resolved from their compendiums`);
   return results;
 }
 
 /**
- * Patch entries from older third-party packs that lack computed labels.
- * @param {object[]} entries - Spell index entries to patch in place
+ * Copy an index entry so derived and view data never mutate the shared compendium index.
+ * @param {object} entry - Compendium index entry
+ * @returns {object} Spell view with prepared source data and labels
  */
-function applyLabelsFallback(entries) {
-  for (const entry of entries) {
-    if (entry.labels) continue;
-    entry.labels = {};
-    if (entry.system?.level !== undefined) entry.labels.level = CONFIG.DND5E.spellLevels[entry.system.level];
-    if (entry.system?.school) {
-      const school = CONFIG.DND5E.spellSchools[entry.system.school];
-      entry.labels.school = school?.label ?? school?.name ?? school ?? '';
-    }
-    if (entry.system?.activation?.type) {
-      entry.labels.activation = formatActivationLabel(entry.system.activation.type, entry.system.activation.value);
-    }
-    if (entry.system?.range) {
-      const range = entry.system.range;
-      if (range.units === 'self') entry.labels.range = _loc('DND5E.DistSelf');
-      else if (range.units === 'touch') entry.labels.range = _loc('DND5E.DistTouch');
-      else if (range.units === 'spec') entry.labels.range = _loc('DND5E.Special');
-      else if (range.value && range.units) {
-        const unitLabel = CONFIG.DND5E?.movementUnits?.[range.units]?.label ?? range.units;
-        entry.labels.range = `${range.value} ${unitLabel}`;
-      }
-    }
-    if (entry.system?.properties?.length) {
-      const vsm = entry.system.properties
-        .map((p) => CONFIG.DND5E.itemProperties[p]?.abbreviation)
-        .filter(Boolean)
-        .join(', ');
-      if (vsm) entry.labels.components = { vsm };
-    }
-    if (entry.system?.materials?.consumed) {
-      const { cost, value } = entry.system.materials;
-      if (cost > 0) entry.labels.materials = _loc('SPELLBOOK.MaterialComponents.Cost', { cost });
-      else if (value) entry.labels.materials = value;
-      else entry.labels.materials = _loc('SPELLBOOK.MaterialComponents.UnknownCost');
-    }
+function createSpellView(entry) {
+  const system = { ...entry.system };
+  if (foundry.utils.getType(system.source) === 'Object' && entry.uuid) {
+    system.source = { ...system.source };
+    SourceField.prepareData.call(system.source, entry.uuid);
   }
+  return { ...entry, system, labels: entry.labels ?? buildFallbackLabels(system) };
+}
+
+/**
+ * Build labels for entries from older third-party packs that lack computed labels.
+ * @param {object} system - Spell system data
+ * @returns {object} Spell labels
+ */
+function buildFallbackLabels(system) {
+  const labels = {};
+  if (system.level !== undefined) labels.level = CONFIG.DND5E.spellLevels[system.level];
+  if (system.school) {
+    const school = CONFIG.DND5E.spellSchools[system.school];
+    labels.school = school?.label ?? school?.name ?? school ?? '';
+  }
+  if (system.activation?.type) labels.activation = formatActivationLabel(system.activation.type, system.activation.value);
+  const range = system.range;
+  if (range?.units === 'self') labels.range = _loc('DND5E.DistSelf');
+  else if (range?.units === 'touch') labels.range = _loc('DND5E.DistTouch');
+  else if (range?.units === 'spec') labels.range = _loc('DND5E.Special');
+  else if (range?.value && range.units) labels.range = `${range.value} ${CONFIG.DND5E?.movementUnits?.[range.units]?.label ?? range.units}`;
+  if (system.properties?.length) {
+    const vsm = system.properties
+      .map((p) => CONFIG.DND5E.itemProperties[p]?.abbreviation)
+      .filter(Boolean)
+      .join(', ');
+    if (vsm) labels.components = { vsm };
+  }
+  if (system.materials?.consumed) {
+    const { cost, value } = system.materials;
+    if (cost > 0) labels.materials = _loc('SPELLBOOK.MaterialComponents.Cost', { cost });
+    else if (value) labels.materials = value;
+    else labels.materials = _loc('SPELLBOOK.MaterialComponents.UnknownCost');
+  }
+  return labels;
 }
 
 /**

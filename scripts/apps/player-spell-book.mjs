@@ -787,11 +787,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       for (const entry of scrollEntries) {
         if (spellbook?.includes(entry.spellUuid)) continue;
         if (resultUuids.has(entry.spellUuid)) continue;
-        const spell = entry.spell;
-        spell.isFromScroll = true;
-        spell.scrollId = entry.scrollId;
-        spell.scrollName = entry.scrollName;
-        scrollOnly.push(spell);
+        const { spell, scrollId, scrollName } = entry;
+        scrollOnly.push({ ...spell.toObject(), uuid: spell.uuid, labels: spell.labels, system: spell.system, isFromScroll: true, scrollId, scrollName });
       }
       if (scrollOnly.length) results = [...scrollOnly, ...results];
     }
