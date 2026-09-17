@@ -1,4 +1,12 @@
+## New Features
+
+- Added `syncGrantedSpellList` and `setClassSpellLists` to the module API.
+- Granted spell lists are filed in their own compendium folder and Spell List Manager group. Class Rules only offers the current actor's granted list.
+- Merging into an existing merged list shows a warning when a selected list's class identifier differs from the target list.
+- Species and feat granted spells are mirrored into a per-actor granted spell list. The list is created and attached to a class when Class Rules first assigns that class a spell list, and resyncs when a GM opens the Spell Book.
+- The Merge Spell Lists dialog has a Merge Into option to add spells from selected lists to an existing merged list instead of creating a new one.
+- The Spell Book has a read-only Granted Spells tab that groups spells by the species or feat that granted them, with spellcasting ability and casting method badges. Actors with only granted spells now get the Spell Book button.
+
 ## Bug Fixes
 
-- Fixed a crash when rendering spells whose range is a formula. The Spell List Manager and the Spell Book failed to open when the system's range formula resolution threw "ReferenceError: error is not defined".
-- Range display now uses the system's prepared range label and falls back to resolving the formula with the actor's or spell's roll data.
+- Renaming a spell list to a name used by a system or compendium spell list no longer fails silently. Renaming to a name already used by another custom, merged, modified, or granted list shows a warning.
