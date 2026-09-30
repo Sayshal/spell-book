@@ -1,4 +1,4 @@
 ## Bug Fixes
 
-- Spell Book no longer writes source data or display labels into shared compendium index entries.
-- Scroll spells shown in the wizard Learn tab no longer write scroll details onto the cached compendium spell.
+- Preparing a spell no longer takes over an existing always-prepared, innate, at-will, or Cast activity copy of that spell and leaves it stuck as a prepared class spell. A separate copy is prepared instead.
+- The Show Cantrips class rule set to off now hides cantrips from the preparation list for every class, not only wizard-enabled classes.
