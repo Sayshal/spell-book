@@ -17,17 +17,17 @@ export class SpellDataManager {
    * @returns {Promise<object[]>} Filtered spell documents
    */
   static async getPreparableSpellsForClass(actor, classIdentifier) {
-    const allClassSpells = await this.#getFullClassList(actor, classIdentifier);
+    const fullClassList = await this.#getFullClassList(actor, classIdentifier);
+    const hideCantrips = this.#shouldHideCantrips(actor, classIdentifier);
+    const allClassSpells = hideCantrips ? fullClassList.filter((spell) => spell.system.level !== 0) : fullClassList;
     const wizardClasses = ClassManager.getWizardEnabledClasses(actor);
     const isWizard = wizardClasses.some((w) => w.identifier === classIdentifier);
     if (!isWizard) return allClassSpells;
     const journal = await WizardBook.getWizardSpellbook(actor, classIdentifier);
     const journalSet = new Set(journal.map((uuid) => foundry.utils.parseUuid(uuid).uuid));
     const grantedSet = this.#collectGrantedSpellUuids(actor);
-    const hideCantrips = this.#shouldHideCantrips(actor, classIdentifier);
     return allClassSpells.filter((spell) => {
-      const isCantrip = spell.system.level === 0;
-      if (isCantrip) return !hideCantrips;
+      if (spell.system.level === 0) return true;
       const canonical = foundry.utils.parseUuid(spell.uuid).uuid;
       return journalSet.has(canonical) || grantedSet.has(canonical);
     });
