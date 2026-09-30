@@ -581,7 +581,7 @@ export class SpellManager {
       }
       return;
     }
-    const unassigned = allMatchingSpells.find((s) => !ClassManager.getSpellClassIdentifier(s));
+    const unassigned = matchingSpells.find((s) => !ClassManager.getSpellClassIdentifier(s));
     const existingSpell = unassigned || matchingSpells[0];
     if (existingSpell) {
       const updateData = { _id: existingSpell.id, 'system.method': preparationMode, 'system.prepared': 1 };
