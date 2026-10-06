@@ -1,5 +1,5 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
-import { appendToMergedSpellList, createMergedSpellList, createNewSpellList, findSpellListsByType, isSourceHiddenSpellList } from '../data/_module.mjs';
+import { appendToSpellList, createMergedSpellList, createNewSpellList, findSpellListsByType, isSourceHiddenSpellList } from '../data/_module.mjs';
 import { detachedRenderOptions } from '../ui/_module.mjs';
 
 const { DialogV2 } = foundry.applications.api;
@@ -105,7 +105,7 @@ export class CreationController {
       rejectClose: false
     });
     if (result !== 'merge' || !formData) return;
-    const merged = formData.targetUuid ? await appendToMergedSpellList(formData.targetUuid, formData.spellListUuids) : await createMergedSpellList(formData.spellListUuids, formData.mergedListName);
+    const merged = formData.targetUuid ? await appendToSpellList(formData.targetUuid, formData.spellListUuids) : await createMergedSpellList(formData.spellListUuids, formData.mergedListName);
     if (!merged) return;
     if (formData.hideSourceLists) {
       const hidden = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
@@ -174,7 +174,7 @@ export class CreationController {
   /**
    * Build grouped merge candidates for the merge dialog.
    * @param {SpellListManager} app - The parent spell-list-manager app
-   * @returns {object} { standard, custom, merged, actorOwned }
+   * @returns {object} { standard, custom, merged, targets, actorOwned }
    * @private
    */
   static getSpellListCandidates(app) {
@@ -185,6 +185,7 @@ export class CreationController {
       standard: app.availableLists.filter((l) => !l.isActorOwned && !l.isCustom && !l.isMerged && visible(l) && !isSourceHiddenSpellList(l.system?.spells, false, sourceConfig)),
       custom: app.availableLists.filter((l) => !l.isActorOwned && !l.isMerged && l.isCustom && visible(l)),
       merged: app.availableLists.filter((l) => !l.isActorOwned && l.isMerged && visible(l)),
+      targets: app.availableLists.filter((l) => !l.isActorOwned && (l.isMerged || l.isCustom || l.isModified) && visible(l)),
       actorOwned: app.availableLists.filter((l) => l.isActorOwned && visible(l))
     };
   }

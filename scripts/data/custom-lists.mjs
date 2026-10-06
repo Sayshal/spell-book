@@ -233,15 +233,17 @@ export async function createMergedSpellList(spellListUuids, mergedListName) {
 }
 
 /**
- * Add the spells of source lists to an existing merged list in place.
- * @param {string} targetUuid - UUID of the merged list to extend
+ * Add the spells of source lists to an existing editable list in place. Merged targets also record their sources.
+ * @param {string} targetUuid - UUID of the merged, custom, or modified list to extend
  * @param {string[]} sourceUuids - UUIDs of spell lists to add
- * @returns {Promise<object|null>} The updated merged list page or null
+ * @returns {Promise<object|null>} The updated list page or null
  */
-export async function appendToMergedSpellList(targetUuid, sourceUuids) {
+export async function appendToSpellList(targetUuid, sourceUuids) {
   const target = await fromUuid(targetUuid);
-  if (target?.flags?.[MODULE.ID]?.[FLAGS.KIND] !== LIST_KINDS.MERGED) return null;
-  const allSourceUuids = Array.from(new Set([...(target.flags[MODULE.ID].sourceListUuids || []), ...sourceUuids]));
+  const kind = target?.flags?.[MODULE.ID]?.[FLAGS.KIND];
+  if (![LIST_KINDS.MERGED, LIST_KINDS.CUSTOM, LIST_KINDS.DUPLICATE].includes(kind)) return null;
+  const isMerged = kind === LIST_KINDS.MERGED;
+  const allSourceUuids = Array.from(new Set([...(isMerged ? target.flags[MODULE.ID].sourceListUuids || [] : []), ...sourceUuids]));
   const loaded = new Map(await Promise.all(allSourceUuids.map(async (uuid) => [uuid, await fromUuid(uuid)])));
   const spells = new Set(Array.from(target.system.spells || []));
   const mismatched = [];
@@ -252,13 +254,14 @@ export async function appendToMergedSpellList(targetUuid, sourceUuids) {
     if (source.system.identifier && source.system.identifier.toLowerCase() !== target.system.identifier) mismatched.push(source.name);
   }
   if (mismatched.length) ui.notifications.warn(_loc('SPELLBOOK.Manager.MergeLists.IdentifierMismatch', { lists: mismatched.join(', '), target: target.name }));
-  const sources = [...loaded.values()].filter(Boolean);
-  const listNames = sources.map((l) => l.name).join(', ');
-  await target.update({
-    'system.spells': Array.from(spells),
-    'system.description': _loc('SPELLBOOK.Manager.CreateList.MultiMergedDescription', { listNames, count: sources.length }),
-    [`flags.${MODULE.ID}.sourceListUuids`]: allSourceUuids
-  });
+  const update = { 'system.spells': Array.from(spells) };
+  if (isMerged) {
+    const sources = [...loaded.values()].filter(Boolean);
+    const listNames = sources.map((l) => l.name).join(', ');
+    update['system.description'] = _loc('SPELLBOOK.Manager.CreateList.MultiMergedDescription', { listNames, count: sources.length });
+    update[`flags.${MODULE.ID}.sourceListUuids`] = allSourceUuids;
+  }
+  await target.update(update);
   await ensureListRegistered(target.uuid);
   ATLAS.log(3, `Merged ${sourceUuids.length} spell lists into "${target.name}"`, { spellCount: spells.size, uuid: target.uuid });
   return target;
