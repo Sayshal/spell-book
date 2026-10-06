@@ -1,4 +1,8 @@
-## Bug Fixes
+## New Features
 
-- Preparing a spell no longer takes over an existing always-prepared, innate, at-will, or Cast activity copy of that spell and leaves it stuck as a prepared class spell. A separate copy is prepared instead.
-- The Show Cantrips class rule set to off now hides cantrips from the preparation list for every class, not only wizard-enabled classes.
+- The Merge Into dropdown in the Merge Spell Lists dialog now lists custom and modified spell lists as targets, not only merged lists.
+
+## Changes
+
+- Merging into a custom or modified list adds the spells only and leaves its description and source tracking unchanged.
+- Verified Foundry compatibility now reads 14 instead of 14.367.
