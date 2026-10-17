@@ -2,7 +2,7 @@
 
 Because preparing your spells shouldn't feel like an IRS audit.
 
-![Player Spell Book hero view](https://wiki.3deathsaves.com/spell-book/psb-hero.png)
+![Spell Book Hero](https://wiki.3deathsaves.com/spell-book/hero.png)
 
 ![GitHub release](https://img.shields.io/github/v/release/Sayshal/spell-book?style=for-the-badge)
 ![GitHub Downloads (specific asset, all releases)](<https://img.shields.io/github/downloads/Sayshal/spell-book/module.zip?style=for-the-badge&logo=foundryvirtualtabletop&logoColor=white&logoSize=auto&label=Downloads%20(Total)&color=ff144f>)
@@ -39,11 +39,7 @@ Because preparing your spells shouldn't feel like an IRS audit.
 
 ![Party Spell Coordination](https://wiki.3deathsaves.com/spell-book/party-coordinator.png)
 
-![Synergy Analysis](https://wiki.3deathsaves.com/spell-book/synergy-analysis.png)
-
 **Details Customization:** Turn specific metadata pieces on and off per spell row: level, components, school, casting time, range, damage type, condition, save, concentration, material components. Player and GM configurations are independent. Changes apply to open windows live.
-
-![Details Customization dialog](https://wiki.3deathsaves.com/spell-book/details-customization.png)
 
 ---
 
@@ -72,17 +68,7 @@ await SPELLBOOK.api.scrollScanner();
 SPELLBOOK.api.debugSpell('Revivify');
 ```
 
-Hooks, all namespaced with the module id:
-
-| Hook                          | Payload                                                                   |
-| ----------------------------- | ------------------------------------------------------------------------- |
-| `spell-book.spellBookOpened`  | `{ actor, app }`                                                          |
-| `spell-book.spellBookClosed`  | `{ actor }`                                                               |
-| `spell-book.preLearnSpell`    | `{ actor, classId, spellUuid, source, costs }` - return `false` to cancel |
-| `spell-book.spellLearned`     | `{ actor, classId, spellUuid, source, name, school, level }`              |
-| `spell-book.spellCopied`      | `{ actorName, spellName, minutes }`                                       |
-| `spell-book.preparationSaved` | `{ actor, classIdentifier, changes }`                                     |
-| `spell-book.loadoutApplied`   | `{ actor, classIdentifier, spellUuids, loadoutId, loadoutName }`          |
+Hooks and the full API reference are on the [Wiki](https://wiki.3deathsaves.com/spell-book/).
 
 ---
 
