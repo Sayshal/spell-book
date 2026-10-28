@@ -1,8 +1,10 @@
-## New Features
+## Bug Fixes
 
-- The Merge Into dropdown in the Merge Spell Lists dialog now lists custom and modified spell lists as targets, not only merged lists.
+- Always-ritual classes keep their separate ritual copy regardless of spellcasting method.
+- Spell level cap is no longer inflated for classes whose identifier matches their spellcasting method key.
+- Spells prepared by classes with custom spellcasting methods from other modules now use that method instead of standard slots.
+- The slot tracker chat card now lists slots for every spellcasting method, not only standard and pact.
 
 ## Changes
 
-- Merging into a custom or modified list adds the spells only and leaves its description and source tracking unchanged.
-- Verified Foundry compatibility now reads 14 instead of 14.367.
+- Bug reports and feature requests now go through 3deathsaves.com/report instead of GitHub issue forms.
