@@ -98,10 +98,10 @@ export class ClassManager {
   /**
    * Determine the preparation mode from a spellcasting configuration.
    * @param {object} spellcastingConfig - The spellcasting configuration object
-   * @returns {string} 'pact' or 'spell'
+   * @returns {string} The class's spellcasting method key, or 'spell'
    */
   static getClassPreparationMode(spellcastingConfig) {
-    return spellcastingConfig?.type === SPELL_MODE.PACT ? SPELL_MODE.PACT : SPELL_MODE.SPELL;
+    return spellcastingConfig?.type ?? SPELL_MODE.SPELL;
   }
 
   /**

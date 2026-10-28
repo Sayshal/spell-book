@@ -570,7 +570,7 @@ export class SpellManager {
     }
     const existingRitual = matchingSpells.find((s) => s.system.method === SPELL_MODE.RITUAL);
     const classRules = RuleSet.getClassRules(actor, classIdentifier);
-    if (existingRitual && classRules.ritualCasting === RITUAL_CASTING_MODES.ALWAYS && preparationMode === SPELL_MODE.SPELL) {
+    if (existingRitual && classRules.ritualCasting === RITUAL_CASTING_MODES.ALWAYS) {
       const sourceSpell = await fromUuid(uuid);
       if (sourceSpell) {
         const newSpellData = await game.items.fromCompendium(sourceSpell);

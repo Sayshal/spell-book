@@ -151,10 +151,8 @@ export class SpellDataManager {
     const spellcastingModel = CONFIG.DND5E.spellcasting[spellcastingType];
     if (!spellcastingModel?.table) return 0;
     const spellSlotTable = spellcastingModel.table;
-    const classLevels = ClassManager.getSpellcastingLevels(actor, classIdentifier);
     const spellcastingSource = ClassManager.getSpellcastingSourceItem(actor, classIdentifier);
-    const classKey = spellcastingSource?.identifier || spellcastingSource?.name?.slugify() || 'class';
-    const progression = { [spellcastingType]: 0, [classKey]: classLevels };
+    const progression = { [spellcastingType]: 0 };
     actor.constructor.computeClassProgression(progression, spellcastingSource, { spellcasting: spellcastingConfig });
     if (spellcastingModel.isSingleLevel) {
       const spells = { [spellcastingType]: {} };

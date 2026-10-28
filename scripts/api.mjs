@@ -146,18 +146,10 @@ export async function spellSlotTracker() {
     return;
   }
   const rows = [];
-  const slotKeys = [
-    ...Object.keys(CONFIG.DND5E.spellLevels)
-      .filter((level) => level !== '0')
-      .map((level) => `spell${level}`),
-    'pact'
-  ];
-  for (const key of slotKeys) {
-    const slot = spellcasting[key];
-    if (!slot || slot.max <= 0) continue;
+  for (const [key, slot] of Object.entries(spellcasting)) {
+    if (key === 'spell0' || !(slot?.max > 0)) continue;
     const used = slot.max - slot.value;
-    const label = key === 'pact' ? _loc('DND5E.PactMagic') : CONFIG.DND5E.spellLevels[key.slice(5)];
-    rows.push(`<tr><td>${label}</td><td>${used}/${slot.max}</td><td>${slot.value}</td></tr>`);
+    rows.push(`<tr><td>${slot.label}</td><td>${used}/${slot.max}</td><td>${slot.value}</td></tr>`);
   }
   if (!rows.length) {
     ui.notifications.info(_loc('SPELLBOOK.API.SlotTracker.NoSlots', { name: actor.name }));
