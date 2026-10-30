@@ -84,6 +84,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
     this.#setupMemberHover();
     this.#setupMemberContextMenu();
     this.#restoreCollapsedLevels();
+    if (this._onDocumentClick) document.removeEventListener('click', this._onDocumentClick);
     this._onDocumentClick = (event) => {
       if (this._filteredActorId && this.element.contains(event.target) && !event.target.closest('.member-card')) this.#clearSpellFilter();
       if (this._contextMenu && !event.target.closest('.party-member-context-menu')) this.#hideContextMenu();
