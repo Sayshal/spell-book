@@ -1,10 +1,3 @@
 ## Bug Fixes
 
-- Always-ritual classes keep their separate ritual copy regardless of spellcasting method.
-- Spell level cap is no longer inflated for classes whose identifier matches their spellcasting method key.
-- Spells prepared by classes with custom spellcasting methods from other modules now use that method instead of standard slots.
-- The slot tracker chat card now lists slots for every spellcasting method, not only standard and pact.
-
-## Changes
-
-- Bug reports and feature requests now go through 3deathsaves.com/report instead of GitHub issue forms.
+- Party Coordinator no longer stacks an extra document click listener on every re-render or leaves stale listeners active after the window closes.
