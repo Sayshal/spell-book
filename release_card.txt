@@ -10,4 +10,4 @@
 
 ## Bug Fixes
 
-- 5 bugs squashed
+- 6 bugs squashed

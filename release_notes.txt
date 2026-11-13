@@ -10,6 +10,7 @@
 
 ## Bug Fixes
 
+- Chris's Premades compatibility works again, applying missing or outdated automations to the actor's spells after saving changes.
 - The always prepared spell icon tooltip falls back to the item that granted the spell through advancement when no class source is set.
 - The granted spell icon tooltip now shows the item that granted the spell instead of the spell's own name.
 - The Prepared Only and Favorites filters now reflect unsaved checkbox and favorite changes.
