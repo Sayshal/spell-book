@@ -40,7 +40,7 @@ export function getSpellSourceDocument(spell, actor = null) {
   const sourceItem = spell?.system?.sourceItem;
   if (sourceItem) return resolvedActor.identifiedItems.get(sourceItem)?.first() ?? null;
   if (spell?._classContext) return resolvedActor.identifiedItems.get(buildClassSourceItem(spell._classContext))?.first() ?? null;
-  return null;
+  return spell?.system?.advancementRootItem ?? null;
 }
 
 /**

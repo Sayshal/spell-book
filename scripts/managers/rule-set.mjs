@@ -1,6 +1,8 @@
 import { CLASS_IDENTIFIERS, FLAGS, MODULE, RITUAL_CASTING_MODES, RULE_SETS, SETTINGS, SPELL_MODE, SWAP_MODES, TEMPLATES, WIZARD_DEFAULTS } from '../constants.mjs';
 import { parseClassSpellKey } from '../data/class-spell-key.mjs';
 import { getClassSpellList } from '../data/spell-list-resolver.mjs';
+import { syncGrantedSpellList } from '../data/custom-lists.mjs';
+import { getDefaultClassLists } from '../data/spell-list-registry.mjs';
 import { ClassManager } from './class-manager.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
@@ -120,26 +122,42 @@ export class RuleSet {
   }
 
   /**
-   * Initialize class rules for any newly detected spellcasting classes.
+   * Store class rules for newly detected spellcasting classes with the default class spell lists,
+   * and assign the default subclass spell lists the first time each subclass is seen.
    * @param {object} actor - The actor to check
-   * @returns {void}
+   * @param {object} [options] - Initialization options
+   * @param {boolean} [options.defaultsOnly] - Only store rules for classes that have a default spell list to assign
+   * @returns {Promise<void>}
    */
-  static async initializeNewClasses(actor) {
+  static async initializeNewClasses(actor, { defaultsOnly = false } = {}) {
     const spellcastingClasses = ClassManager.detectSpellcastingClasses(actor);
-    const existingRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
+    const existingRules = foundry.utils.deepClone(actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {});
     const ruleSet = RuleSet.getEffectiveRuleSet(actor);
-    let hasNewClasses = false;
+    let changed = false;
+    const firstAssigned = [];
     for (const classId of Object.keys(spellcastingClasses)) {
-      if (!existingRules[classId]) {
-        existingRules[classId] = RuleSet.#getClassDefaults(classId, ruleSet);
-        hasNewClasses = true;
+      const classLists = getDefaultClassLists('class', classId);
+      const subclassId = actor.classes?.[classId]?.subclass?.identifier;
+      const subclassLists = getDefaultClassLists('subclass', subclassId);
+      let rules = existingRules[classId];
+      if (!rules) {
+        if (defaultsOnly && !classLists.length && !subclassLists.length) continue;
+        rules = existingRules[classId] = RuleSet.#getClassDefaults(classId, ruleSet);
+        rules.customSpellList = classLists;
+        if (classLists.length) firstAssigned.push(classId);
+        changed = true;
       }
+      if (!subclassLists.length || rules.defaultSubclassListsFor === subclassId) continue;
+      rules.defaultSubclassListsFor = subclassId;
+      if (!rules.customSubclassSpellList?.length) rules.customSubclassSpellList = subclassLists;
+      changed = true;
     }
-    if (hasNewClasses) {
-      await actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, existingRules);
-      if (this.#classRules.has(actor)) this.#classRules.delete(actor);
-      ATLAS.log(3, `New classes initialized`, { actorName: actor.name, classCount: Object.keys(spellcastingClasses).length });
-    } else ATLAS.log(3, `No new classes to initialize`, { actorName: actor.name });
+    if (!changed) return;
+    const grantedList = firstAssigned.length ? await syncGrantedSpellList(actor, { create: true }) : null;
+    if (grantedList) for (const classId of firstAssigned) existingRules[classId].customSpellList.push(grantedList.uuid);
+    await actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, existingRules);
+    this.#classRules.delete(actor);
+    ATLAS.log(3, 'Class rules initialized', { actorName: actor.name, classCount: Object.keys(spellcastingClasses).length });
   }
 
   /**

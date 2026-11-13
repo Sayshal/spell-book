@@ -94,8 +94,10 @@ export function registerSettings() {
     type: new StringField({ initial: 'cantrips-known, cantrips' })
   });
   register(SETTINGS.REGISTRY_ENABLED_LISTS, { scope: 'world', config: false, type: new ArrayField(new StringField()) });
+  register(SETTINGS.DEFAULT_CLASS_LISTS, { scope: 'world', config: false, type: new ObjectField({ initial: {} }) });
   register(SETTINGS.CLASS_RULE_LISTS_MIGRATION_COMPLETE, { scope: 'world', config: false, type: new BooleanField({ initial: false }) });
   register(SETTINGS.SPELL_LIST_KINDS_MIGRATION_COMPLETE, { scope: 'world', config: false, type: new BooleanField({ initial: false }) });
+  register(SETTINGS.MOON_IDENTIFIER_MIGRATION_COMPLETE, { scope: 'world', config: false, type: new BooleanField({ initial: false }) });
   register(SETTINGS.SPELL_BOOK_POSITION, { scope: 'client', config: false, type: new ObjectField({ nullable: true, initial: null }) });
   register(SETTINGS.SPELL_LIST_MANAGER_POSITION, { scope: 'client', config: false, type: new ObjectField({ nullable: true, initial: null }) });
   register(SETTINGS.INJECT_NOTES_INTO_DESCRIPTIONS, {

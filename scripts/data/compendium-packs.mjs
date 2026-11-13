@@ -1,12 +1,14 @@
 /**
- * Visible Item compendiums that can carry spells and are enabled in dnd5e's `packSourceConfiguration`.
+ * Visible Item compendiums that can carry spells and are enabled as Compendium Browser sources.
  * @returns {object[]} The eligible compendium packs
  */
 export function getEligibleSpellPacks() {
-  const packSourceConfig = game.settings.get('dnd5e', 'packSourceConfiguration') ?? {};
   return game.packs.filter(
     (pack) =>
-      pack.metadata.type === 'Item' && pack.visible && packSourceConfig[pack.collection] !== false && (!pack.metadata.flags.dnd5e?.types || new Set(pack.metadata.flags.dnd5e.types).has('spell'))
+      pack.metadata.type === 'Item' &&
+      pack.visible &&
+      dnd5e.applications.settings.CompendiumBrowserSettingsConfig.isSourceEnabled(pack) &&
+      (!pack.metadata.flags.dnd5e?.types || new Set(pack.metadata.flags.dnd5e.types).has('spell'))
   );
 }
 

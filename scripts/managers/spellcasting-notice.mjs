@@ -4,6 +4,7 @@ import { getClassSpellList } from '../data/spell-list-resolver.mjs';
 import { ClassRules } from '../dialogs/_module.mjs';
 import { invalidateActorCaches } from '../utils/invalidation.mjs';
 import { ClassManager } from './class-manager.mjs';
+import { RuleSet } from './rule-set.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
 
@@ -25,11 +26,13 @@ function scheduleCheck(actor) {
 }
 
 /**
- * Whisper the GM and actor owners when a spellcasting class resolves to no spell list.
+ * Store default spell lists for new classes and subclasses, then whisper the GM and actor owners
+ * when a spellcasting class resolves to no spell list.
  * @param {object} actor - The actor document
  */
 async function checkSpellcastingLists(actor) {
   ClassManager.invalidateCache(actor);
+  await RuleSet.initializeNewClasses(actor, { defaultsOnly: true });
   const classes = ClassManager.detectSpellcastingClasses(actor);
   const missing = [];
   for (const [identifier, data] of Object.entries(classes)) {
@@ -56,6 +59,14 @@ export function onSpellcastingItemCreate(item) {
   if (!item.actor || (item.type !== 'class' && item.type !== 'subclass')) return;
   invalidateActorCaches(item.actor);
   scheduleCheck(item.actor);
+}
+
+/**
+ * Check a newly created actor that already carries classes.
+ * @param {object} actor - The created actor document
+ */
+export function onSpellcastingActorCreate(actor) {
+  if (actor.itemTypes?.class?.length) scheduleCheck(actor);
 }
 
 /**

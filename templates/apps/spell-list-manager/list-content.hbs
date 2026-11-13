@@ -12,6 +12,15 @@
             <span>{{localize 'SPELLBOOK.Registry.EnableLabel'}}</span>
           </label>
         </div>
+        {{#if selectedList.canBeDefault}}
+          <div class="registry-toggle action-button" data-tooltip="{{localize 'SPELLBOOK.Manager.DefaultList.Tooltip'}}">
+            <label class="checkbox-label">
+              <dnd5e-checkbox data-action="toggleDefaultList" data-uuid="{{selectedList.uuid}}"
+                {{#if selectedList.isDefaultList}}checked{{/if}}></dnd5e-checkbox>
+              <span>{{localize 'SPELLBOOK.Manager.DefaultList.Label'}}</span>
+            </label>
+          </div>
+        {{/if}}
         {{#if selectedList.isRenameable}}
           <button type="button" class="action-button" data-action="renameList" data-uuid="{{selectedList.uuid}}"
             data-tooltip="{{localize 'SPELLBOOK.Manager.Tooltips.Rename'}}">

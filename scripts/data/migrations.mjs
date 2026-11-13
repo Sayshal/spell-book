@@ -143,3 +143,36 @@ export async function migrateSpellListFolders() {
   if (moved > 0) ATLAS.log(3, `Re-filed ${moved} spell list journal(s) into their folders`);
   if (failed > 0) ATLAS.log(1, `Spell list folder migration incomplete, ${failed} folder(s) failed. Will retry on next load`);
 }
+
+/**
+ * Rename the Druid Circle of the Moon identifier on custom pack lists from `moon` to dnd5e's `circle-moon`.
+ * @returns {Promise<void>}
+ */
+export async function migrateMoonIdentifier() {
+  if (!ATLAS.isPrimaryGM || game.settings.get(MODULE.ID, SETTINGS.MOON_IDENTIFIER_MIGRATION_COMPLETE)) return;
+  const pack = game.packs.get(PACK.SPELLS);
+  if (!pack) return;
+  let journals;
+  try {
+    journals = await pack.getDocuments();
+  } catch (error) {
+    ATLAS.log(2, 'Skipping Circle of the Moon migration; custom pack unavailable', error);
+    return;
+  }
+  let migrated = 0;
+  try {
+    for (const journal of journals) {
+      const updates = journal.pages
+        .filter((page) => page.type === 'spells' && page.system.type === 'subclass' && page.system.identifier === 'moon')
+        .map((page) => ({ _id: page.id, 'system.identifier': 'circle-moon' }));
+      if (!updates.length) continue;
+      await JournalEntryPage.updateDocuments(updates, { parent: journal });
+      migrated += updates.length;
+    }
+  } catch (error) {
+    ATLAS.log(1, 'Circle of the Moon migration incomplete, will retry on next load', error);
+    return;
+  }
+  if (migrated > 0) ATLAS.log(3, `Renamed ${migrated} Circle of the Moon spell list identifier(s) to circle-moon`);
+  await game.settings.set(MODULE.ID, SETTINGS.MOON_IDENTIFIER_MIGRATION_COMPLETE, true);
+}

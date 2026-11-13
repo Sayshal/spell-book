@@ -37,7 +37,6 @@ const RITUAL_OPTIONS = [
  */
 async function loadSpellListOptions(actor, assignedUuids = new Set()) {
   const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
-  const sourceConfig = game.settings.get('dnd5e', 'packSourceConfiguration') ?? {};
   const allPacks = Array.from(game.packs).filter((p) => p.metadata.type === 'JournalEntry');
   const options = [];
   for (const pack of allPacks) {
@@ -54,7 +53,7 @@ async function loadSpellListOptions(actor, assignedUuids = new Set()) {
           const isActorOwned = !!flags.actorId;
           const isModuleList = flags.kind === LIST_KINDS.CUSTOM || flags.kind === LIST_KINDS.MERGED;
           const exempt = isActorOwned || isModuleList;
-          const sourceHidden = isSourceHiddenSpellList(page.system?.spells, exempt, sourceConfig);
+          const sourceHidden = isSourceHiddenSpellList(page.system?.spells, exempt);
           if (sourceHidden && !assignedUuids.has(page.uuid)) continue;
           let label = page.name;
           if (isActorOwned && !isGranted) {

@@ -180,9 +180,8 @@ export class CreationController {
   static getSpellListCandidates(app) {
     const hidden = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
     const visible = (list) => !hidden.includes(list.uuid);
-    const sourceConfig = game.settings.get('dnd5e', 'packSourceConfiguration') ?? {};
     return {
-      standard: app.availableLists.filter((l) => !l.isActorOwned && !l.isCustom && !l.isMerged && visible(l) && !isSourceHiddenSpellList(l.system?.spells, false, sourceConfig)),
+      standard: app.availableLists.filter((l) => !l.isActorOwned && !l.isCustom && !l.isMerged && visible(l) && !isSourceHiddenSpellList(l.system?.spells)),
       custom: app.availableLists.filter((l) => !l.isActorOwned && !l.isMerged && l.isCustom && visible(l)),
       merged: app.availableLists.filter((l) => !l.isActorOwned && l.isMerged && visible(l)),
       targets: app.availableLists.filter((l) => !l.isActorOwned && (l.isMerged || l.isCustom || l.isModified) && visible(l)),
