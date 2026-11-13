@@ -1,5 +1,5 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
-import { duplicateSpellList, ensureListRegistered, findAllSpellLists, toggleListForRegistry } from '../data/_module.mjs';
+import { duplicateSpellList, ensureListRegistered, findAllSpellLists, toggleDefaultClassList, toggleListForRegistry } from '../data/_module.mjs';
 import { SpellComparison } from '../dialogs/_module.mjs';
 import { confirmDialog, createSpellIconLink, detachedRenderOptions } from '../ui/_module.mjs';
 
@@ -201,6 +201,19 @@ export class EditingController {
     if (!app.selectedList) return;
     const newState = await toggleListForRegistry(app.selectedList.uuid);
     target.checked = newState;
+  }
+
+  /**
+   * Toggle whether the selected list is a default for new characters of its class or subclass.
+   * @param {SpellListManager} app - The parent spell-list-manager app
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} target - The checkbox element
+   */
+  static async toggleDefaultList(app, event, target) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!app.selectedList) return;
+    target.checked = await toggleDefaultClassList(app.selectedList.document);
   }
 
   /**

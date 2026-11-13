@@ -2449,6 +2449,18 @@
     }
   }
 
+  .party-search {
+    gap: var(--sb-space-sm);
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    padding: 0 var(--sb-space-md);
+
+    input {
+      flex: 1;
+    }
+  }
+
   .spell-comparison {
     scrollbar-gutter: stable;
     flex: 1;

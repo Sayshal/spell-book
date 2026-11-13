@@ -1,9 +1,9 @@
 import { SpellBook, SpellListManager } from './apps/_module.mjs';
 import { HOOKS, MODULE, PACK, SETTINGS } from './constants.mjs';
-import { invalidateTargetUserCache, invalidateUserSpellDataCache } from './data/_module.mjs';
+import { ensureUserSpellDataPages, invalidateTargetUserCache, invalidateUserSpellDataCache } from './data/_module.mjs';
 import { initializePeddler, onRenderScrollPurchase, onSpellLearned, onTidy5eGroupSheetRender, onTidy5eQuadroneRender, onTidy5eRender, registerDowntimeNote } from './integrations/_module.mjs';
 import { SpellDataManager } from './managers/_module.mjs';
-import { onAdvancementComplete, onRenderSpellcastingNotice, onSpellcastingItemCreate } from './managers/spellcasting-notice.mjs';
+import { onAdvancementComplete, onRenderSpellcastingNotice, onSpellcastingActorCreate, onSpellcastingItemCreate } from './managers/spellcasting-notice.mjs';
 import { DescriptionInjector } from './ui/_module.mjs';
 import { invalidateActorCaches, onActorSheetRender, onCompendiumDirectoryRender, onGroupActorRender, onRestCompleted, onUpdateActor } from './utils/_module.mjs';
 
@@ -32,6 +32,8 @@ export function registerHooks() {
   Hooks.on('updateItem', DescriptionInjector.onUpdateItem.bind(DescriptionInjector));
   Hooks.on('createItem', DescriptionInjector.onCreateItem.bind(DescriptionInjector));
   Hooks.on('createItem', onSpellcastingItemCreate);
+  Hooks.on('createActor', onSpellcastingActorCreate);
+  Hooks.on('createUser', ensureUserSpellDataPages);
   Hooks.on('updateItem', (item, changes) => {
     if (item.actor && (item.type === 'class' || item.type === 'subclass') && changes.system?.levels !== undefined) invalidateActorCaches(item.actor);
   });

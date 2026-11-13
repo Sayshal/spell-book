@@ -388,17 +388,15 @@ async function updateSpellListMapping(originalUuid, duplicateUuid) {
  * Whether a stock spell list is fully hidden by disabled dnd5e Compendium Browser sources.
  * @param {Set<string>|string[]} spells - The list's spell UUIDs
  * @param {boolean} [exempt] - Skip the check (custom/merged/actor-owned list)
- * @param {object} [config] - Pre-fetched packSourceConfiguration; fetched if omitted
  * @returns {boolean} Whether every spell in the list belongs to a disabled source
  */
-export function isSourceHiddenSpellList(spells, exempt = false, config) {
+export function isSourceHiddenSpellList(spells, exempt = false) {
   if (exempt) return false;
   const uuids = spells instanceof Set ? [...spells] : Array.isArray(spells) ? spells : [];
   if (!uuids.length) return false;
-  config ??= game.settings.get('dnd5e', 'packSourceConfiguration') ?? {};
   return uuids.every((uuid) => {
-    const collection = foundry.utils.parseUuid(uuid)?.collection?.collection;
-    return collection ? config[collection] === false : false;
+    const pack = foundry.utils.parseUuid(uuid)?.collection;
+    return pack instanceof foundry.documents.collections.CompendiumCollection ? !dnd5e.applications.settings.CompendiumBrowserSettingsConfig.isSourceEnabled(pack) : false;
   });
 }
 

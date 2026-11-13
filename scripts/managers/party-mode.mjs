@@ -1,6 +1,7 @@
 import { FLAGS, MODULE, SOURCE_PREFIXES, SPELL_MODE } from '../constants.mjs';
 import { parseClassSpellKey } from '../data/class-spell-key.mjs';
-import { extractDamageTypes, extractSaveAbilities } from '../ui/formatting.mjs';
+import { getConfigLabel } from '../data/helpers.mjs';
+import { extractDamageTypes, extractSaveAbilities, extractSpellConditions } from '../ui/formatting.mjs';
 import { ClassManager } from './class-manager.mjs';
 
 /**
@@ -199,11 +200,31 @@ export class PartyMode {
     for (const spell of actor.itemTypes.spell.filter(filter)) {
       const sourceUuid = spell._stats?.compendiumSource || spell.flags?.core?.sourceId || spell.uuid;
       const isPrepared = spell.system?.prepared === 1 || (alwaysAvailable && ALWAYS_AVAILABLE_METHODS.includes(spell.system?.method));
-      const entry = { uuid: spell.uuid, sourceUuid, name: spell.name, level: spell.system?.level, prepared: isPrepared };
+      const entry = { uuid: spell.uuid, sourceUuid, name: spell.name, level: spell.system?.level, prepared: isPrepared, searchTerms: this.#buildSearchTerms(spell) };
       known.push(entry);
       if (isPrepared) prepared.push(entry);
     }
     return { known, prepared };
+  }
+
+  /**
+   * Lowercased text the party coordinator search matches: name, level, school, properties, casting time, damage types and conditions.
+   * @param {object} spell - The spell item
+   * @returns {string} Space-separated search terms
+   * @private
+   */
+  static #buildSearchTerms(spell) {
+    const { spellLevels, spellSchools, itemProperties, activityActivationTypes, damageTypes, healingTypes, conditionTypes } = CONFIG.DND5E;
+    const terms = [
+      spell.name,
+      spellLevels[spell.system.level],
+      getConfigLabel(spellSchools, spell.system.school),
+      ...Array.from(spell.system.properties ?? [], (key) => getConfigLabel(itemProperties, key)),
+      getConfigLabel(activityActivationTypes, spell.system.activation?.type),
+      ...extractDamageTypes(spell).map((key) => getConfigLabel(damageTypes, key) || getConfigLabel(healingTypes, key)),
+      ...extractSpellConditions(spell).map((key) => getConfigLabel(conditionTypes, key))
+    ];
+    return terms.filter(Boolean).join(' ').toLowerCase();
   }
 
   /**
@@ -248,7 +269,7 @@ export class PartyMode {
         for (const spell of classData.knownSpells) {
           if (!byLevel[spell.level]) byLevel[spell.level] = {};
           if (!byLevel[spell.level][spell.name]) {
-            byLevel[spell.level][spell.name] = { name: spell.name, level: spell.level, sourceUuid: spell.sourceUuid, actorStatuses: [] };
+            byLevel[spell.level][spell.name] = { name: spell.name, level: spell.level, sourceUuid: spell.sourceUuid, searchTerms: spell.searchTerms, actorStatuses: [] };
           }
           byLevel[spell.level][spell.name].actorStatuses.push({
             actorId: actorData.id,

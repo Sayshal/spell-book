@@ -37,6 +37,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
     this.partyActors = partyActors || (this.groupActor ? PartyMode.getPartyActors(this.groupActor) : []);
     this._comparisonData = null;
     this._filteredActorId = null;
+    this._searchQuery = '';
     this._contextMenu = null;
     this._onDocumentClick = null;
     this._onActorUpdate = null;
@@ -56,6 +57,7 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
     context.isGM = game.user.isGM;
     context.spellLevels = this.#buildSpellLevelGroups(this._comparisonData.spellsByLevel);
     context.groupName = this.groupActor?.name || _loc('ATLAS.Common.Party');
+    context.searchQuery = this._searchQuery;
     this.#decorateActors(context.comparison?.actors);
     return context;
   }
@@ -84,9 +86,15 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
     this.#setupMemberHover();
     this.#setupMemberContextMenu();
     this.#restoreCollapsedLevels();
+    this.element.querySelector('[name="party-search"]')?.addEventListener('input', (event) => {
+      this._searchQuery = event.target.value;
+      this.#refreshVisibility();
+    });
+    if (this._filteredActorId) this.#applySpellFilter(this._filteredActorId);
+    else if (this._searchQuery) this.#refreshVisibility();
     if (this._onDocumentClick) document.removeEventListener('click', this._onDocumentClick);
     this._onDocumentClick = (event) => {
-      if (this._filteredActorId && this.element.contains(event.target) && !event.target.closest('.member-card')) this.#clearSpellFilter();
+      if (this._filteredActorId && this.element.contains(event.target) && !event.target.closest('.member-card, .party-search')) this.#clearSpellFilter();
       if (this._contextMenu && !event.target.closest('.party-member-context-menu')) this.#hideContextMenu();
     };
     document.addEventListener('click', this._onDocumentClick);
@@ -343,16 +351,12 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
     this._filteredActorId = actorId;
     for (const spellItem of this.element.querySelectorAll('.spell-comparison-item')) {
       const status = spellItem.querySelector(`.actor-spell-status[data-actor-id="${actorId}"]`);
-      if (!status) {
-        spellItem.style.display = 'none';
-        continue;
-      }
-      spellItem.style.display = '';
+      if (!status) continue;
       spellItem.classList.add('member-filtered');
       status.classList.add('filtered-actor');
       for (const other of spellItem.querySelectorAll(`.actor-spell-status:not([data-actor-id="${actorId}"])`)) other.classList.add('dimmed');
     }
-    this.#updateLevelHeadersForFilter();
+    this.#refreshVisibility();
     this.#updateMemberCardStates(actorId);
     this.element.classList.add('member-filter-active');
   }
@@ -364,13 +368,26 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
   #clearSpellFilter() {
     this._filteredActorId = null;
     for (const spellItem of this.element.querySelectorAll('.spell-comparison-item')) {
-      spellItem.style.display = '';
       spellItem.classList.remove('member-filtered');
       for (const status of spellItem.querySelectorAll('.actor-spell-status')) status.classList.remove('filtered-actor', 'dimmed');
     }
-    this.#updateLevelHeadersForFilter();
+    this.#refreshVisibility();
     this.#updateMemberCardStates(null);
     this.element.classList.remove('member-filter-active');
+  }
+
+  /**
+   * Show only spells matching every search word and, when set, the member filter.
+   * @private
+   */
+  #refreshVisibility() {
+    const words = this._searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
+    for (const spellItem of this.element.querySelectorAll('.spell-comparison-item')) {
+      const matchesMember = !this._filteredActorId || !!spellItem.querySelector(`.actor-spell-status[data-actor-id="${this._filteredActorId}"]`);
+      const matchesSearch = words.every((word) => spellItem.dataset.search?.includes(word));
+      spellItem.style.display = matchesMember && matchesSearch ? '' : 'none';
+    }
+    this.#updateLevelHeadersForFilter();
   }
 
   /**
@@ -398,9 +415,10 @@ export class PartyCoordinator extends HandlebarsApplicationMixin(ApplicationV2) 
       const visible = Array.from(spellItems).filter((item) => item.style.display !== 'none');
       const count = group.querySelector('.spell-count');
       if (count) {
-        count.textContent = this._filteredActorId
-          ? _loc('SPELLBOOK.Party.SpellCountFiltered', { visible: visible.length, total: spellItems.length })
-          : _loc('SPELLBOOK.Party.SpellCount', { count: spellItems.length });
+        count.textContent =
+          this._filteredActorId || this._searchQuery
+            ? _loc('SPELLBOOK.Party.SpellCountFiltered', { visible: visible.length, total: spellItems.length })
+            : _loc('SPELLBOOK.Party.SpellCount', { count: spellItems.length });
       }
       group.style.display = visible.length === 0 ? 'none' : '';
     }

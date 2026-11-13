@@ -54,6 +54,33 @@ async function getUserPage(userId) {
 }
 
 /**
+ * Create the user spell data journal and a page for every user that lacks one.
+ * @returns {Promise<void>}
+ */
+export async function ensureUserSpellDataPages() {
+  if (!ATLAS.isPrimaryGM) return;
+  const pack = game.packs.get(PACK.USER_SPELL_DATA);
+  if (!pack) return;
+  const { NONE, OWNER } = CONST.DOCUMENT_OWNERSHIP_LEVELS;
+  const journal =
+    (await getUserSpellDataJournal()) ??
+    (await JournalEntry.create({ name: JOURNAL_NAME, ownership: { default: NONE }, flags: { [MODULE.ID]: { [FLAGS.IS_USER_SPELL_DATA_JOURNAL]: true } } }, { pack: pack.collection }));
+  const missing = game.users.filter((user) => !journal.pages.some((page) => page.flags?.[MODULE.ID]?.userId === user.id));
+  if (!missing.length) return;
+  const pages = await Promise.all(
+    missing.map(async (user) => ({
+      name: user.name,
+      type: 'text',
+      text: { content: await formatUserSpellsHtml({}, user.name, user.id) },
+      ownership: { default: NONE, [user.id]: OWNER },
+      flags: { [MODULE.ID]: { userId: user.id, dataVersion: DATA_VERSION } }
+    }))
+  );
+  await journal.createEmbeddedDocuments('JournalEntryPage', pages);
+  ATLAS.log(3, `Created user spell data pages for ${pages.length} user(s)`);
+}
+
+/**
  * Drop cached user spell data so the next read comes from the journal.
  * @param {string} [userId] - User to forget, or omit to clear every entry
  * @returns {void}

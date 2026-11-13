@@ -819,14 +819,10 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       state.resultIndex = 0;
       return;
     }
-    if (!state.results?.length) {
-      listEl?.replaceChildren();
-      state.resultIndex = 0;
-      return;
-    }
     const rc = await this.#buildRenderContext(tabId);
-    const groups = this.#isGrantedTab(tabId) ? this.#groupBySource(state.results) : this.#groupByLevel(state.results);
+    const groups = this.#isGrantedTab(tabId) ? this.#groupBySource(state.allResults) : this.#groupByLevel(state.allResults);
     const fragment = document.createDocumentFragment();
+    state.elements = new Map();
     for (const group of groups) {
       if (!group.spells.length) continue;
       const levelHtml = await foundry.applications.handlebars.renderTemplate(TEMPLATES.COMPONENTS.SPELL_LEVEL, { ...group, spells: [] });
@@ -835,14 +831,30 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       const levelEl = levelTpl.content.firstElementChild;
       const spellList = levelEl.querySelector('.spell-list');
       const rendered = await Promise.all(group.spells.map((s) => this.#renderResult(s, rc)));
+      group.spells.forEach((spell, i) => state.elements.set(spell, rendered[i]));
       spellList?.append(...rendered);
       fragment.appendChild(levelEl);
     }
     if (spinner) spinner.hidden = true;
     const savedScroll = preserveScroll ? listEl?.scrollTop || 0 : 0;
     listEl?.replaceChildren(fragment);
+    state.renderedResults = state.allResults;
     this.#restorePendingChanges(tabId);
+    this.#applyResultVisibility(tabId);
     if (savedScroll && listEl) listEl.scrollTop = Math.min(savedScroll, listEl.scrollHeight - listEl.clientHeight);
+  }
+
+  /**
+   * Hide rendered spells that the current filters exclude, and any level group left empty.
+   * @param {string} tabId - The tab id whose rendered results should be filtered
+   */
+  #applyResultVisibility(tabId) {
+    const state = this.#state.get(tabId);
+    const panel = this.#getPanelEl(tabId);
+    if (!state?.elements || !panel) return;
+    const visible = new Set(state.results);
+    for (const [spell, el] of state.elements) el.hidden = !visible.has(spell);
+    for (const levelEl of panel.querySelectorAll('.spell-list-items .spell-level')) levelEl.hidden = !levelEl.querySelector('.spell-list > li:not([hidden])');
   }
 
   /**
@@ -1064,7 +1076,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
       }
       const granted = owned.find((o) => o.item?.flags?.dnd5e?.cachedFor);
       if (granted && !alwaysPrepared) {
-        tags.push({ cssClass: 'granted', icon: 'fas fa-hand-sparkles', tooltip: granted.item.name || '' });
+        const grantingItem = fromUuidSync(granted.item.flags.dnd5e.cachedFor, { relative: this.actor, strict: false })?.item;
+        tags.push({ cssClass: 'granted', icon: 'fas fa-hand-sparkles', tooltip: grantingItem ? _loc('SPELLBOOK.Preparation.GrantedBy', { source: grantingItem.name }) : '' });
       }
       const pact = owned.find((o) => o.method === 'pact');
       if (pact) {
@@ -1327,13 +1340,17 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
         if (minRange !== null && r < minRange) return false;
         if (maxRange !== null && r > maxRange) return false;
       }
-      if (filterState.prepared && !spell.preparation?.prepared) return false;
-      if (filterState.favorited && !spell.favorited) return false;
+      const el = state.elements?.get(spell);
+      if (filterState.prepared && !(el?.querySelector('input[type="checkbox"][data-uuid]')?.checked ?? spell.preparation?.prepared)) return false;
+      if (filterState.favorited && !(el?.querySelector('.spell-favorite-toggle')?.classList.contains('favorited') ?? spell.favorited)) return false;
       if (filterState.affordable && state.costData && !this.#getSpellCost(spell, state.costData).affordable) return false;
       return true;
     });
     if (!preserveScroll) state.resultIndex = 0;
-    await this.#renderClassResults(tabId, { preserveScroll });
+    if (preserveScroll || state.renderedResults !== state.allResults) return this.#renderClassResults(tabId, { preserveScroll });
+    this.#applyResultVisibility(tabId);
+    const listEl = this.#getPanelEl(tabId)?.querySelector('.spell-list-items');
+    if (listEl) listEl.scrollTop = 0;
   }
 
   /**
@@ -1368,6 +1385,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
           pending.set(cb.dataset.uuid, false);
         }
         if (pending.size) this.#pendingChanges.set(tabId, pending);
+        this.#restorePendingChanges(tabId);
       }
     }
     this.#applyFiltersForActive();

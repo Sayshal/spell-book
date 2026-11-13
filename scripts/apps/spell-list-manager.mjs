@@ -8,6 +8,7 @@ import {
   getClassPacks,
   getPackTopLevelFolderName,
   getValidCustomListMappings,
+  isDefaultClassList,
   isListEnabledForRegistry,
   isSourceHiddenSpellList
 } from '../data/_module.mjs';
@@ -51,6 +52,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       restoreList: SpellListManager.#onRestoreList,
       renameList: SpellListManager.#onRenameList,
       registerList: SpellListManager.#onRegisterList,
+      toggleDefaultList: SpellListManager.#onToggleDefaultList,
       compareSpell: SpellListManager.#onCompareSpell,
       toggleSelectionMode: SpellListManager.#onToggleSelectionMode,
       selectAll: SpellListManager.#onSelectAll,
@@ -504,9 +506,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const modified = this.availableLists.filter((l) => !l.isActorOwned && l.isModified && !hiddenLists.includes(l.uuid));
     const merged = this.availableLists.filter((l) => !l.isActorOwned && l.isMerged && !hiddenLists.includes(l.uuid));
     const custom = this.availableLists.filter((l) => !l.isActorOwned && l.isCustom && !hiddenLists.includes(l.uuid));
-    const sourceConfig = game.settings.get('dnd5e', 'packSourceConfiguration') ?? {};
     const allStandard = this.availableLists.filter((l) => !l.isActorOwned && !l.isCustom && !l.isMerged && !l.isModified && !hiddenLists.includes(l.uuid));
-    const standard = allStandard.filter((l) => !isSourceHiddenSpellList(l.system?.spells, false, sourceConfig));
+    const standard = allStandard.filter((l) => !isSourceHiddenSpellList(l.system?.spells));
     const sourceHiddenCount = allStandard.length - standard.length;
     const byActor = (a, b) => (a.actorName && b.actorName ? a.actorName.localeCompare(b.actorName) : a.actorName ? -1 : b.actorName ? 1 : a.name.localeCompare(b.name));
     const byName = (a, b) => a.name.localeCompare(b.name);
@@ -544,6 +545,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     const flags = this.selectedList.document.flags?.[MODULE.ID] || {};
     processed.isRenameable = !!flags.kind;
     processed.isRegistryEnabled = isListEnabledForRegistry(this.selectedList.uuid);
+    processed.canBeDefault = !flags.actorId && ['class', 'subclass'].includes(this.selectedList.document.system?.type) && !!this.selectedList.document.system?.identifier;
+    processed.isDefaultList = processed.canBeDefault && isDefaultClassList(this.selectedList.document);
     processed.isActorOwned = !!flags.actorId;
     processed.spellCount = processed.spells?.length ?? 0;
     if (processed.spells?.length) {
@@ -1469,6 +1472,16 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   static #onRegisterList(event, target) {
     return EditingController.toggleRegistry(this, event, target);
+  }
+
+  /**
+   * Toggle whether the selected list is a default for new characters of its class or subclass.
+   * @param {Event} event - The triggering event
+   * @param {HTMLElement} target - The checkbox element
+   * @returns {Promise<void>} Resolves after the controller finishes
+   */
+  static #onToggleDefaultList(event, target) {
+    return EditingController.toggleDefaultList(this, event, target);
   }
 
   /**

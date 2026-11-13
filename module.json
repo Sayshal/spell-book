@@ -89,8 +89,8 @@
     "systems": [
       {
         "compatibility": {
-          "minimum": "5.3.3",
-          "verified": "6.0.0"
+          "minimum": "6.1.0",
+          "verified": "6.1.0"
         },
         "id": "dnd5e",
         "type": "system"

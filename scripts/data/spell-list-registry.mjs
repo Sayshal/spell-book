@@ -92,3 +92,40 @@ export async function ensureListRegistered(uuid) {
     ATLAS.log(1, 'ensureListRegistered failed', err);
   }
 }
+
+/**
+ * Spell list UUIDs set as defaults for new characters of a class or subclass.
+ * @param {string} type - List type, `class` or `subclass`
+ * @param {string} identifier - Class or subclass identifier
+ * @returns {string[]} Default spell list UUIDs
+ */
+export function getDefaultClassLists(type, identifier) {
+  if (!identifier) return [];
+  return [...(game.settings.get(MODULE.ID, SETTINGS.DEFAULT_CLASS_LISTS)[`${type}:${identifier}`] ?? [])];
+}
+
+/**
+ * Whether a spell list page is a default for new characters of its class or subclass.
+ * @param {object} page - The spell list page
+ * @returns {boolean} Whether the list is a default
+ */
+export function isDefaultClassList(page) {
+  return getDefaultClassLists(page.system.type, page.system.identifier).includes(page.uuid);
+}
+
+/**
+ * Add or remove a spell list page from the defaults for new characters of its class or subclass.
+ * @param {object} page - The spell list page
+ * @returns {Promise<boolean>} Whether the list is now a default
+ */
+export async function toggleDefaultClassList(page) {
+  const key = `${page.system.type}:${page.system.identifier}`;
+  const defaults = foundry.utils.deepClone(game.settings.get(MODULE.ID, SETTINGS.DEFAULT_CLASS_LISTS));
+  const lists = new Set(defaults[key] ?? []);
+  const enabled = !lists.delete(page.uuid);
+  if (enabled) lists.add(page.uuid);
+  if (lists.size) defaults[key] = [...lists];
+  else delete defaults[key];
+  await game.settings.set(MODULE.ID, SETTINGS.DEFAULT_CLASS_LISTS, defaults);
+  return enabled;
+}

@@ -1,6 +1,15 @@
 import { exposeApi } from './scripts/api.mjs';
 import { FOLDER_TYPES, HOOKS, MODULE, PACK, SPELL_LIST_TYPES, TEMPLATES } from './scripts/constants.mjs';
-import { findAllSpellLists, getOrCreateSpellListFolder, migrateSpellListFolders, migrateSpellListKinds, normalizeClassRuleLists, registerEnabledSpellLists } from './scripts/data/_module.mjs';
+import {
+  ensureUserSpellDataPages,
+  findAllSpellLists,
+  getOrCreateSpellListFolder,
+  migrateMoonIdentifier,
+  migrateSpellListFolders,
+  migrateSpellListKinds,
+  normalizeClassRuleLists,
+  registerEnabledSpellLists
+} from './scripts/data/_module.mjs';
 import { registerHooks } from './scripts/hooks.mjs';
 import { initializeMacros } from './scripts/managers/_module.mjs';
 import { registerSettings } from './scripts/settings.mjs';
@@ -50,7 +59,9 @@ Hooks.once('ready', async () => {
     await getOrCreateSpellListFolder(FOLDER_TYPES.ACTOR_SPELLBOOK);
     await normalizeClassRuleLists();
     await migrateSpellListKinds();
+    await migrateMoonIdentifier();
     await migrateSpellListFolders();
+    await ensureUserSpellDataPages();
     await registerEnabledSpellLists();
     await initializeMacros();
     sweepPendingRequests();

@@ -45,6 +45,11 @@
       {{/each}}
     </div>
   </section>
+  <div class="party-search">
+    <i class="fas fa-search" aria-hidden="true"></i>
+    <input type="search" name="party-search" value="{{searchQuery}}" placeholder="{{localize 'SPELLBOOK.Filters.Search'}}"
+      aria-label="{{localize 'SPELLBOOK.Filters.Search'}}">
+  </div>
   <section class="spell-comparison">
     {{#each spellLevels as |levelGroup|}}
       <div class="spell-level-group" data-spell-level="{{levelGroup.level}}">
@@ -56,7 +61,7 @@
         </h4>
         <div class="spells-grid" id="spell-list-{{levelGroup.level}}">
           {{#each levelGroup.spells as |spell|}}
-            <div class="spell-comparison-item" data-spell-uuid="{{spell.uuid}}">
+            <div class="spell-comparison-item" data-spell-uuid="{{spell.uuid}}" data-search="{{spell.searchTerms}}">
               <div class="spell-name-section">
                 {{{spell.enrichedIcon}}}
                 <span class="spell-name">{{spell.name}}</span>

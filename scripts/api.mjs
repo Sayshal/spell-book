@@ -49,8 +49,8 @@ export async function flagPurge() {
 }
 
 /**
- * Whether at least one visible Item compendium that can carry spells is enabled via
- * dnd5e's `packSourceConfiguration`. Used by external integrations to short-circuit
+ * Whether at least one visible Item compendium that can carry spells is enabled as a
+ * dnd5e Compendium Browser source. Used by external integrations to short-circuit
  * a handoff when there is nothing for Spell Book to render.
  * @returns {boolean} `true` when at least one eligible spell pack is visible to the player.
  */
