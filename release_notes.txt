@@ -1,3 +1,23 @@
+## Breaking Changes
+
+- Raised the minimum and verified dnd5e version to 6.1.0.
+
+## New Features
+
+- Added a search bar to the Party Spell Coordinator that matches spell name, level, school, properties, casting time, damage and healing types, and conditions, and works together with the member filter.
+- Class and subclass spell lists can be marked as defaults for new characters in the Spell List Manager, and are assigned automatically when a character first gains that class or subclass.
+- Each list in the Spell List Manager sidebar now shows its spell count and its source compendium or owning actor.
+
 ## Bug Fixes
 
-- Party Coordinator no longer stacks an extra document click listener on every re-render or leaves stale listeners active after the window closes.
+- The always prepared spell icon tooltip falls back to the item that granted the spell through advancement when no class source is set.
+- The granted spell icon tooltip now shows the item that granted the spell instead of the spell's own name.
+- The Prepared Only and Favorites filters now reflect unsaved checkbox and favorite changes.
+- The user spell data journal and each user's page are recreated if missing, on load and when a new user is added, so spell notes and favorites no longer fail to save.
+- Unsaved preparation changes are no longer lost when searching or filtering in the Spell Book.
+
+## Changes
+
+- Compendium visibility now follows the system's Compendium Browser source settings.
+- Custom Circle of the Moon spell lists are migrated to the new circle-moon subclass identifier on first load.
+- Personal spell notes shown in spell descriptions keep their line breaks with dnd5e 6.1.

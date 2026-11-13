@@ -1,3 +1,13 @@
+## Breaking Changes
+
+- Requires dnd5e 6.1.0 or later.
+
+## New Features
+
+- Class and subclass spell lists can be set as defaults that are assigned when a character first gains that class or subclass.
+- The Spell List Manager sidebar shows each list's spell count and source.
+- The Party Spell Coordinator has a search bar that works with the member filter.
+
 ## Bug Fixes
 
-- 1 bug squashed
+- 5 bugs squashed
