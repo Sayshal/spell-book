@@ -120,7 +120,7 @@ export class CreationController {
   }
 
   /**
-   * Enable an input only while a select holds a given value.
+   * Enable and show an input only while a select holds a given value.
    * @param {HTMLElement} root - Dialog element containing both fields
    * @param {string} selectName - Name of the controlling select
    * @param {string} inputName - Name of the input to toggle
@@ -133,6 +133,7 @@ export class CreationController {
     if (!select || !input) return;
     const sync = () => {
       input.disabled = select.value !== enabledValue;
+      input.closest('.form-group').hidden = input.disabled;
     };
     select.addEventListener('change', sync);
     sync();

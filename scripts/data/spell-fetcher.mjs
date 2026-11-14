@@ -118,6 +118,9 @@ function createSpellView(entry) {
     system.source = { ...system.source };
     SourceField.prepareData.call(system.source, entry.uuid);
   }
+  if (system.range?.value && !Number.isNumeric(system.range.value)) {
+    system.range = { ...system.range, value: dnd5e.utils.simplifyBonus(system.range.value, { scaling: new dnd5e.documents.Scaling(0) }) || null };
+  }
   return { ...entry, system, labels: entry.labels ?? buildFallbackLabels(system) };
 }
 

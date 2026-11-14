@@ -1,6 +1,13 @@
 import { FLAGS, FOLDER_TYPES, LIST_KINDS, MODULE, PACK, SETTINGS, SOURCE_PREFIXES, SPELL_LIST_TYPES } from '../constants.mjs';
 import { ensureListRegistered } from './spell-list-registry.mjs';
 
+/** @type {Object<string, string>} Source labels shown in place of the pack title for custom pack list kinds */
+const KIND_SOURCE_LABELS = {
+  [LIST_KINDS.CUSTOM]: 'ATLAS.Common.Custom',
+  [LIST_KINDS.MERGED]: 'SPELLBOOK.Manager.ListKind.Merged',
+  [LIST_KINDS.DUPLICATE]: 'SPELLBOOK.Manager.ListKind.Modified'
+};
+
 /**
  * Create a new spell list in the custom pack.
  * @param {string} name - Display name for the spell list
@@ -423,11 +430,15 @@ export async function findAllSpellLists() {
       if (dup) list.name = dup.name;
     }
     const actorId = doc?.flags?.[MODULE.ID]?.actorId;
-    if (actorId) {
+    if (!actorId) continue;
+    const actor = game.actors.get(actorId);
+    if (actor || list.isGranted) {
       list.isActorOwned = true;
       list.actorId = actorId;
-      const actor = game.actors.get(actorId);
-      if (actor) list.actorName = actor.name;
+      list.actorName = actor?.name;
+    } else {
+      list.isCustom = true;
+      list.pack = _loc('SPELLBOOK.Manager.ListKind.PlayerSpellbook');
     }
   }
   return lists;
@@ -449,11 +460,12 @@ async function harvestPackLists(pack, lists, isCustomPack) {
       const flags = page.flags?.[MODULE.ID] || {};
       if (!isCustomPack && page.system?.type === 'other') continue;
       const isModified = flags[FLAGS.KIND] === LIST_KINDS.DUPLICATE;
+      const kindLabel = KIND_SOURCE_LABELS[flags[FLAGS.KIND]];
       lists.push({
         uuid: page.uuid,
         name: page.name,
         journal: journal.name,
-        pack: isCustomPack ? pack.metadata.label : topLevelFolder || pack.metadata.label,
+        pack: kindLabel ? _loc(kindLabel) : topLevelFolder || pack.metadata.label,
         packageName: pack.metadata.packageName,
         system: page.system,
         spellCount: page.system.spells?.size,

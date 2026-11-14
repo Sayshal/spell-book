@@ -11,7 +11,7 @@ import { invalidateActorCaches, onActorSheetRender, onCompendiumDirectoryRender,
 export function registerHooks() {
   Hooks.on('renderActorSheetV2', onActorSheetRender);
   Hooks.on('renderGroupActorSheet', onGroupActorRender);
-  Hooks.on('activateCompendiumDirectory', onCompendiumDirectoryRender);
+  Hooks.on('renderCompendiumDirectory', onCompendiumDirectoryRender);
   Hooks.on('dnd5e.restCompleted', onRestCompleted);
   if (game.modules.get('tidy5e-sheet')?.active) {
     Hooks.on('tidy5e-sheet.renderActorSheet', onTidy5eRender);

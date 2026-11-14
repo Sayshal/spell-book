@@ -974,7 +974,7 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
         const src = SpellListManager.#resolveSpellSource(spell) || 'no-source';
         if (src !== f.spellSource) return false;
       }
-      const rangeValue = Number(spell.system?.range?.value ?? 0);
+      const rangeValue = getFilterData(spell).range?.value ?? 0;
       if (!Number.isNaN(minRange) && f.minRange !== '' && rangeValue < minRange) return false;
       if (!Number.isNaN(maxRange) && f.maxRange !== '' && rangeValue > maxRange) return false;
       if (f.damageType && !getFilterData(spell).damageTypes.includes(f.damageType)) return false;

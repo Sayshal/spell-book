@@ -167,8 +167,11 @@ export function extractCastingTime(spell) {
  * @returns {object} Range data structure
  */
 export function extractRange(spell) {
-  const value = Number(spell.system?.range?.value);
-  return { units: spell.system?.range?.units || '', label: spell.labels?.range || '', value: Number.isFinite(value) ? value : 0 };
+  const units = spell.system?.range?.units || '';
+  let value = Number(spell.system?.range?.value);
+  if (!Number.isFinite(value)) value = 0;
+  else if (units in CONFIG.DND5E.movementUnits) value = dnd5e.utils.convertLength(value, units, { to: dnd5e.utils.defaultUnits('length'), legacy: false }).value;
+  return { units, label: spell.labels?.range || '', value };
 }
 
 /**

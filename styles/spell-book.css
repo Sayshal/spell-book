@@ -1954,7 +1954,8 @@
   }
 
   .spell-first-target.selected .select-toggle,
-  .spell-item.available.selected .add-spell.select-toggle {
+  .spell-item.available.selected .add-spell.select-toggle,
+  .spell-item.selected .remove-spell.select-toggle {
     color: var(--sb-text-accent);
   }
 
@@ -2994,7 +2995,7 @@
       font-size: var(--sb-font-xs);
 
       span + span::before {
-        content: ' 2 ';
+        content: ' \2022  ';
       }
     }
 

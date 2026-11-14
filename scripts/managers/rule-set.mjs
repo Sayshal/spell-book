@@ -3,6 +3,7 @@ import { parseClassSpellKey } from '../data/class-spell-key.mjs';
 import { getClassSpellList } from '../data/spell-list-resolver.mjs';
 import { syncGrantedSpellList } from '../data/custom-lists.mjs';
 import { getDefaultClassLists } from '../data/spell-list-registry.mjs';
+import { invalidateActorCaches } from '../utils/invalidation.mjs';
 import { ClassManager } from './class-manager.mjs';
 
 const { renderTemplate } = foundry.applications.handlebars;
@@ -116,7 +117,7 @@ export class RuleSet {
     }
     classRules[classIdentifier] = { ...classRules[classIdentifier], ...newRules };
     await actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, classRules);
-    if (this.#classRules.has(actor)) this.#classRules.delete(actor);
+    invalidateActorCaches(actor);
     ATLAS.log(3, `Class rules updated successfully`, { actorName: actor.name, classIdentifier });
     return true;
   }

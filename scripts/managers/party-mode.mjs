@@ -1,5 +1,4 @@
-import { FLAGS, MODULE, SOURCE_PREFIXES, SPELL_MODE } from '../constants.mjs';
-import { parseClassSpellKey } from '../data/class-spell-key.mjs';
+import { SOURCE_PREFIXES, SPELL_MODE } from '../constants.mjs';
 import { getConfigLabel } from '../data/helpers.mjs';
 import { extractDamageTypes, extractSaveAbilities, extractSpellConditions } from '../ui/formatting.mjs';
 import { ClassManager } from './class-manager.mjs';
@@ -122,18 +121,17 @@ export class PartyMode {
   }
 
   /**
-   * Check if an actor has a specific spell prepared (via flags).
+   * Check if an actor has a specific spell prepared or always available.
    * @param {object} actor - The actor to check
-   * @param {string} spellUuid - The spell UUID
+   * @param {string} spellUuid - The spell's compendium source UUID
    * @returns {boolean} Whether the spell is prepared
    */
   static actorHasSpell(actor, spellUuid) {
     if (!actor.testUserPermission(game.user, 'OBSERVER')) return false;
-    const preparedByClass = actor.getFlag(MODULE.ID, FLAGS.PREPARED_SPELLS_BY_CLASS) || {};
-    for (const classSpells of Object.values(preparedByClass)) {
-      for (const spellKey of classSpells) if (parseClassSpellKey(spellKey).spellUuid === spellUuid) return true;
-    }
-    return false;
+    return actor.itemTypes.spell.some((s) => {
+      const sourceUuid = s._stats?.compendiumSource || s.flags?.core?.sourceId || s.uuid;
+      return sourceUuid === spellUuid && (s.system?.prepared === 1 || ALWAYS_AVAILABLE_METHODS.includes(s.system?.method));
+    });
   }
 
   /**
@@ -355,7 +353,7 @@ export class PartyMode {
     const actorStats = { concentrationCount: 0, ritualCount: 0, damageTypes: new Set(), preparedCount: 0 };
     for (const bucket of this.#getSpellBuckets(actor)) {
       for (const spell of bucket.spells.known) {
-        collectors.allSpells.add(spell.uuid);
+        collectors.allSpells.add(spell.sourceUuid);
         if (spell.prepared) {
           actorStats.preparedCount++;
           this.#analyzeSpell(spell, actor.name, analysis, collectors, actorStats);
@@ -389,7 +387,7 @@ export class PartyMode {
   static #analyzeSpell(spell, actorName, analysis, collectors, actorStats) {
     const doc = fromUuidSync(spell.uuid);
     if (!doc) return;
-    collectors.allPreparedSpells.add(spell.uuid);
+    collectors.allPreparedSpells.add(spell.sourceUuid);
     const props = this.#extractSpellProperties(doc);
     const spellRef = `${actorName}: ${doc.name}`;
     if (!collectors.preparedSpellsByName.has(doc.name)) collectors.preparedSpellsByName.set(doc.name, []);

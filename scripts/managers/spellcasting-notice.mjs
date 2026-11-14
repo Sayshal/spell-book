@@ -47,7 +47,7 @@ async function checkSpellcastingLists(actor) {
   if (!fresh.length) return;
   const recipients = game.users.filter((u) => u.isGM || actor.testUserPermission(u, 'OWNER')).map((u) => u.id);
   const content = await renderTemplate(TEMPLATES.COMPONENTS.SPELLCASTING_NOTICE, { actorName: actor.name, actorUuid: actor.uuid, classes: fresh });
-  await ChatMessage.create({ content, whisper: recipients, flags: { [MODULE.ID]: { [FLAGS.MESSAGE_TYPE]: MESSAGE_TYPES.SPELLCASTING_NOTICE } } });
+  await ChatMessage.create({ content, speaker: ChatMessage.getSpeaker({ actor }), whisper: recipients, flags: { [MODULE.ID]: { [FLAGS.MESSAGE_TYPE]: MESSAGE_TYPES.SPELLCASTING_NOTICE } } });
   ATLAS.log(3, `Spellcasting list notice sent for ${actor.name}: ${fresh.map((c) => c.identifier).join(', ')}`);
 }
 
