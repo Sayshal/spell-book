@@ -1,8 +1,8 @@
 .spell-book {
-  --sb-bg-active: rgb(from var(--atlas-shadow-color, rgb(0 0 0)) r g b / 15%);
+  --sb-bg-active: var(--atlas-selected-bg, rgb(85 170 255 / 15%));
   --sb-bg-app: var(--atlas-bg, rgb(27 29 36));
-  --sb-bg-header-strip: rgb(from var(--atlas-shadow-color, rgb(0 0 0)) r g b / 20%);
-  --sb-bg-hover: rgb(from var(--atlas-shadow-color, rgb(0 0 0)) r g b / 10%);
+  --sb-bg-header-strip: var(--atlas-bg-lighter, rgb(42 44 51));
+  --sb-bg-hover: var(--atlas-bg-hover, rgb(58 60 67));
   --sb-bg-input: rgb(from var(--atlas-input-bg, rgb(58 60 67)) r g b / 30%);
   --sb-bg-prepared: rgb(from var(--atlas-success, rgb(0 128 0)) r g b / 10%);
   --sb-bg-prepared-full: rgb(from var(--atlas-success, rgb(0 128 0)) r g b / 20%);
@@ -16,6 +16,7 @@
   --sb-border-dark: rgb(from var(--atlas-divider, rgb(85 85 85)) r g b / 90%);
   --sb-border-focus: var(--atlas-today, rgb(85 170 255));
   --sb-border-highlight: var(--atlas-primary, rgb(159 146 117));
+  --sb-border: var(--atlas-border, rgb(153 153 153));
   --sb-border-light: rgb(from var(--atlas-border-light, rgb(201 199 184)) r g b / 16.5%);
   --sb-border-medium: rgb(from var(--atlas-border, rgb(153 153 153)) r g b / 25%);
   --sb-error: var(--atlas-error, rgb(244 67 54));
@@ -51,22 +52,24 @@
   --sb-space-xl: 1rem;
   --sb-space-xs: 0.125rem;
   --sb-success: var(--atlas-success, rgb(76 175 80));
-  --sb-tag-actor: rgb(107 209 77);
-  --sb-tag-always: rgb(63 198 193);
-  --sb-tag-atwill: rgb(230 126 34);
-  --sb-tag-cross-class: rgb(206 164 229);
-  --sb-tag-custom: rgb(121 215 212);
-  --sb-tag-custom-list: rgb(255 201 25);
-  --sb-tag-granted: rgb(245 159 112);
-  --sb-tag-innate: rgb(52 152 219);
+  --sb-tag-ink: var(--atlas-text, rgb(221 221 221));
+  --sb-tag-actor: color-mix(in oklab, rgb(107 209 77) 35%, var(--sb-tag-ink));
+  --sb-tag-always: color-mix(in oklab, rgb(63 198 193) 35%, var(--sb-tag-ink));
+  --sb-tag-atwill: color-mix(in oklab, rgb(230 126 34) 35%, var(--sb-tag-ink));
+  --sb-tag-cross-class: color-mix(in oklab, rgb(206 164 229) 35%, var(--sb-tag-ink));
+  --sb-tag-custom: color-mix(in oklab, rgb(121 215 212) 35%, var(--sb-tag-ink));
+  --sb-tag-custom-list: color-mix(in oklab, rgb(255 201 25) 25%, var(--sb-tag-ink));
+  --sb-tag-granted: color-mix(in oklab, rgb(245 159 112) 35%, var(--sb-tag-ink));
+  --sb-tag-innate: color-mix(in oklab, rgb(52 152 219) 35%, var(--sb-tag-ink));
   --sb-tag-learned: rgb(119 34 61);
   --sb-tag-learned-copied: rgb(8 93 162);
   --sb-tag-learned-free: rgb(48 105 49);
   --sb-tag-learned-scroll: rgb(143 87 3);
-  --sb-tag-merged: rgb(147 51 234);
-  --sb-tag-pact: rgb(155 89 182);
-  --sb-tag-prepared: rgb(76 175 80);
-  --sb-tag-ritual: rgb(241 196 15);
+  --sb-tag-merged: color-mix(in oklab, rgb(147 51 234) 35%, var(--sb-tag-ink));
+  --sb-tag-pact: color-mix(in oklab, rgb(155 89 182) 35%, var(--sb-tag-ink));
+  --sb-tag-prepared: color-mix(in oklab, rgb(76 175 80) 35%, var(--sb-tag-ink));
+  --sb-tag-ritual: color-mix(in oklab, rgb(241 196 15) 25%, var(--sb-tag-ink));
+  --sb-icon-accent: var(--atlas-accent, rgb(159 146 117));
   --sb-text-accent: var(--atlas-title-text, rgb(159 146 117));
   --sb-text-disabled: var(--atlas-text-dim, rgb(102 102 102));
   --sb-text-heading: var(--atlas-text-heading, rgb(241 241 241));
@@ -745,7 +748,7 @@
     display: flex;
     align-items: center;
     padding: var(--sb-space-md) var(--sb-space-lg);
-    border-bottom: 0.0625rem solid var(--sb-border-light);
+    border-bottom: 0.0625rem solid var(--sb-border);
     cursor: grab;
     background: var(--sb-bg-header-strip);
 
@@ -755,7 +758,7 @@
 
     .header-icon {
       flex-shrink: 0;
-      color: var(--sb-text-accent);
+      color: var(--sb-icon-accent);
       font-size: 1.25rem;
     }
 

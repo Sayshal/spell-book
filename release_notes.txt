@@ -11,10 +11,13 @@
 ## Bug Fixes
 
 - Chris's Premades compatibility works again, applying missing or outdated automations to the actor's spells after saving changes.
+- Spell tags stay readable on light and dark 3DS themes.
 - The always prepared spell icon tooltip falls back to the item that granted the spell through advancement when no class source is set.
 - The granted spell icon tooltip now shows the item that granted the spell instead of the spell's own name.
 - The Prepared Only and Favorites filters now reflect unsaved checkbox and favorite changes.
 - The user spell data journal and each user's page are recreated if missing, on load and when a new user is added, so spell notes and favorites no longer fail to save.
+- The window header icon uses the 3DS theme's accent color, matching the other 3DS modules.
+- The window header, row hover and selected rows use the 3DS theme's colors instead of grey overlays.
 - Unsaved preparation changes are no longer lost when searching or filtering in the Spell Book.
 
 ## Changes
