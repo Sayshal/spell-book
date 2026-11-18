@@ -1,14 +1,11 @@
+## New Features
+
+- The Spell List Manager now prompts to Save, Discard, or Cancel when leaving a list with unsaved spell edits through Back to Lists or by closing the window. Edits that net out against the saved list do not trigger the prompt.
+
 ## Bug Fixes
 
-- A Spell Book opened before a class had a spell list now picks up a list assigned through the API without a reload.
-- Loadout details now use a bullet separator instead of a stray glyph.
-- Party Mode now shows a member's avatar for spells prepared or always available on the character sheet, not only spells prepared through the Spell Book.
-- Range filters now compare spell ranges in the world's length units, so metric worlds filter feet and meters correctly.
-- Selected spells in the current list now highlight their tick in selection mode.
-- Spell books left behind by deleted actors now appear in the Spell List Manager as Player Spell Book custom lists that can be hidden.
-- Spells with formula ranges, such as Spare the Dying, now show a resolved range in spell rows and range filters.
-- Synergy Analysis now counts each unique and prepared spell once instead of once per copy.
-- The Merged List Name field is now hidden when merging into an existing list, and the Create List dialog's Custom Identifier field is hidden unless Custom is picked.
-- The Spell List Manager button now stays in the Compendium sidebar after it re-renders and appears in the popped-out directory.
-- The Spell List Manager now labels custom, merged and modified list sources by kind instead of the pack name.
-- The Spellcasting Gained chat notice is now spoken as the actor.
+- Custom, granted, and merged lists, and renamed modified copies, keep their own page names instead of the registry name.
+- Merged list descriptions and the identifier-mismatch warning now name source lists from the item registry.
+- Modified copies of stock spell lists no longer lose the link to their originals. A one-time migration on world load restores links for existing modified copies.
+- Renaming a list no longer drops pending spell edits.
+- The Spell List Manager and Class Rules spell list picker now name class, subclass, species, and background lists from the system's item registry, matching the Compendium Browser.
