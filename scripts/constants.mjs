@@ -97,6 +97,7 @@ export const SETTINGS = {
   SPELL_COPY_DOWNTIME_NOTE: 'spellCopyDowntimeNote',
   SPELL_LIST_KINDS_MIGRATION_COMPLETE: 'spellListKindsMigrationComplete',
   MOON_IDENTIFIER_MIGRATION_COMPLETE: 'moonIdentifierMigrationComplete',
+  LIST_MAPPINGS_MIGRATION_COMPLETE: 'listMappingsMigrationComplete',
   SPELL_LIST_MANAGER_POSITION: 'spellListManagerPosition',
   INJECT_NOTES_INTO_DESCRIPTIONS: 'injectNotesIntoDescriptions',
   SPELL_NOTES_MAX_LENGTH: 'spellNotesMaxLength',

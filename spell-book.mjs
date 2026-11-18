@@ -4,6 +4,7 @@ import {
   ensureUserSpellDataPages,
   findAllSpellLists,
   getOrCreateSpellListFolder,
+  migrateListMappings,
   migrateMoonIdentifier,
   migrateSpellListFolders,
   migrateSpellListKinds,
@@ -60,6 +61,7 @@ Hooks.once('ready', async () => {
     await normalizeClassRuleLists();
     await migrateSpellListKinds();
     await migrateMoonIdentifier();
+    await migrateListMappings();
     await migrateSpellListFolders();
     await ensureUserSpellDataPages();
     await registerEnabledSpellLists();

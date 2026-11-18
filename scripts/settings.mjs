@@ -8,7 +8,7 @@ const { ArrayField, BooleanField, NumberField, ObjectField, StringField } = foun
 export function registerSettings() {
   const register = (key, opts) => game.settings.register(MODULE.ID, key, opts);
 
-  register(SETTINGS.CUSTOM_SPELL_LIST_MAPPINGS, { scope: 'world', config: false, type: new ObjectField({ initial: {} }) });
+  register(SETTINGS.CUSTOM_SPELL_LIST_MAPPINGS, { scope: 'world', config: false, type: Object, default: {} });
   register(SETTINGS.AUTO_DELETE_UNPREPARED_SPELLS, {
     name: 'SPELLBOOK.Settings.AutoDeleteUnpreparedSpells.Name',
     hint: 'SPELLBOOK.Settings.AutoDeleteUnpreparedSpells.Hint',
@@ -98,6 +98,7 @@ export function registerSettings() {
   register(SETTINGS.CLASS_RULE_LISTS_MIGRATION_COMPLETE, { scope: 'world', config: false, type: new BooleanField({ initial: false }) });
   register(SETTINGS.SPELL_LIST_KINDS_MIGRATION_COMPLETE, { scope: 'world', config: false, type: new BooleanField({ initial: false }) });
   register(SETTINGS.MOON_IDENTIFIER_MIGRATION_COMPLETE, { scope: 'world', config: false, type: new BooleanField({ initial: false }) });
+  register(SETTINGS.LIST_MAPPINGS_MIGRATION_COMPLETE, { scope: 'world', config: false, type: new BooleanField({ initial: false }) });
   register(SETTINGS.SPELL_BOOK_POSITION, { scope: 'client', config: false, type: new ObjectField({ nullable: true, initial: null }) });
   register(SETTINGS.SPELL_LIST_MANAGER_POSITION, { scope: 'client', config: false, type: new ObjectField({ nullable: true, initial: null }) });
   register(SETTINGS.INJECT_NOTES_INTO_DESCRIPTIONS, {

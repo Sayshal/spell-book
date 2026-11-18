@@ -176,3 +176,31 @@ export async function migrateMoonIdentifier() {
   if (migrated > 0) ATLAS.log(3, `Renamed ${migrated} Circle of the Moon spell list identifier(s) to circle-moon`);
   await game.settings.set(MODULE.ID, SETTINGS.MOON_IDENTIFIER_MIGRATION_COMPLETE, true);
 }
+
+/**
+ * Rebuild original-to-copy spell list mappings from the copies' flags.
+ * The setting was an ObjectField, which split dotted UUID keys into nested objects and lost every mapping.
+ * @returns {Promise<void>}
+ */
+export async function migrateListMappings() {
+  if (!ATLAS.isPrimaryGM || game.settings.get(MODULE.ID, SETTINGS.LIST_MAPPINGS_MIGRATION_COMPLETE)) return;
+  const pack = game.packs.get(PACK.SPELLS);
+  if (!pack) return;
+  let journals;
+  try {
+    journals = await pack.getDocuments();
+  } catch (error) {
+    ATLAS.log(2, 'Skipping spell list mapping migration; custom pack unavailable', error);
+    return;
+  }
+  const mappings = {};
+  for (const journal of journals) {
+    for (const page of journal.pages) {
+      const flags = page.flags?.[MODULE.ID];
+      if (flags?.[FLAGS.KIND] === LIST_KINDS.DUPLICATE && flags.originalUuid) mappings[flags.originalUuid] = page.uuid;
+    }
+  }
+  await game.settings.set(MODULE.ID, SETTINGS.CUSTOM_SPELL_LIST_MAPPINGS, mappings);
+  ATLAS.log(3, `Rebuilt ${Object.keys(mappings).length} spell list mapping(s)`);
+  await game.settings.set(MODULE.ID, SETTINGS.LIST_MAPPINGS_MIGRATION_COMPLETE, true);
+}
