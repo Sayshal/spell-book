@@ -127,6 +127,7 @@ export class EditingController {
       [`flags.${MODULE.ID}.originalVersion`]: original._stats?.systemVersion || game.system.version
     });
     app.selectedList.spellUuids = originalSpells;
+    app.pendingChanges = { added: new Set(), removed: new Set() };
     await app._loadSelectedSpellDetails(originalSpells);
   }
 
@@ -174,7 +175,7 @@ export class EditingController {
     await doc.update({ name: newName });
     app.selectedList.name = newName;
     await app._refreshLists();
-    await app.selectSpellList(doc.uuid);
+    app.render(false, { parts: ['sidebar', 'content', 'footer'] });
   }
 
   /**

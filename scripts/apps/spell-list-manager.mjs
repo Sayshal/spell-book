@@ -121,6 +121,14 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
   /** @type {boolean} Whether bulk selection mode is active. */
   selectionMode = false;
 
+  /** @returns {boolean} Whether the selected list's spells differ from its saved document. */
+  get hasUnsavedChanges() {
+    if (!this.selectedList) return false;
+    const saved = this.selectedList.document.system.spells || new Set();
+    const current = new Set(this.selectedList.spellUuids);
+    return current.size !== saved.size || [...current].some((uuid) => !saved.has(uuid));
+  }
+
   /** @type {Set<string>} Spells queued for bulk add. */
   selectedToAdd = new Set();
 
@@ -391,6 +399,35 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
       ${compareIcon}${countBadge}
       <button type="button" class="${btnClass}" data-action="${action}" data-uuid="${spell.uuid}" data-tooltip="${addTooltip}">${iconHtml}</button>
     </li>`;
+  }
+
+  /** @override */
+  async close(options = {}) {
+    if (!options.force && !(await this._resolveUnsavedChanges())) return this;
+    return super.close(options);
+  }
+
+  /**
+   * Ask the user to save, discard, or keep unsaved list edits before leaving the list.
+   * @returns {Promise<boolean>} Whether it is safe to leave the selected list
+   */
+  async _resolveUnsavedChanges() {
+    if (!this.hasUnsavedChanges) return true;
+    const choice = await DialogV2.wait({
+      classes: ['spell-book'],
+      window: { title: 'ATLAS.Common.UnsavedChanges' },
+      content: `<p>${_loc('SPELLBOOK.Manager.Confirm.UnsavedContent', { name: this.selectedList.name })}</p>`,
+      buttons: [
+        { icon: 'fas fa-save', label: 'SPELLBOOK.Manager.Confirm.Save', action: 'save', className: 'dialog-button dialog-button-success' },
+        { icon: 'fas fa-trash', label: 'ATLAS.Common.Discard', action: 'discard', className: 'dialog-button dialog-button-danger' },
+        { icon: 'fas fa-times', label: 'ATLAS.Common.Cancel', action: 'cancel', className: 'dialog-button' }
+      ],
+      default: 'cancel',
+      rejectClose: false,
+      renderOptions: detachedRenderOptions(this)
+    });
+    if (choice === 'save') await EditingController.saveEdits(this);
+    return choice === 'save' || choice === 'discard';
   }
 
   /** @override */
@@ -1231,9 +1268,10 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @this {SpellListManager}
    */
   static async #onClose() {
+    if (!(await this._resolveUnsavedChanges())) return;
     this.element?.classList.add('closing');
     await new Promise((resolve) => setTimeout(resolve, 250));
-    await this.close({ animate: false });
+    await this.close({ animate: false, force: true });
   }
 
   /**
@@ -1242,9 +1280,12 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
    * @param {Event} _event - The triggering event
    * @param {HTMLElement} target - The button with data-mode
    */
-  static #onSwitchSidebarMode(_event, target) {
-    this.sidebarMode = target.dataset.mode || 'lists';
-    if (this.sidebarMode === 'lists' || this.sidebarMode === 'spells') {
+  static async #onSwitchSidebarMode(_event, target) {
+    const mode = target.dataset.mode || 'lists';
+    const leavingList = mode === 'lists' || mode === 'spells';
+    if (leavingList && !(await this._resolveUnsavedChanges())) return;
+    this.sidebarMode = mode;
+    if (leavingList) {
       this.selectedList = null;
       this.pendingChanges = { added: new Set(), removed: new Set() };
     }
