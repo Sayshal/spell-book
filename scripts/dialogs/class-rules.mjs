@@ -1,5 +1,5 @@
 import { FLAGS, LIST_KINDS, MODULE, RITUAL_CASTING_MODES, RULE_SETS, SETTINGS, SWAP_MODES, TEMPLATES, WIZARD_DEFAULTS } from '../constants.mjs';
-import { getJournalDocumentsFromPack, isSourceHiddenSpellList, syncGrantedSpellList } from '../data/_module.mjs';
+import { getJournalDocumentsFromPack, getSpellListName, isSourceHiddenSpellList, syncGrantedSpellList } from '../data/_module.mjs';
 import { getPackTopLevelFolderName } from '../data/compendium-packs.mjs';
 import { ClassManager, RuleSet, SpellManager } from '../managers/_module.mjs';
 import { detachedRenderOptions } from '../ui/_module.mjs';
@@ -43,31 +43,30 @@ async function loadSpellListOptions(actor, assignedUuids = new Set()) {
     try {
       const folderName = getPackTopLevelFolderName(pack) ?? pack.metadata.label;
       const journals = await getJournalDocumentsFromPack(pack);
-      for (const journal of journals) {
-        for (const page of journal.pages) {
-          if (page.type !== 'spells' || page.system?.type === 'other') continue;
-          if (hiddenLists.includes(page.uuid)) continue;
-          const flags = page.flags?.[MODULE.ID] || {};
-          const isGranted = flags.kind === LIST_KINDS.GRANTED;
-          if (isGranted && flags.actorId !== actor.id && !assignedUuids.has(page.uuid)) continue;
-          const isActorOwned = !!flags.actorId;
-          const isModuleList = flags.kind === LIST_KINDS.CUSTOM || flags.kind === LIST_KINDS.MERGED;
-          const exempt = isActorOwned || isModuleList;
-          const sourceHidden = isSourceHiddenSpellList(page.system?.spells, exempt);
-          if (sourceHidden && !assignedUuids.has(page.uuid)) continue;
-          let label = page.name;
-          if (isActorOwned && !isGranted) {
-            const owner = game.actors.get(flags.actorId);
-            label = `${page.name} (${owner?.name ?? _loc('ATLAS.Common.Character')})`;
-          } else if (!isActorOwned && !isModuleList) {
-            label = `${page.name} (${folderName})`;
-          }
-          if (sourceHidden) label = `${label} (${_loc('SPELLBOOK.Settings.SourceDisabledSuffix')})`;
-          const type = page.system?.type || 'other';
-          const groupKey =
-            type === 'class' ? 'SPELLBOOK.Settings.SpellListGroups.Class' : type === 'subclass' ? 'SPELLBOOK.Settings.SpellListGroups.Subclass' : 'SPELLBOOK.Settings.SpellListGroups.Other';
-          options.push({ value: page.uuid, label, group: _loc(groupKey) });
+      const pages = journals.flatMap((journal) => journal.pages.filter((page) => page.type === 'spells' && page.system?.type !== 'other'));
+      for (const page of pages) {
+        if (hiddenLists.includes(page.uuid)) continue;
+        const flags = page.flags?.[MODULE.ID] || {};
+        const isGranted = flags.kind === LIST_KINDS.GRANTED;
+        if (isGranted && flags.actorId !== actor.id && !assignedUuids.has(page.uuid)) continue;
+        const isActorOwned = !!flags.actorId;
+        const isModuleList = flags.kind === LIST_KINDS.CUSTOM || flags.kind === LIST_KINDS.MERGED;
+        const exempt = isActorOwned || isModuleList;
+        const sourceHidden = isSourceHiddenSpellList(page.system?.spells, exempt);
+        if (sourceHidden && !assignedUuids.has(page.uuid)) continue;
+        const name = getSpellListName(page);
+        let label = name;
+        if (isActorOwned && !isGranted) {
+          const owner = game.actors.get(flags.actorId);
+          label = `${name} (${owner?.name ?? _loc('ATLAS.Common.Character')})`;
+        } else if (!isActorOwned && !isModuleList) {
+          label = `${name} (${folderName})`;
         }
+        if (sourceHidden) label = `${label} (${_loc('SPELLBOOK.Settings.SourceDisabledSuffix')})`;
+        const type = page.system?.type || 'other';
+        const groupKey =
+          type === 'class' ? 'SPELLBOOK.Settings.SpellListGroups.Class' : type === 'subclass' ? 'SPELLBOOK.Settings.SpellListGroups.Subclass' : 'SPELLBOOK.Settings.SpellListGroups.Other';
+        options.push({ value: page.uuid, label, group: _loc(groupKey) });
       }
     } catch (error) {
       ATLAS.log(2, `Skipping pack "${pack?.metadata?.label ?? pack?.metadata?.id}" while building spell list options`, error);

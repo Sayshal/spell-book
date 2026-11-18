@@ -1,5 +1,5 @@
 import { MODULE, SETTINGS, TEMPLATES } from '../constants.mjs';
-import { duplicateSpellList, ensureListRegistered, findAllSpellLists, toggleDefaultClassList, toggleListForRegistry } from '../data/_module.mjs';
+import { duplicateSpellList, ensureListRegistered, findAllSpellLists, getSpellListName, toggleDefaultClassList, toggleListForRegistry } from '../data/_module.mjs';
 import { SpellComparison } from '../dialogs/_module.mjs';
 import { confirmDialog, createSpellIconLink, detachedRenderOptions } from '../ui/_module.mjs';
 
@@ -472,7 +472,7 @@ export class EditingController {
     const duplicate = await duplicateSpellList(app.selectedList.document);
     if (!duplicate) return;
     const { spells, spellsByLevel, spellUuids } = app.selectedList;
-    app.selectedList = { document: duplicate, uuid: duplicate.uuid, name: duplicate.name, spellUuids, spells, spellsByLevel, isLoadingSpells: false };
+    app.selectedList = { document: duplicate, uuid: duplicate.uuid, name: getSpellListName(duplicate), spellUuids, spells, spellsByLevel, isLoadingSpells: false };
     if (originalSource) app.filterState.source = originalSource;
   }
 }

@@ -210,7 +210,7 @@ export async function createMergedSpellList(spellListUuids, mergedListName) {
   }
   const mergedSpells = Array.from(new Set(collected));
   const identifier = lists[0].system?.identifier || 'merged';
-  const listNames = lists.map((l) => l.name).join(', ');
+  const listNames = lists.map(getSpellListName).join(', ');
   const folder = await getOrCreateSpellListFolder(FOLDER_TYPES.MERGED);
   const ownership = { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED, [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER };
   const journal = await JournalEntry.create(
@@ -253,18 +253,18 @@ export async function appendToSpellList(targetUuid, sourceUuids) {
   const allSourceUuids = Array.from(new Set([...(isMerged ? target.flags[MODULE.ID].sourceListUuids || [] : []), ...sourceUuids]));
   const loaded = new Map(await Promise.all(allSourceUuids.map(async (uuid) => [uuid, await fromUuid(uuid)])));
   const spells = new Set(Array.from(target.system.spells || []));
+  const sources = [...loaded.values()].filter(Boolean);
   const mismatched = [];
   for (const uuid of sourceUuids) {
     const source = loaded.get(uuid);
     if (!source) throw new Error(`Unable to load spell list: ${uuid}`);
     for (const spellUuid of source.system.spells || []) spells.add(spellUuid);
-    if (source.system.identifier && source.system.identifier.toLowerCase() !== target.system.identifier) mismatched.push(source.name);
+    if (source.system.identifier && source.system.identifier.toLowerCase() !== target.system.identifier) mismatched.push(getSpellListName(source));
   }
   if (mismatched.length) ui.notifications.warn(_loc('SPELLBOOK.Manager.MergeLists.IdentifierMismatch', { lists: mismatched.join(', '), target: target.name }));
   const update = { 'system.spells': Array.from(spells) };
   if (isMerged) {
-    const sources = [...loaded.values()].filter(Boolean);
-    const listNames = sources.map((l) => l.name).join(', ');
+    const listNames = sources.map(getSpellListName).join(', ');
     update['system.description'] = _loc('SPELLBOOK.Manager.CreateList.MultiMergedDescription', { listNames, count: sources.length });
     update[`flags.${MODULE.ID}.sourceListUuids`] = allSourceUuids;
   }
@@ -427,7 +427,7 @@ export async function findAllSpellLists() {
     const duplicateUuid = customMappings[list.uuid];
     if (duplicateUuid) {
       const dup = await fromUuid(duplicateUuid);
-      if (dup) list.name = dup.name;
+      if (dup) list.name = getSpellListName(dup);
     }
     const actorId = doc?.flags?.[MODULE.ID]?.actorId;
     if (!actorId) continue;
@@ -454,30 +454,41 @@ async function harvestPackLists(pack, lists, isCustomPack) {
   let topLevelFolder = null;
   if (!isCustomPack && pack.folder) topLevelFolder = pack.folder.depth !== 1 ? (pack.folder.getParentFolders?.().at(-1)?.name ?? pack.folder.name) : pack.folder.name;
   const journals = isCustomPack ? await pack.getDocuments() : await getJournalDocumentsFromPack(pack);
-  for (const journal of journals) {
-    for (const page of journal.pages) {
-      if (page.type !== 'spells') continue;
-      const flags = page.flags?.[MODULE.ID] || {};
-      if (!isCustomPack && page.system?.type === 'other') continue;
-      const isModified = flags[FLAGS.KIND] === LIST_KINDS.DUPLICATE;
-      const kindLabel = KIND_SOURCE_LABELS[flags[FLAGS.KIND]];
-      lists.push({
-        uuid: page.uuid,
-        name: page.name,
-        journal: journal.name,
-        pack: kindLabel ? _loc(kindLabel) : topLevelFolder || pack.metadata.label,
-        packageName: pack.metadata.packageName,
-        system: page.system,
-        spellCount: page.system.spells?.size,
-        identifier: page.system.identifier,
-        isCustom: flags[FLAGS.KIND] === LIST_KINDS.CUSTOM,
-        isGranted: flags[FLAGS.KIND] === LIST_KINDS.GRANTED,
-        isMerged: flags[FLAGS.KIND] === LIST_KINDS.MERGED,
-        isModified,
-        document: page
-      });
-    }
+  const pages = journals.flatMap((journal) => journal.pages.filter((page) => page.type === 'spells' && (isCustomPack || page.system?.type !== 'other')));
+  for (const page of pages) {
+    const flags = page.flags?.[MODULE.ID] || {};
+    const kindLabel = KIND_SOURCE_LABELS[flags[FLAGS.KIND]];
+    lists.push({
+      uuid: page.uuid,
+      name: getSpellListName(page),
+      journal: page.parent.name,
+      pack: kindLabel ? _loc(kindLabel) : topLevelFolder || pack.metadata.label,
+      packageName: pack.metadata.packageName,
+      system: page.system,
+      spellCount: page.system.spells?.size,
+      identifier: page.system.identifier,
+      isCustom: flags[FLAGS.KIND] === LIST_KINDS.CUSTOM,
+      isGranted: flags[FLAGS.KIND] === LIST_KINDS.GRANTED,
+      isMerged: flags[FLAGS.KIND] === LIST_KINDS.MERGED,
+      isModified: flags[FLAGS.KIND] === LIST_KINDS.DUPLICATE,
+      document: page
+    });
   }
+}
+
+/** @enum {string} Spell list types mapped to the dnd5e item registry that names them */
+const NAME_REGISTRIES = { background: 'backgrounds', class: 'classes', race: 'species', subclass: 'subclasses' };
+
+/**
+ * Display name for a spell-list page, from the dnd5e item registry for its identifier, mirroring dnd5e's SpellList#name.
+ * Module-authored lists and renamed copies keep their page name.
+ * @param {object} page - Spell-list journal page
+ * @returns {string} Display name
+ */
+export function getSpellListName(page) {
+  const flags = page.flags?.[MODULE.ID] ?? {};
+  if (flags[FLAGS.KIND] && page.name !== flags.originalName) return page.name;
+  return dnd5e.registry[NAME_REGISTRIES[page.system?.type]]?.get(page.system?.identifier)?.name ?? page.name;
 }
 
 /**

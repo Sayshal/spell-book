@@ -7,6 +7,7 @@ import {
   formatActivationLabel,
   getClassPacks,
   getPackTopLevelFolderName,
+  getSpellListName,
   getValidCustomListMappings,
   isDefaultClassList,
   isListEnabledForRegistry,
@@ -1176,7 +1177,8 @@ export class SpellListManager extends HandlebarsApplicationMixin(ApplicationV2) 
     this._filteredAll = [];
     this._batchIndex = 0;
     const spellUuids = Array.from(doc.system.spells || []);
-    this.selectedList = { document: doc, uuid: doc.uuid, name: doc.name, spellUuids, spells: [], isLoadingSpells: true };
+    const name = getSpellListName(doc);
+    this.selectedList = { document: doc, uuid: doc.uuid, name, spellUuids, spells: [], isLoadingSpells: true };
     this.sidebarMode = 'filters';
     this.render(false, { parts: ['sidebar', 'content', 'footer'] });
     await this._loadSelectedSpellDetails(spellUuids);
