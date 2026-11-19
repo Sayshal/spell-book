@@ -1,3 +1,5 @@
 ## Bug Fixes
 
-- Merge Spell Lists dialog options now show each list's source.
+- Granted Spells group headers now use the granting item's type label instead of always showing Feat or Species.
+- Granted Spells tab now lists spells granted by subclasses, backgrounds, and items, along with class spells marked always prepared.
+- The actor's granted spell list now mirrors the same expanded set of granted spells.
