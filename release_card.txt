@@ -1,7 +1,3 @@
-## New Features
-
-- The Spell List Manager now prompts to save, discard, or cancel when leaving a list or closing the window with unsaved spell edits.
-
 ## Bug Fixes
 
-- 5 bugs squashed
+- 1 bug squashed

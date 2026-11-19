@@ -1,11 +1,3 @@
-## New Features
-
-- The Spell List Manager now prompts to Save, Discard, or Cancel when leaving a list with unsaved spell edits through Back to Lists or by closing the window. Edits that net out against the saved list do not trigger the prompt.
-
 ## Bug Fixes
 
-- Custom, granted, and merged lists, and renamed modified copies, keep their own page names instead of the registry name.
-- Merged list descriptions and the identifier-mismatch warning now name source lists from the item registry.
-- Modified copies of stock spell lists no longer lose the link to their originals. A one-time migration on world load restores links for existing modified copies.
-- Renaming a list no longer drops pending spell edits.
-- The Spell List Manager and Class Rules spell list picker now name class, subclass, species, and background lists from the system's item registry, matching the Compendium Browser.
+- Merge Spell Lists dialog options now show each list's source.
