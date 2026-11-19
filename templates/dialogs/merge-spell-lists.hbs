@@ -5,7 +5,7 @@
       <select id="merge-target" name="mergeTarget">
         <option value="new">{{localize "SPELLBOOK.Manager.MergeLists.TargetNew"}}</option>
         {{#each lists.targets}}
-          <option value="{{this.uuid}}">{{this.name}}</option>
+          <option value="{{this.uuid}}">{{this.name}} ({{this.pack}})</option>
         {{/each}}
       </select>
     </div>
@@ -18,28 +18,28 @@
         {{#if lists.standard.length}}
           <optgroup label="{{localize 'SPELLBOOK.Manager.Folders.SpellLists'}}">
             {{#each lists.standard}}
-              <option value="{{this.uuid}}">{{this.name}}</option>
+              <option value="{{this.uuid}}">{{this.name}} ({{this.pack}})</option>
             {{/each}}
           </optgroup>
         {{/if}}
         {{#if lists.custom.length}}
           <optgroup label="{{localize 'SPELLBOOK.Manager.Folders.CustomLists'}}">
             {{#each lists.custom}}
-              <option value="{{this.uuid}}">{{this.name}}</option>
+              <option value="{{this.uuid}}">{{this.name}} ({{this.pack}})</option>
             {{/each}}
           </optgroup>
         {{/if}}
         {{#if lists.merged.length}}
           <optgroup label="{{localize 'SPELLBOOK.Manager.Folders.MergedLists'}}">
             {{#each lists.merged}}
-              <option value="{{this.uuid}}">{{this.name}}</option>
+              <option value="{{this.uuid}}">{{this.name}} ({{this.pack}})</option>
             {{/each}}
           </optgroup>
         {{/if}}
         {{#if lists.actorOwned.length}}
           <optgroup label="{{localize 'SPELLBOOK.Manager.Folders.PlayerSpellbooks'}}">
             {{#each lists.actorOwned}}
-              <option value="{{this.uuid}}">{{this.name}}</option>
+              <option value="{{this.uuid}}">{{this.name}} ({{this.pack}})</option>
             {{/each}}
           </optgroup>
         {{/if}}
