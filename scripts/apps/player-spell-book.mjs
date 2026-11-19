@@ -7,7 +7,6 @@ import {
   RITUAL_CASTING_MODES,
   SEARCH_DEBOUNCE_DELAY,
   SETTINGS,
-  SOURCE_PREFIXES,
   TAB_IDS,
   TAB_PREFIXES,
   TEMPLATES,
@@ -405,7 +404,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Whether the actor owns any species or feat granted spells.
+   * Whether the actor owns any granted spells.
    * @returns {boolean} True when the granted tab should render
    */
   #hasGrantedSpells() {
@@ -929,7 +928,7 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * Group granted spells by the species or feat that granted them, ordered by level within each group.
+   * Group granted spells by the item that granted them, ordered by level within each group.
    * @param {object[]} spells - Granted spell items
    * @returns {object[]} Source groups shaped like level groups
    */
@@ -938,7 +937,8 @@ export class SpellBook extends HandlebarsApplicationMixin(ApplicationV2) {
     for (const spell of spells) {
       const sourceItem = spell.system.sourceItem;
       if (!groups.has(sourceItem)) {
-        const typeLabel = _loc(sourceItem.startsWith(SOURCE_PREFIXES.FEAT) ? 'ATLAS.Common.Feat' : 'ATLAS.Common.Species');
+        const type = sourceItem.slice(0, sourceItem.indexOf(':'));
+        const typeLabel = _loc({ feat: 'ATLAS.Common.Feat', race: 'ATLAS.Common.Species' }[type] ?? CONFIG.Item.typeLabels[type] ?? type);
         const name = getSpellSourceDocument(spell, this.actor)?.name ?? sourceItem.slice(sourceItem.indexOf(':') + 1);
         groups.set(sourceItem, { level: sourceItem, levelName: `${typeLabel}: ${name}`, spells: [], isCollapsed: false, isWizardContext: false, cantripCounter: { enabled: false } });
       }

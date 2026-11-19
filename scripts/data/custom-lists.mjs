@@ -275,13 +275,15 @@ export async function appendToSpellList(targetUuid, sourceUuids) {
 }
 
 /**
- * Whether a spell item was granted by a species or feat.
+ * Whether a spell item was granted rather than chosen: any non-class source, or always prepared by a class.
  * @param {object} spell - The spell item
- * @returns {boolean} True when the spell's source item is a species or feat
+ * @returns {boolean} True when the spell comes from a feat, species, subclass or other item, or is always prepared by its class
  */
 export function isGrantedSpell(spell) {
-  const sourceItem = spell?.system?.sourceItem ?? '';
-  return sourceItem.startsWith(SOURCE_PREFIXES.FEAT) || sourceItem.startsWith(SOURCE_PREFIXES.RACE);
+  const sourceItem = spell?.system?.sourceItem;
+  if (!sourceItem) return false;
+  if (!sourceItem.startsWith(SOURCE_PREFIXES.CLASS)) return true;
+  return spell.system.prepared === CONFIG.DND5E.spellPreparationStates.always.value;
 }
 
 /**
@@ -300,7 +302,7 @@ export async function findGrantedSpellList(actor) {
 }
 
 /**
- * Mirror the actor's species and feat granted spells into its granted spell list.
+ * Mirror the actor's granted spells into its granted spell list.
  * @param {object} actor - The actor document
  * @param {object} [options] - Sync options
  * @param {boolean} [options.create] - Create the list when the actor has none

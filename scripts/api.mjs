@@ -335,7 +335,7 @@ export async function getSpellLearningCost(actor, classId, spell) {
 }
 
 /**
- * Create or update the actor's list of spells granted by species and feats.
+ * Create or update the actor's list of granted spells.
  * @param {object} actor - The actor document
  * @returns {Promise<object|null>} The granted list page, or null when there are no granted spells or the user is not a GM
  */
