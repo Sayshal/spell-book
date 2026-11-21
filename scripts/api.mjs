@@ -355,17 +355,43 @@ export async function setClassSpellLists(actor, classIdentifier, uuids) {
   return RuleSet.updateClassRules(actor, classIdentifier, { customSpellList: uuids });
 }
 
+/**
+ * Find a spell list page by its display name (case-insensitive).
+ * @param {string} name - The spell list name
+ * @returns {Promise<object|null>} The first matching spell list page, or null
+ */
+export async function getSpellList(name) {
+  if (!name) return null;
+  const target = name.toLowerCase();
+  const lists = await findAllSpellLists();
+  return lists.find((list) => list.name.toLowerCase() === target)?.document ?? null;
+}
+
+/**
+ * Set the subclass spell lists a class draws from on an actor.
+ * @param {object} actor - The actor document
+ * @param {string} classIdentifier - The class identifier
+ * @param {string[]} uuids - Spell list page UUIDs
+ * @returns {Promise<boolean>} True if the rules were updated
+ */
+export async function setSubclassSpellLists(actor, classIdentifier, uuids) {
+  if (!actor || !classIdentifier || !Array.isArray(uuids)) return false;
+  return RuleSet.updateClassRules(actor, classIdentifier, { customSubclassSpellList: uuids });
+}
+
 /** Wire up the public API surface and expose it on the SPELLBOOK global. */
 export function exposeApi() {
   const api = {
     flagPurge,
     getSpellLearningCost,
+    getSpellList,
     hasConfiguredCompendiums,
     learnFromScroll,
     openClassRulesForActor,
     openPartyCoordinator,
     openSpellBookForActor,
     setClassSpellLists,
+    setSubclassSpellLists,
     spellBookQuickAccess,
     spellSlotTracker,
     scrollScanner,
