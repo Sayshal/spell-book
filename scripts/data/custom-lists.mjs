@@ -456,7 +456,7 @@ async function harvestPackLists(pack, lists, isCustomPack) {
   let topLevelFolder = null;
   if (!isCustomPack && pack.folder) topLevelFolder = pack.folder.depth !== 1 ? (pack.folder.getParentFolders?.().at(-1)?.name ?? pack.folder.name) : pack.folder.name;
   const journals = isCustomPack ? await pack.getDocuments() : await getJournalDocumentsFromPack(pack);
-  const pages = journals.flatMap((journal) => journal.pages.filter((page) => page.type === 'spells' && (isCustomPack || page.system?.type !== 'other')));
+  const pages = journals.flatMap((journal) => journal.pages.filter((page) => page.type === 'spells'));
   for (const page of pages) {
     const flags = page.flags?.[MODULE.ID] || {};
     const kindLabel = KIND_SOURCE_LABELS[flags[FLAGS.KIND]];

@@ -43,7 +43,7 @@ async function loadSpellListOptions(actor, assignedUuids = new Set()) {
     try {
       const folderName = getPackTopLevelFolderName(pack) ?? pack.metadata.label;
       const journals = await getJournalDocumentsFromPack(pack);
-      const pages = journals.flatMap((journal) => journal.pages.filter((page) => page.type === 'spells' && page.system?.type !== 'other'));
+      const pages = journals.flatMap((journal) => journal.pages.filter((page) => page.type === 'spells'));
       for (const page of pages) {
         if (hiddenLists.includes(page.uuid)) continue;
         const flags = page.flags?.[MODULE.ID] || {};

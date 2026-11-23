@@ -6,6 +6,9 @@ import { getDefaultClassLists } from '../data/spell-list-registry.mjs';
 import { invalidateActorCaches } from '../utils/invalidation.mjs';
 import { ClassManager } from './class-manager.mjs';
 
+/** @type {string[]} Class rule keys that hold spell list UUIDs */
+const LIST_RULE_KEYS = ['customSpellList', 'customSubclassSpellList'];
+
 const { renderTemplate } = foundry.applications.handlebars;
 
 /** Rule Set Manager - Centralized spellcasting rule configuration and management. */
@@ -95,27 +98,28 @@ export class RuleSet {
    */
   static async updateClassRules(actor, classIdentifier, newRules) {
     ATLAS.log(3, `Updating class rules`, { actorName: actor.name, actorId: actor.id, classIdentifier, newRules });
-    const classRules = actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {};
-    const currentRules = classRules[classIdentifier] || {};
-    if (newRules.customSpellList !== undefined) {
-      const oldList = currentRules.customSpellList || [];
-      const newList = newRules.customSpellList || [];
-      const isDifferent = JSON.stringify([...oldList].sort()) !== JSON.stringify([...newList].sort());
-      if (isDifferent) {
-        ATLAS.log(3, `Custom spell list changed, checking for affected spells`, { actorName: actor.name, classIdentifier });
-        const affectedSpells = await RuleSet.#getAffectedSpellsByListChange(actor, classIdentifier, newRules.customSpellList);
-        if (affectedSpells.length > 0) {
-          ATLAS.log(3, `Found affected spells, requesting confirmation`, { actorName: actor.name, classIdentifier, affectedCount: affectedSpells.length });
-          const shouldProceed = await RuleSet.#confirmSpellListChange(actor, classIdentifier, affectedSpells);
-          if (!shouldProceed) {
-            ATLAS.log(3, `User cancelled spell list change`, { actorName: actor.name, classIdentifier });
-            return false;
-          }
-          await RuleSet.#unprepareAffectedSpells(actor, classIdentifier, affectedSpells);
+    if (!actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES)?.[classIdentifier]) await RuleSet.initializeNewClasses(actor);
+    const classRules = foundry.utils.deepClone(actor.getFlag(MODULE.ID, FLAGS.CLASS_RULES) || {});
+    const currentRules = classRules[classIdentifier] ?? RuleSet.#getClassDefaults(classIdentifier, RuleSet.getEffectiveRuleSet(actor));
+    const nextRules = { ...currentRules, ...newRules };
+    const sameList = (a = [], b = []) => JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
+    const listChanged = LIST_RULE_KEYS.some((key) => newRules[key] !== undefined && !sameList(currentRules[key], newRules[key]));
+    if (listChanged) {
+      ATLAS.log(3, `Spell lists changed, checking for affected spells`, { actorName: actor.name, classIdentifier });
+      // Mirror the resolver: subclass lists only count when a class list is assigned
+      const allowedLists = nextRules.customSpellList?.length ? [...nextRules.customSpellList, ...(nextRules.customSubclassSpellList || [])] : [];
+      const affectedSpells = await RuleSet.#getAffectedSpellsByListChange(actor, classIdentifier, allowedLists);
+      if (affectedSpells.length > 0) {
+        ATLAS.log(3, `Found affected spells, requesting confirmation`, { actorName: actor.name, classIdentifier, affectedCount: affectedSpells.length });
+        const shouldProceed = await RuleSet.#confirmSpellListChange(actor, classIdentifier, affectedSpells);
+        if (!shouldProceed) {
+          ATLAS.log(3, `User cancelled spell list change`, { actorName: actor.name, classIdentifier });
+          return false;
         }
+        await RuleSet.#unprepareAffectedSpells(actor, classIdentifier, affectedSpells);
       }
     }
-    classRules[classIdentifier] = { ...classRules[classIdentifier], ...newRules };
+    classRules[classIdentifier] = nextRules;
     await actor.setFlag(MODULE.ID, FLAGS.CLASS_RULES, classRules);
     invalidateActorCaches(actor);
     ATLAS.log(3, `Class rules updated successfully`, { actorName: actor.name, classIdentifier });

@@ -1,5 +1,5 @@
 import { PartyCoordinator, SpellBook } from './apps/_module.mjs';
-import { MODULE } from './constants.mjs';
+import { MODULE, SETTINGS } from './constants.mjs';
 import { fetchAllSpells, findAllSpellLists, getEligibleSpellPacks, syncGrantedSpellList as syncGrantedList } from './data/_module.mjs';
 import { ClassRules } from './dialogs/_module.mjs';
 import { PartyMode, RuleSet, SpellManager, WizardBook } from './managers/_module.mjs';
@@ -356,15 +356,22 @@ export async function setClassSpellLists(actor, classIdentifier, uuids) {
 }
 
 /**
- * Find a spell list page by its display name (case-insensitive).
- * @param {string} name - The spell list name
- * @returns {Promise<object|null>} The first matching spell list page, or null
+ * Find a spell list page by UUID, display name (case-insensitive), or system identifier and type.
+ * Name and identifier lookups skip hidden and granted lists, and prefer modified, custom or merged copies over stock lists.
+ * @param {string|{identifier: string, type: string}} query - Page UUID, list name, or { identifier, type }
+ * @returns {Promise<object|null>} The matching spell list page, or null
  */
-export async function getSpellList(name) {
-  if (!name) return null;
-  const target = name.toLowerCase();
-  const lists = await findAllSpellLists();
-  return lists.find((list) => list.name.toLowerCase() === target)?.document ?? null;
+export async function getSpellList(query) {
+  if (!query) return null;
+  if (typeof query === 'string' && foundry.utils.parseUuid(query)?.type === 'JournalEntryPage') {
+    const page = await fromUuid(query);
+    return page?.type === 'spells' ? page : null;
+  }
+  const hiddenLists = game.settings.get(MODULE.ID, SETTINGS.HIDDEN_SPELL_LISTS) || [];
+  const matches =
+    typeof query === 'string' ? (list) => list.name.toLowerCase() === query.toLowerCase() : (list) => list.identifier === query.identifier && (!query.type || list.system?.type === query.type);
+  const candidates = (await findAllSpellLists()).filter((list) => !list.isGranted && !hiddenLists.includes(list.uuid) && matches(list));
+  return (candidates.find((list) => list.isModified || list.isCustom || list.isMerged) ?? candidates[0])?.document ?? null;
 }
 
 /**
@@ -372,7 +379,7 @@ export async function getSpellList(name) {
  * @param {object} actor - The actor document
  * @param {string} classIdentifier - The class identifier
  * @param {string[]} uuids - Spell list page UUIDs
- * @returns {Promise<boolean>} True if the rules were updated
+ * @returns {Promise<boolean>} True if the rules were updated, false if cancelled
  */
 export async function setSubclassSpellLists(actor, classIdentifier, uuids) {
   if (!actor || !classIdentifier || !Array.isArray(uuids)) return false;
