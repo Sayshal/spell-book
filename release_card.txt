@@ -1,3 +1,8 @@
+## New Features
+
+- Add API calls to find a spell list by UUID, name, or identifier and to set subclass spell lists on an actor.
+- Spell lists of type other now appear in Class Rules and the Spell List Manager.
+
 ## Bug Fixes
 
-- 3 bugs squashed
+- 2 bugs squashed
